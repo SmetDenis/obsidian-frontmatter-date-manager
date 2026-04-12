@@ -1,4 +1,4 @@
-# Frontmatter Date Manager
+# Obsidian - Frontmatter Date Manager
 
 Automatically update `created` and `updated` dates in YAML frontmatter when editing notes in Obsidian.
 
@@ -32,52 +32,50 @@ into `<vault>/.obsidian/plugins/frontmatter-date-manager/`.
 
 ## Usage
 
-The plugin runs automatically after installation. When you edit a markdown file,
-it updates the frontmatter `updated` field with the current modification time.
-If the `created` field is missing, it sets it to the file's creation time.
+The plugin runs automatically after installation. When you edit a markdown file, it updates the frontmatter `updated` field with the current modification time. If the `created` field is missing, it sets it to the file's creation time.
 
 Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 ### Commands
 
-| Command | Description |
-|---|---|
+| Command                                | Description                                             |
+|----------------------------------------|---------------------------------------------------------|
 | **Update timestamps for current file** | Manually trigger a timestamp update for the active note |
-| **Toggle auto-update on/off** | Enable or disable automatic timestamp updates |
-| **Pause auto-update for 5 minutes** | Temporarily pause updates with automatic resume |
+| **Toggle auto-update on/off**          | Enable or disable automatic timestamp updates           |
+| **Pause auto-update for 5 minutes**    | Temporarily pause updates with automatic resume         |
 
 **Status bar indicator** — shows current state (`FDM: paused` or `FDM: paused (Xm)`); click to toggle auto-update on/off.
 
 ## Settings
 
-| Setting | Default | Description |
-|---|---|---|
-| Enable auto-update | `true` | Automatically update timestamps on file modification |
-| File filter rules | `""` (all files) | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments |
-| Min seconds between saves | `30` | Minimum interval between timestamp updates |
-| Delay for new files | `5000` ms | Wait before processing newly created files |
-| Date format | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
-| Timezone | `""` (system) | IANA timezone identifier; empty uses system timezone |
-| Number properties | `false` | Output numbers instead of strings for numeric formats |
-| Enable updated | `true` | Write the updated timestamp to frontmatter |
-| Updated key | `updated` | Frontmatter key name for the updated timestamp |
-| Enable created | `true` | Write the created timestamp to frontmatter |
-| Created key | `created` | Frontmatter key name for the created timestamp |
-| Content change detection | `true` | Use SHA-256 hashing to detect actual content changes |
-| Hash tracking mode | `body` | What triggers updates: `body`, `frontmatter`, or `both` |
-| Exclude frontmatter keys | `[]` | Frontmatter keys to ignore in change detection |
-| Auto-populate cache | `true` | Hash all uncached files when the plugin loads |
-| Command after update | `""` (none) | Obsidian command to execute after each timestamp update |
+| Setting                   | Default                 | Description                                                                     |
+|---------------------------|-------------------------|---------------------------------------------------------------------------------|
+| Enable auto-update        | `true`                  | Automatically update timestamps on file modification                            |
+| File filter rules         | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments             |
+| Min seconds between saves | `30`                    | Minimum interval between timestamp updates                                      |
+| Delay for new files       | `5000` ms               | Wait before processing newly created files                                      |
+| Date format               | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
+| Timezone                  | `""` (system)           | IANA timezone identifier; empty uses system timezone                            |
+| Number properties         | `false`                 | Output numbers instead of strings for numeric formats                           |
+| Enable updated            | `true`                  | Write the updated timestamp to frontmatter                                      |
+| Updated key               | `updated`               | Frontmatter key name for the updated timestamp                                  |
+| Enable created            | `true`                  | Write the created timestamp to frontmatter                                      |
+| Created key               | `created`               | Frontmatter key name for the created timestamp                                  |
+| Content change detection  | `true`                  | Use SHA-256 hashing to detect actual content changes                            |
+| Hash tracking mode        | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                         |
+| Exclude frontmatter keys  | `[]`                    | Frontmatter keys to ignore in change detection                                  |
+| Auto-populate cache       | `true`                  | Hash all uncached files when the plugin loads                                   |
+| Command after update      | `""` (none)             | Obsidian command to execute after each timestamp update                         |
 
 ## Date format examples
 
-| Format string | Example output |
-|---|---|
-| `yyyy-MM-dd'T'HH:mm:ss` | 2026-04-12T14:30:00 |
-| `yyyy-MM-dd HH:mm:ss` | 2026-04-12 14:30:00 |
-| `dd.MM.yyyy HH:mm` | 12.04.2026 14:30 |
-| `t` | 1776268200 (Unix seconds) |
-| `T` | 1776268200000 (Unix ms) |
+| Format string           | Example output            |
+|-------------------------|---------------------------|
+| `yyyy-MM-dd'T'HH:mm:ss` | 2026-04-12T14:30:00       |
+| `yyyy-MM-dd HH:mm:ss`   | 2026-04-12 14:30:00       |
+| `dd.MM.yyyy HH:mm`      | 12.04.2026 14:30          |
+| `t`                     | 1776268200 (Unix seconds) |
+| `T`                     | 1776268200000 (Unix ms)   |
 
 > **Note:** This plugin uses **date-fns**, not Moment.js. Common migration: `YYYY` -> `yyyy`, `DD` -> `dd`.
 
