@@ -67,7 +67,7 @@ export abstract class BaseBulkModal extends Modal {
     }
 
     let errorCount = 0;
-    this.plugin._bulkRunning = true;
+    this.plugin.bulkRunning = true;
     try {
       for (let i = 0; i < allMdFiles.length; i++) {
         if (!this.isOpened) {
@@ -83,7 +83,7 @@ export abstract class BaseBulkModal extends Modal {
         }
       }
     } finally {
-      this.plugin._bulkRunning = false;
+      this.plugin.bulkRunning = false;
     }
 
     await this.onComplete();

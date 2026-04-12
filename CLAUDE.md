@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Obsidian plugin that automatically updates frontmatter `created` and `updated` timestamps when files are edited.
 
-**Target: Obsidian v1.12.7+** (`minAppVersion` in manifest.json).
+**Target: Obsidian v1.4.11+** (`minAppVersion` in manifest.json).
 
 ## Obsidian API — IMPORTANT
 

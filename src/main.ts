@@ -26,6 +26,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   hashCache: Record<string, HashCacheEntry> = {};
   statusBarEl!: HTMLElement;
   private recentlyCreated = new Set<string>();
+  // Timers are managed manually (not via registerInterval) because they need
+  // individual clearing/re-setting. All are cleaned up in onunload().
   private modifyTimers = new Map<string, number>();
   private processingFiles = new Set<string>();
   private _hashCacheDirty = false;
@@ -35,7 +37,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   private _pauseResumeTimer: number | null = null;
   private _pauseCountdownTimer: number | null = null;
   private _compiledRules: FilterRule[] = [];
-  _bulkRunning = false;
+  bulkRunning = false;
 
   parseDate(input: number | string): Date | undefined {
     if (typeof input === 'string') {
@@ -616,7 +618,7 @@ ${e.message}`;
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
         if (!this.settings.enableAutoUpdate) return;
-        if (this._bulkRunning) return;
+        if (this.bulkRunning) return;
         if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
         if (!isTFile(file)) return;
         if (this.recentlyCreated.has(file.path)) return;

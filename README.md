@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.12.7+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.4.11+-7C3AED)](https://obsidian.md)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
 Automatically update `created` and `updated` dates in YAML frontmatter when editing notes in Obsidian.
@@ -38,11 +38,16 @@ Automatically update `created` and `updated` dates in YAML frontmatter when edit
 
 ## Installation
 
-Search for **Frontmatter Date Manager** in Obsidian Community Plugins.
+### Manual installation
 
-Or manually: download `main.js`, `manifest.json`, and `styles.css` from the
+Download `main.js`, `manifest.json`, and `styles.css` from the
 [latest release](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
 into `<vault>/.obsidian/plugins/frontmatter-date-manager/`.
+
+### Community plugins (coming soon)
+
+This plugin has been submitted to the Obsidian community plugin directory.
+Once approved, search for **Frontmatter Date Manager** in Settings > Community plugins > Browse.
 
 ## Usage
 

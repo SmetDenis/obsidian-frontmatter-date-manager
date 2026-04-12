@@ -484,7 +484,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     updateCount(0);
 
     let errorCount = 0;
-    this.plugin._bulkRunning = true;
+    this.plugin.bulkRunning = true;
     try {
       for (let i = 0; i < entriesToProcess.length; i++) {
         if (!this.isOpen) {
@@ -505,7 +505,7 @@ export class BulkPopulateTimestampsModal extends Modal {
         }
       }
     } finally {
-      this.plugin._bulkRunning = false;
+      this.plugin.bulkRunning = false;
     }
 
     // Done
