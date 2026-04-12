@@ -7,6 +7,8 @@ import { tz } from '@date-fns/tz';
 import { UpdateAllModal } from './UpdateAllModal';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
 import { BulkPopulateTimestampsModal } from './BulkPopulateTimestampsModal';
+import { RenameKeyModal } from './RenameKeyModal';
+import { ReformatDateModal } from './ReformatDateModal';
 import { parseFilterRules, isFileExcluded } from './filterRules';
 
 export type HashTrackingMode = 'body' | 'frontmatter' | 'both';
@@ -142,6 +144,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         });
       });
 
+    this.addRenameKeyButton();
+    this.addReformatDateButton();
+
     if (this.plugin.settings.enableContentHashCheck ?? true) {
       new Setting(this.containerEl)
         .setName('Rebuild hash cache')
@@ -213,6 +218,20 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       );
   }
 
+  private addRenameKeyButton(): void {
+    new Setting(this.containerEl)
+      .setName('Rename frontmatter key')
+      .setDesc(
+        'Move values from an old key name to a new one across all files. ' +
+          'Useful after changing the created or updated key name above.',
+      )
+      .addButton((cb) => {
+        cb.setButtonText('Rename key').onClick(() => {
+          new RenameKeyModal(this.app, this.plugin).open();
+        });
+      });
+  }
+
   addEnableCreated(): void {
     new Setting(this.containerEl)
       .setName("Track 'created' timestamp")
@@ -257,6 +276,20 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       description: 'Format string for reading and writing dates',
       setValue: (newValue) => (this.plugin.settings.dateFormat = newValue),
     });
+  }
+
+  private addReformatDateButton(): void {
+    new Setting(this.containerEl)
+      .setName('Reformat existing dates')
+      .setDesc(
+        'Parse dates written in an old format and rewrite them using the current format. ' +
+          'Useful after changing the date format above.',
+      )
+      .addButton((cb) => {
+        cb.setButtonText('Reformat dates').onClick(() => {
+          new ReformatDateModal(this.app, this.plugin).open();
+        });
+      });
   }
 
   addTimezone(): void {

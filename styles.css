@@ -276,3 +276,81 @@
         max-width: 300px;
     }
 }
+
+/* Rename Key Modal */
+.frontmatter-date-manager-rename-key-modal {
+
+    & .setting-item {
+        flex-wrap: wrap;
+    }
+
+    .frontmatter-date-manager-progress-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0.75rem 0;
+
+        & progress {
+            flex: 1
+        }
+    }
+}
+
+.frontmatter-date-manager-rename-key-validation {
+    color: var(--text-error);
+    font-size: var(--font-smaller);
+    margin: 0.25rem 0 0.5rem;
+    min-height: 1.2em;
+}
+
+.frontmatter-date-manager-rename-key-conflict-warning {
+    color: var(--text-warning);
+    font-size: var(--font-smaller);
+    margin: 0.5rem 0;
+    font-weight: var(--font-semibold);
+}
+
+.frontmatter-date-manager-rename-key-conflict-row {
+    color: var(--text-warning);
+}
+
+/* Reformat Date Modal */
+.frontmatter-date-manager-reformat-date-modal {
+
+    & .setting-item {
+        flex-wrap: wrap;
+    }
+
+    .frontmatter-date-manager-progress-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0.75rem 0;
+
+        & progress {
+            flex: 1
+        }
+    }
+}
+
+.frontmatter-date-manager-reformat-format-preview {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    margin: 0.25rem 0;
+    font-family: var(--font-monospace);
+    min-height: 1.2em;
+}
+
+.frontmatter-date-manager-reformat-error {
+    color: var(--text-error);
+    font-size: var(--font-smaller);
+    margin: 0.5rem 0;
+    font-weight: var(--font-semibold);
+}
+
+.frontmatter-date-manager-reformat-note {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+    margin: 0.75rem 0;
+}
