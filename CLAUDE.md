@@ -23,21 +23,24 @@ Key Obsidian API used in this plugin:
 ## Build & Dev Commands
 
 ```bash
-yarn install          # Install dependencies (yarn.lock present, use yarn)
-yarn build            # Type-check + production build → dist/
-yarn dev              # Dev mode with watch (esbuild + CSS + optional vault sync)
-yarn lint             # ESLint with eslint-plugin-obsidianmd (matches community review bot)
-yarn format:check     # Prettier check
-yarn format:write     # Prettier fix
-yarn test             # Run all tests (vitest)
-yarn test:watch       # Run tests in watch mode
+make                  # Show all available commands
+make install          # Install dependencies (yarn --frozen-lockfile)
+make build            # Type-check + production build → dist/
+make dev              # Dev mode with watch (esbuild + CSS + optional vault sync)
+make lint             # ESLint with eslint-plugin-obsidianmd (matches community review bot)
+make format-check     # Prettier check
+make format           # Prettier fix
+make test             # Run all tests (vitest)
+make test-watch       # Run tests in watch mode
+make pre-commit       # Run all checks: format, lint, test, build
+make local-test       # Build and copy plugin to local Obsidian vault
 ```
 
 Run a single test file: `yarn test src/__tests__/formatDate.test.ts`
 
-### Dev mode vault sync
+### Local vault testing
 
-Set `OBSIDIAN_VAULT` env var (or `.env` file) to your vault path. Dev mode will auto-copy `dist/` output into `<vault>/.obsidian/plugins/frontmatter-date-manager/`.
+Set `OBSIDIAN_VAULT` env var (or `.env` file, see `.env.example`) to your vault path. `make local-test` builds the plugin and copies artifacts to `<vault>/.obsidian/plugins/frontmatter-date-manager/`. `make dev` uses the same variable for auto-copy on file changes.
 
 ## Build Output
 
@@ -52,6 +55,8 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 - **`src/UpdateAllModal.ts`** — Modal for bulk-updating all vault files' timestamps.
 - **`src/UpdateAllCacheData.ts`** — Modal for populating/rebuilding SHA-256 hash cache for all files.
 - **`src/BulkPopulateTimestampsModal.ts`** — Wizard modal for bulk-populating frontmatter timestamps from filesystem dates (`ctime`/`mtime`). Three-phase flow: configure (mode/override selection + platform warnings) → preview (dry-run with scrollable table) → execute (progress bar). Supports `PopulateMode` (`'created'`|`'updated'`|`'both'`) and `OverrideMode` (`'fill-missing'`|`'overwrite-all'`). Uses `Platform.*` API for platform-specific ctime reliability warnings. Does NOT extend `BaseBulkModal` (different wizard-based UI flow).
+- **`src/RenameKeyModal.ts`** — Wizard modal for renaming frontmatter keys across all files. Three-phase flow: configure (old/new key names + delete toggle) → preview (scrollable table with conflict detection) → execute (processFrontMatter rename + optional delete). Scans ALL markdown files (`vault.getMarkdownFiles()`), not just filter-eligible ones. Does NOT extend `BaseBulkModal`.
+- **`src/ReformatDateModal.ts`** — Wizard modal for standardizing date formats across all files. Three-phase flow: configure (target format display + scope dropdown) → preview (auto-detect existing formats, show conversions) → execute (processFrontMatter rewrite). Has public `tryParseDate()` that auto-detects formats via `parseISO`, common date-fns format strings, and native `Date()` fallback. Does NOT extend `BaseBulkModal`.
 - **`src/suggesters/`** — Input autocomplete using Obsidian's `AbstractInputSuggest`. `TimezoneSuggest` for IANA timezones.
 - **`src/utils.ts`** — `isTFile` type guard, `onlyUniqueArray` filter, `isGlobPattern` detector, `matchesPathPattern` (picomatch for globs, prefix match for plain folder names), `getMomentFormatHint` (detects Moment.js tokens and suggests date-fns equivalents), `__DEV_MODE__` global declaration.
 - **`src/picomatch.d.ts`** — Type declarations for `picomatch/posix` module.
@@ -139,10 +144,10 @@ This plugin targets the Obsidian community plugin store. All code changes must c
 After finishing ANY task (feature, bugfix, refactor, test changes, etc.), **ALWAYS** run:
 
 ```bash
-yarn lint && yarn format:check && yarn test && yarn build
+make pre-commit
 ```
 
-If `format:check` fails, fix with `yarn format:write` and re-run. Do not consider the task done until all four pass.
+If `format-check` fails, fix with `make format` and re-run. Do not consider the task done until all four checks pass.
 
 After all checks pass, update documentation if the task changed user-facing behavior, settings, architecture, or key patterns:
 - `README.md` — settings table, feature descriptions, examples

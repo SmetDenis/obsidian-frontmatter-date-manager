@@ -27,8 +27,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: yarn
 
-      - run: yarn install --frozen-lockfile
-      - run: yarn format:check
-      - run: yarn lint
-      - run: yarn test
-      - run: yarn build
+      - run: make install
+      - run: make format-check
+      - run: make lint
+      - run: make test
+      - run: make build

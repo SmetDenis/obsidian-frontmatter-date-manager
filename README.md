@@ -32,6 +32,8 @@ Automatically update `created` and `updated` dates in YAML frontmatter when edit
 - Run a command after timestamps are updated
 - Bulk-update all vault files at once
 - Bulk-populate timestamps from filesystem dates (ctime/mtime) with dry-run preview
+- Rename frontmatter keys across all files (migrate old key names with preview)
+- Reformat existing dates from one format to another (parse old, write new, with preview)
 - Toggle auto-update via command palette or status bar
 - Pause auto-update for 5 minutes with automatic resume
 - Works on desktop and mobile
@@ -132,7 +134,10 @@ No. The plugin compares file content via SHA-256 hashing. If a sync service rewr
 No. The hash cache entry is automatically migrated to the new path. Existing timestamps are preserved.
 
 **I changed the date format. Will old timestamps be converted?**
-No. Existing values stay as-is. Only new writes use the new format.
+Not automatically. Use Settings → Bulk operations → Reformat dates to standardize all values. The plugin auto-detects existing formats (ISO 8601, European, US, numeric timestamps) and rewrites them using your current format. Preview all changes before applying.
+
+**I renamed the frontmatter key (e.g. `created` → `date_created`). What about existing files?**
+Use Settings → Bulk operations → Rename key. Enter the old and new key names, preview affected files, then apply. You can choose whether to delete the old key or keep both.
 
 **I changed the timezone. Will old timestamps be recalculated?**
 No. Same principle - old values are left untouched. New writes use the new timezone.
@@ -158,6 +163,17 @@ Add to your `.gitignore`:
 For **Obsidian Sync**: the file is already excluded automatically (Sync does not sync plugin data files beyond `data.json`).
 
 For **iCloud, Syncthing, Dropbox, or other file-based sync**: add `hash-cache.json` to your sync tool's ignore/exclusion list for the plugin directory.
+
+## Development
+
+```bash
+make              # Show all available commands
+make install      # Install dependencies
+make pre-commit   # Run all checks (format, lint, test, build)
+make local-test   # Build and copy plugin to local vault
+```
+
+To use `make local-test`, copy `.env.example` to `.env` and set `OBSIDIAN_VAULT` to your vault path.
 
 ## License
 

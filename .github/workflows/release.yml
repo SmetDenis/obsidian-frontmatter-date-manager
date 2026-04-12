@@ -33,9 +33,9 @@ jobs:
           node-version: 22
           cache: yarn
 
-      - run: yarn install --frozen-lockfile
-      - run: yarn test
-      - run: yarn build
+      - run: make install
+      - run: make test
+      - run: make build
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
