@@ -38,6 +38,11 @@ export class Plugin {
     onClickEvent: () => {},
   });
   registerEvent = () => {};
+  registerInterval = (id: number) => id;
+}
+
+export function normalizePath(path: string): string {
+  return path;
 }
 
 export class Modal {

@@ -1,4 +1,4 @@
-import { Notice, Plugin, TAbstractFile, TFile } from 'obsidian';
+import { Notice, Plugin, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import { format, parse, add, isAfter } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import {
@@ -26,14 +26,14 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   hashCache: Record<string, HashCacheEntry> = {};
   statusBarEl!: HTMLElement;
   private recentlyCreated = new Set<string>();
-  private modifyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private modifyTimers = new Map<string, number>();
   private processingFiles = new Set<string>();
   private _hashCacheDirty = false;
-  private _hashCacheSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private _hashCacheSaveTimer: number | null = null;
   private _hashCacheFirstDirtyAt: number | null = null;
   private _pausedUntil: number = 0;
-  private _pauseResumeTimer: ReturnType<typeof setTimeout> | null = null;
-  private _pauseCountdownTimer: ReturnType<typeof setInterval> | null = null;
+  private _pauseResumeTimer: number | null = null;
+  private _pauseCountdownTimer: number | null = null;
   private _compiledRules: FilterRule[] = [];
   _bulkRunning = false;
 
@@ -213,22 +213,26 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         if (this._pauseResumeTimer) clearTimeout(this._pauseResumeTimer);
         if (this._pauseCountdownTimer) clearInterval(this._pauseCountdownTimer);
 
-        this._pauseCountdownTimer = setInterval(() => {
-          this.updateStatusBar();
-        }, 30_000);
-
-        this._pauseResumeTimer = setTimeout(
-          () => {
-            this._pauseResumeTimer = null;
-            this._pausedUntil = 0;
-            if (this._pauseCountdownTimer) {
-              clearInterval(this._pauseCountdownTimer);
-              this._pauseCountdownTimer = null;
-            }
+        this._pauseCountdownTimer = this.registerInterval(
+          window.setInterval(() => {
             this.updateStatusBar();
-            new Notice('Auto-update resumed.');
-          },
-          PAUSE_MINUTES * 60 * 1000,
+          }, 30_000),
+        );
+
+        this._pauseResumeTimer = this.registerInterval(
+          window.setTimeout(
+            () => {
+              this._pauseResumeTimer = null;
+              this._pausedUntil = 0;
+              if (this._pauseCountdownTimer) {
+                clearInterval(this._pauseCountdownTimer);
+                this._pauseCountdownTimer = null;
+              }
+              this.updateStatusBar();
+              new Notice('Auto-update resumed.');
+            },
+            PAUSE_MINUTES * 60 * 1000,
+          ),
         );
       },
     });
@@ -576,7 +580,7 @@ ${e.message}`;
   private async processFileWithLock(file: TFile): Promise<void> {
     if (this.processingFiles.has(file.path)) {
       // Already processing this file — re-schedule
-      const retryTimer = setTimeout(() => {
+      const retryTimer = window.setTimeout(() => {
         this.modifyTimers.delete(file.path);
         void this.processFileWithLock(file);
       }, MODIFY_DEBOUNCE_MS);
@@ -599,9 +603,11 @@ ${e.message}`;
       this.app.vault.on('create', (file) => {
         if (isTFile(file) && this.settings.delayForNewFiles > 0) {
           this.recentlyCreated.add(file.path);
-          setTimeout(
-            () => this.recentlyCreated.delete(file.path),
-            this.settings.delayForNewFiles,
+          this.registerInterval(
+            window.setTimeout(
+              () => this.recentlyCreated.delete(file.path),
+              this.settings.delayForNewFiles,
+            ),
           );
         }
       }),
@@ -620,7 +626,7 @@ ${e.message}`;
         const existing = this.modifyTimers.get(file.path);
         if (existing) clearTimeout(existing);
 
-        const timer = setTimeout(() => {
+        const timer = window.setTimeout(() => {
           this.modifyTimers.delete(file.path);
           void this.processFileWithLock(file);
         }, MODIFY_DEBOUNCE_MS);
@@ -718,7 +724,7 @@ ${e.message}`;
   }
 
   private getHashCachePath(): string {
-    return `${this.manifest.dir}/${HASH_CACHE_FILE}`;
+    return normalizePath(`${this.manifest.dir}/${HASH_CACHE_FILE}`);
   }
 
   async loadHashCache() {
@@ -804,13 +810,15 @@ ${e.message}`;
     const remainingCap = Math.max(0, HASH_CACHE_MAX_DELAY_MS - elapsed);
     const delay = Math.min(HASH_CACHE_DEBOUNCE_MS, remainingCap);
 
-    this._hashCacheSaveTimer = setTimeout(() => {
-      this._hashCacheSaveTimer = null;
-      this.flushHashCache().catch((err) => {
-        this.logError('Failed to flush hash cache:', err);
-        this._hashCacheDirty = true;
-      });
-    }, delay);
+    this._hashCacheSaveTimer = this.registerInterval(
+      window.setTimeout(() => {
+        this._hashCacheSaveTimer = null;
+        this.flushHashCache().catch((err) => {
+          this.logError('Failed to flush hash cache:', err);
+          this._hashCacheDirty = true;
+        });
+      }, delay),
+    );
   }
 
   async flushHashCache() {

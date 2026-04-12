@@ -205,6 +205,13 @@
     margin: 0.5rem 0;
 }
 
+.frontmatter-date-manager-populate-auto-update-note {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+    margin: 0.75rem 0;
+}
+
 .frontmatter-date-manager-populate-summary {
     color: var(--text-muted);
     margin: 0.5rem 0;

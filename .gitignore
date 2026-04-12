@@ -12,3 +12,5 @@ main.js
 
 dist/
 .env
+tmp/
+data.json
