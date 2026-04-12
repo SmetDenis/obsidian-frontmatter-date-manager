@@ -7,7 +7,7 @@ export class UpdateAllCacheData extends BaseBulkModal {
   }
 
   protected getDescription(): string {
-    return 'This will update all cache data on files affected by this plugin';
+    return 'This will update all cache data on files affected by this plugin.';
   }
 
   protected getWarning(): string | null {

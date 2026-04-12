@@ -53,7 +53,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     const subtitle = contentEl.createEl('p');
     subtitle.appendText('Set created and/or updated dates in frontmatter');
     subtitle.createEl('br');
-    subtitle.appendText('using file system timestamps (ctime/mtime).');
+    subtitle.appendText('using filesystem timestamps (ctime/mtime).');
 
     // Mode dropdown
     new Setting(contentEl)

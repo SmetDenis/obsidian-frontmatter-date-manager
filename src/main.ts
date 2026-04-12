@@ -363,7 +363,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const contentToHash = this.getContentForHashing(fileContent);
         const sha = this.hashString(contentToHash);
         if (sha === entry.hash) {
-          this.log('Ignoring file because, sha same');
+          this.log('Ignoring file — SHA is the same');
           return { ignored: true };
         }
       }
@@ -444,7 +444,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const cTime = this.parseDate(file.stat.ctime);
 
     if (!mTime || !cTime) {
-      this.log('Something wrong happen, skipping');
+      this.log('Something went wrong, skipping');
       return null;
     }
 
