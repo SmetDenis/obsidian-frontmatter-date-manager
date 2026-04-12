@@ -5,7 +5,7 @@
 [![Obsidian](https://img.shields.io/badge/Obsidian-v1.4.11+-7C3AED)](https://obsidian.md)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
-Automatically update `created` and `updated` dates in YAML frontmatter when editing notes in Obsidian.
+Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatter when editing notes in Obsidian.
 
 ## Why this plugin?
 
@@ -15,11 +15,13 @@ Automatically update `created` and `updated` dates in YAML frontmatter when edit
 - **Templates and automation plugins conflict.** Templater, Daily Notes, QuickAdd, and similar plugins create and immediately modify files. Without a configurable delay, timestamps get written before the template is fully applied, resulting in incorrect dates.
 - **Existing vaults lack timestamps.** When you adopt the plugin on a vault with hundreds or thousands of notes, you need a way to bulk-populate timestamps from filesystem dates - not update each note one by one.
 - **Manual entry leads to inconsistent formats.** Different notes end up with `2024-01-15`, `Jan 15, 2024`, `15.01.2024`, and other variations. The plugin enforces a single configurable format across the entire vault.
+- **No automatic "last opened" tracking.** Obsidian tracks when a file was modified but has no concept of when you last *read* it - and no other plugin writes this into frontmatter. This plugin can optionally stamp a `viewed` date every time you open a note, making it queryable via Dataview for spaced repetition, review workflows, and "what haven't I looked at in months?" dashboards.
 
 ## Features
 
 - Auto-update `updated` field on file modification (syncs with `mtime`)
 - Auto-set `created` field on new files (syncs with `ctime`)
+- Auto-set `viewed` field when a file is opened - unique feature not found in other plugins (disabled by default)
 - Customizable date format (uses [date-fns](https://date-fns.org/v4.1.0/docs/format) syntax)
 - Timezone support with IANA timezone autocomplete
 - String and number property types (number useful for Unix timestamps)
@@ -53,7 +55,7 @@ Once approved, search for **Frontmatter Date Manager** in Settings > Community p
 
 ## Usage
 
-The plugin runs automatically after installation. When you edit a markdown file, it updates the frontmatter `updated` field with the current modification time. If the `created` field is missing, it sets it to the file's creation time.
+The plugin runs automatically after installation. When you edit a markdown file, it updates the frontmatter `updated` field with the current modification time. If the `created` field is missing, it sets it to the file's creation time. Optionally, enable the `viewed` timestamp in settings to record when you last opened each file.
 
 Configure behavior in **Settings -> Frontmatter Date Manager**.
 
@@ -69,24 +71,27 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 ## Settings
 
-| Setting                   | Default                 | Description                                                                     |
-|---------------------------|-------------------------|---------------------------------------------------------------------------------|
-| Enable auto-update        | `true`                  | Automatically update timestamps on file modification                            |
-| File filter rules         | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments             |
-| Min seconds between saves | `30`                    | Minimum interval between timestamp updates                                      |
-| Delay for new files       | `5000` ms               | Wait before processing newly created files                                      |
-| Date format               | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
-| Timezone                  | `""` (system)           | IANA timezone identifier; empty uses system timezone                            |
-| Number properties         | `false`                 | Output numbers instead of strings for numeric formats                           |
-| Enable updated            | `true`                  | Write the updated timestamp to frontmatter                                      |
-| Updated key               | `updated`               | Frontmatter key name for the updated timestamp                                  |
-| Enable created            | `true`                  | Write the created timestamp to frontmatter                                      |
-| Created key               | `created`               | Frontmatter key name for the created timestamp                                  |
-| Content change detection  | `true`                  | Use SHA-256 hashing to detect actual content changes                            |
-| Hash tracking mode        | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                         |
-| Exclude frontmatter keys  | `[]`                    | Frontmatter keys to ignore in change detection                                  |
-| Auto-populate cache       | `true`                  | Hash all uncached files when the plugin loads                                   |
-| Command after update      | `""` (none)             | Obsidian command to execute after each timestamp update                         |
+| Setting                                  | Default                  | Description                                                                     |
+|------------------------------------------|--------------------------|---------------------------------------------------------------------------------|
+| Track 'created' timestamp                | `true`                   | Write the created timestamp to frontmatter                                      |
+| Created key                              | `created`                | Frontmatter key name for the created timestamp                                  |
+| Track 'updated' timestamp                | `true`                   | Write the updated timestamp to frontmatter                                      |
+| Updated key                              | `updated`                | Frontmatter key name for the updated timestamp                                  |
+| Track 'viewed' timestamp                 | `false`                  | Record a timestamp when a file is opened                                        |
+| Viewed key                               | `viewed`                 | Frontmatter key name for the last-viewed timestamp                              |
+| Date format                              | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
+| Timezone                                 | `""` (system)            | IANA timezone identifier; empty uses system timezone                             |
+| Store numeric timestamps without quotes  | `false`                  | Output numbers instead of strings for numeric formats                            |
+| Auto-update                              | `true`                   | Automatically update timestamps on file modification                             |
+| Minimum seconds between updates          | `30`                     | Minimum interval between timestamp updates                                       |
+| File filter rules                        | `""` (all files)         | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments             |
+| Change detection (content hashing)       | `true`                   | Use SHA-256 hashing to detect actual content changes                             |
+| Tracking mode                            | `body`                   | What triggers updates: `body`, `frontmatter`, or `both`                          |
+| Ignore frontmatter keys                  | `[]`                     | Frontmatter keys to ignore in change detection                                   |
+| New file delay                           | `5000` ms                | Wait before processing newly created files                                       |
+| Auto-populate cache on startup           | `true`                   | Hash all uncached files when the plugin loads                                    |
+| Maximum cache entries                    | `10000`                  | Oldest unused entries are evicted when cache exceeds this limit                  |
+| Command after update                     | `""` (none)              | Obsidian command to execute after each timestamp update                           |
 
 ## Date format examples
 
@@ -123,6 +128,9 @@ The default `yyyy-MM-dd'T'HH:mm:ss` (ISO 8601) works out of the box. Dataview ca
 Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) for year, `dd` (not `DD`) for day. The plugin shows a hint in settings if it detects a Moment.js-style format.
 
 ### Everyday usage
+
+**I enabled "viewed" timestamps but they don't appear in some notes.**
+The viewed timestamp is only written when you open a file. Notes you haven't opened since enabling the feature won't have the field yet. The same filter rules and minimum-interval setting apply to viewed writes.
 
 **I edited tags or aliases, but `updated` didn't change. Is that a bug?**
 No. By default, hash tracking mode is "Body only" - only changes below the frontmatter block trigger a timestamp update. To include frontmatter changes, switch Settings → Change detection → Tracking mode to "Both".
@@ -173,7 +181,7 @@ make pre-commit   # Run all checks (format, lint, test, build)
 make local-test   # Build and copy plugin to local vault
 ```
 
-To use `make local-test`, copy `.env.example` to `.env` and set `OBSIDIAN_VAULT` to your vault path.
+To use `make local-test`, create a `.env` file with `OBSIDIAN_VAULT=/path/to/vault`, or pass it directly: `make local-test OBSIDIAN_VAULT=/path/to/vault`.
 
 ## License
 
