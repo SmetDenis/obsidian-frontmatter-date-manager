@@ -22,8 +22,7 @@ const HASH_CACHE_DEBOUNCE_MS = 30_000;
 const HASH_CACHE_MAX_DELAY_MS = 300_000;
 
 export default class FrontmatterDateManagerPlugin extends Plugin {
-  // @ts-expect-error the settings are hot loaded at init
-  settings: FrontmatterDateManagerSettings;
+  settings!: FrontmatterDateManagerSettings;
   hashCache: Record<string, HashCacheEntry> = {};
   statusBarEl!: HTMLElement;
   private recentlyCreated = new Set<string>();
@@ -101,7 +100,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       this.app.workspace.onLayoutReady(() => {
         this.garbageCollectHashCache();
         if (this.settings.enableAutoPopulateCache) {
-          this.autoPopulateHashCache();
+          void this.autoPopulateHashCache();
         }
       });
     }
@@ -140,7 +139,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     this.statusBarEl = this.addStatusBarItem();
     this.statusBarEl.onClickEvent(() => {
       this.settings.enableAutoUpdate = !this.settings.enableAutoUpdate;
-      this.saveSettings();
+      void this.saveSettings();
       this.updateStatusBar();
     });
     this.updateStatusBar();
@@ -149,9 +148,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   updateStatusBar() {
     if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) {
       const remaining = Math.ceil((this._pausedUntil - Date.now()) / 60000);
-      this.statusBarEl.setText(`FDM: paused (${remaining}m)`);
+      this.statusBarEl.setText(`Paused (${remaining}m)`);
     } else if (!this.settings.enableAutoUpdate) {
-      this.statusBarEl.setText('FDM: paused');
+      this.statusBarEl.setText('Paused');
     } else {
       this.statusBarEl.setText('');
     }
@@ -192,7 +191,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       name: 'Toggle auto-update on/off',
       callback: () => {
         this.settings.enableAutoUpdate = !this.settings.enableAutoUpdate;
-        this.saveSettings();
+        void this.saveSettings();
         this.updateStatusBar();
         new Notice(
           `Auto-update ${this.settings.enableAutoUpdate ? 'enabled' : 'disabled'}`,
@@ -301,7 +300,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     let skipCurrent = false;
 
     for (const line of lines) {
-      const keyMatch = line.match(/^([a-zA-Z0-9_\-]+)\s*:/);
+      const keyMatch = line.match(/^([a-zA-Z0-9_-]+)\s*:/);
       if (keyMatch) {
         skipCurrent = excludedKeys.has(keyMatch[1]);
       } else if (/^\S/.test(line) && line.trim().length > 0) {
@@ -375,13 +374,20 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   }
 
   isExcalidrawFile(file: TFile): boolean {
-    const ea: any =
-      //@ts-expect-error this is comming from global context, injected by Excalidraw
-      typeof ExcalidrawAutomate === 'undefined'
-        ? undefined
-        : //@ts-expect-error this is comming from global context, injected by Excalidraw
-          ExcalidrawAutomate; //ea will be undefined if the Excalidraw plugin is not running
-    return ea ? ea.isExcalidrawFile(file) : false;
+    // ExcalidrawAutomate is injected into the global scope by the Excalidraw plugin
+    const global = globalThis as Record<string, unknown>;
+    const ea = global['ExcalidrawAutomate'];
+    if (
+      ea != null &&
+      typeof ea === 'object' &&
+      'isExcalidrawFile' in ea &&
+      typeof (ea as Record<string, unknown>)['isExcalidrawFile'] === 'function'
+    ) {
+      return (
+        ea as { isExcalidrawFile: (f: TFile) => boolean }
+      ).isExcalidrawFile(file);
+    }
+    return false;
   }
 
   async getAllFilesPossiblyAffected(options?: { skipHashCheck?: boolean }) {
@@ -436,7 +442,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return null;
     }
 
-    const cached = this.app.metadataCache?.getFileCache(file)?.frontmatter;
+    const cached: Record<string, unknown> | undefined =
+      this.app.metadataCache?.getFileCache(file)?.frontmatter;
 
     const result: {
       createdValue?: string | number;
@@ -444,14 +451,20 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     } = {};
 
     if (this.settings.enableCreateTime && createdKey) {
-      const existingCreated = cached?.[createdKey];
+      const existingCreated = cached?.[createdKey] as
+        | string
+        | number
+        | undefined;
       if (!existingCreated) {
         result.createdValue = this.formatDate(cTime);
       }
     }
 
     if ((this.settings.enableModifiedTime ?? true) && updatedKey) {
-      const existingUpdated = cached?.[updatedKey];
+      const existingUpdated = cached?.[updatedKey] as
+        | string
+        | number
+        | undefined;
       if (!existingUpdated) {
         result.updatedValue = this.formatDate(mTime);
       } else {
@@ -506,7 +519,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     try {
       await this.app.fileManager.processFrontMatter(
         file,
-        (frontmatter) => {
+        (frontmatter: Record<string, unknown>) => {
           this.log('current metadata: ', frontmatter);
           this.log('current stat: ', file.stat);
 
@@ -524,8 +537,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
       if (this.settings.postUpdateCommand) {
         try {
-          // @ts-expect-error executeCommandById is not in public API typings
-          this.app.commands.executeCommandById(this.settings.postUpdateCommand);
+          // Obsidian internal API — no public typings available
+          const internalApp = this.app as unknown as {
+            commands: { executeCommandById: (id: string) => void };
+          };
+          internalApp.commands.executeCommandById(
+            this.settings.postUpdateCommand,
+          );
         } catch (cmdErr) {
           this.logError(
             'Post-update command failed:',
@@ -560,7 +578,7 @@ ${e.message}`;
       // Already processing this file — re-schedule
       const retryTimer = setTimeout(() => {
         this.modifyTimers.delete(file.path);
-        this.processFileWithLock(file);
+        void this.processFileWithLock(file);
       }, MODIFY_DEBOUNCE_MS);
       this.modifyTimers.set(file.path, retryTimer);
       return;
@@ -604,7 +622,7 @@ ${e.message}`;
 
         const timer = setTimeout(() => {
           this.modifyTimers.delete(file.path);
-          this.processFileWithLock(file);
+          void this.processFileWithLock(file);
         }, MODIFY_DEBOUNCE_MS);
         this.modifyTimers.set(file.path, timer);
       }),
@@ -631,7 +649,7 @@ ${e.message}`;
     );
 
     this.registerEvent(
-      this.app.vault.on('delete', async (file) => {
+      this.app.vault.on('delete', (file) => {
         // Clear pending debounce for the deleted file
         const timer = this.modifyTimers.get(file.path);
         if (timer) {
@@ -649,7 +667,7 @@ ${e.message}`;
     );
   }
 
-  async onunload() {
+  onunload() {
     for (const timer of this.modifyTimers.values()) {
       clearTimeout(timer);
     }
@@ -667,7 +685,7 @@ ${e.message}`;
       clearTimeout(this._hashCacheSaveTimer);
       this._hashCacheSaveTimer = null;
     }
-    await this.flushHashCache();
+    void this.flushHashCache();
     this.log('unloading Frontmatter Date Manager plugin');
   }
 
@@ -678,7 +696,7 @@ ${e.message}`;
 
   log(...data: unknown[]) {
     if (!__DEV_MODE__) return;
-    console.log('[FDM]:', ...data);
+    console.debug('[FDM]:', ...data);
   }
 
   logError(...data: unknown[]) {
@@ -687,8 +705,9 @@ ${e.message}`;
   }
 
   async loadSettings() {
-    const data = await this.loadData();
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+    const data =
+      (await this.loadData()) as Partial<FrontmatterDateManagerSettings> | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
 
     this.recompileFilterRules();
     await this.loadHashCache();
@@ -705,7 +724,7 @@ ${e.message}`;
   async loadHashCache() {
     try {
       const raw = await this.app.vault.adapter.read(this.getHashCachePath());
-      const parsed = JSON.parse(raw);
+      const parsed: unknown = JSON.parse(raw);
 
       if (
         typeof parsed !== 'object' ||
@@ -716,19 +735,20 @@ ${e.message}`;
         return;
       }
 
+      const record = parsed as Record<string, unknown>;
       const validated: Record<string, HashCacheEntry> = {};
-      for (const key of Object.keys(parsed)) {
-        const entry = parsed[key];
+      for (const key of Object.keys(record)) {
+        const entry = record[key];
         if (
           entry &&
           typeof entry === 'object' &&
-          typeof entry.hash === 'string' &&
-          typeof entry.lastAccessed === 'number'
+          typeof (entry as Record<string, unknown>).hash === 'string' &&
+          typeof (entry as Record<string, unknown>).lastAccessed === 'number'
         ) {
-          validated[key] = entry;
+          validated[key] = entry as HashCacheEntry;
         }
       }
-      if (Object.keys(validated).length < Object.keys(parsed).length) {
+      if (Object.keys(validated).length < Object.keys(record).length) {
         this._hashCacheDirty = true;
       }
       this.hashCache = validated;

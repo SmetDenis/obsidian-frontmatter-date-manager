@@ -26,6 +26,7 @@ Key Obsidian API used in this plugin:
 yarn install          # Install dependencies (yarn.lock present, use yarn)
 yarn build            # Type-check + production build → dist/
 yarn dev              # Dev mode with watch (esbuild + CSS + optional vault sync)
+yarn lint             # ESLint with eslint-plugin-obsidianmd (matches community review bot)
 yarn format:check     # Prettier check
 yarn format:write     # Prettier fix
 yarn test             # Run all tests (vitest)
@@ -72,22 +73,55 @@ Buttons that mass-modify data must use `.setWarning()` (red), clearly state cons
 **Hash cache lifecycle** (`main.ts`):
 Stored in `hash-cache.json` as `Record<string, {hash, lastAccessed}>`. Loaded on startup with GC (removes entries for deleted files) and optional auto-population. Flushed to disk via debounced writes (30s debounce, 300s max delay). LRU eviction when exceeding configurable max size.
 
+**Obsidian internal API access pattern**:
+When accessing Obsidian APIs without public typings (e.g. `app.commands.executeCommandById`, `app.commands.commands`), use `unknown` intermediate cast — never `any`. Pattern: `const internalApp = this.app as unknown as { commands: { ... } };`. This satisfies both TypeScript and `@typescript-eslint/no-explicit-any`.
+
+**`processFrontMatter` callback typing**:
+The `frontmatter` parameter from `processFrontMatter()` is typed as `any` in Obsidian's API. Always annotate the callback parameter explicitly: `(frontmatter: Record<string, unknown>) => { ... }`. Similarly, `getFileCache()?.frontmatter` (typed as `FrontMatterCache` extending `Record<string, any>`) should be cast to `Record<string, unknown>` before accessing keys.
+
 ### UI & CSS Conventions
 
-These conventions follow Obsidian community plugin review requirements:
+These conventions follow Obsidian community plugin review requirements and are enforced by `eslint-plugin-obsidianmd`:
 
-- **CSS class prefix**: All classes use `frontmatter-date-manager-` prefix (e.g. `frontmatter-date-manager-filter-setting`). Never use unprefixed or short-prefix classes.
-- **Section headings**: Use `new Setting(containerEl).setHeading().setName('...')` — not `createEl('h2')`.
+- **CSS class prefix**: All classes use `frontmatter-date-manager-` prefix (e.g. `frontmatter-date-manager-filter-setting`). Never use unprefixed or short-prefix classes — even when nested inside a prefixed parent.
+- **Section headings in settings tab**: Use `new Setting(containerEl).setHeading().setName('...')` — not `createEl('h1')`..`createEl('h6')`. Heading elements in modals (`Modal` subclasses) are acceptable.
 - **DOM elements**: Use Obsidian's `createEl()` / `createDiv()` / `createSpan()` helpers — not `document.createElement()`.
 - **Styling**: Use CSS classes and `toggleClass()` — never assign `element.style.*` in JavaScript.
 - **Colors**: Use Obsidian CSS variables (`var(--text-error)`, `var(--text-muted)`, etc.) — never hardcode hex colors.
-- **Button/label text**: Sentence case (`Scan & preview`, not `Scan & Preview`).
-- **Console output**: All `console.log`/`console.error` must go through `plugin.log()` / `plugin.logError()` which are gated behind `__DEV_MODE__`.
+- **Sentence case**: All UI text (`setName()`, `setDesc()`, `setText()`, `setPlaceholder()`, `setButtonText()`) must use sentence case. No Title Case, no ALL CAPS words. Proper nouns should be avoided where possible; if unavoidable, keep them lowercase (e.g. "daily notes" not "Daily Notes").
+- **Console output**: Only `console.debug` and `console.error` are allowed (`console.log`/`console.info` are banned by ESLint). All console calls must go through `plugin.log()` / `plugin.logError()` which are gated behind `__DEV_MODE__`.
+- **No `any` types**: The `@typescript-eslint/no-explicit-any` rule is enforced. Use `unknown` with type narrowing instead.
+- **Floating promises**: All promises in fire-and-forget positions (setTimeout callbacks, onClick handlers, etc.) must be prefixed with `void`. The `@typescript-eslint/no-floating-promises` rule is enforced.
+- **Async lifecycle methods**: `onunload()` must NOT be async (returns void per Plugin interface). Use `void this.method()` for async cleanup.
 - **No plugin name in settings heading**: The settings tab must not display the plugin name as a top-level heading.
 
 ### Release
 
 Release tags must be exact version numbers **without** `v` prefix (e.g. `1.0.0`, not `v1.0.0`). Obsidian requires this format to find release assets.
+
+## Obsidian Community Plugin Review Requirements
+
+This plugin targets the Obsidian community plugin store. All code changes must comply with the review process:
+
+### Two-phase review
+1. **Automated bot**: Validates `manifest.json`, runs `eslint-plugin-obsidianmd` (30+ rules). Rescans within 6 hours of each push. Locally replicated via `yarn lint`.
+2. **Human reviewer**: Checks CSS scoping, code patterns, security, UX. Takes 2-12 weeks. PR goes stale after 30 days, auto-closes after 45.
+
+### Key ESLint rules (enforced by bot)
+- `no-console`: Only `console.warn`, `console.error`, `console.debug` allowed.
+- `no-explicit-any`: No `any` types in production code. Tests/mocks exempt.
+- `no-floating-promises`: All promises must be awaited, caught, or voided.
+- `settings-tab/no-manual-html-headings`: No `createEl('h1')`..`createEl('h6')` in `PluginSettingTab`.
+- `ui/sentence-case`: All UI text in sentence case.
+- `no-namespace`: Use typed casts instead of `declare namespace`.
+
+### Reference links
+- Official plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
+- Submission requirements: https://docs.obsidian.md/Plugins/Releasing/Submission+requirements+for+plugins
+- Developer policies: https://docs.obsidian.md/Developer+policies
+- ESLint plugin: https://github.com/obsidianmd/eslint-plugin
+- Sample plugin (reference implementation): https://github.com/obsidianmd/obsidian-sample-plugin
+- Release repo: https://github.com/obsidianmd/obsidian-releases
 
 ## Key Dependencies
 
@@ -100,10 +134,10 @@ Release tags must be exact version numbers **without** `v` prefix (e.g. `1.0.0`,
 After finishing ANY task (feature, bugfix, refactor, test changes, etc.), **ALWAYS** run:
 
 ```bash
-yarn format:check && yarn test && yarn build
+yarn lint && yarn format:check && yarn test && yarn build
 ```
 
-If `format:check` fails, fix with `yarn format:write` and re-run. Do not consider the task done until all three pass.
+If `format:check` fails, fix with `yarn format:write` and re-run. Do not consider the task done until all four pass.
 
 After all checks pass, update documentation if the task changed user-facing behavior, settings, architecture, or key patterns:
 - `README.md` — settings table, feature descriptions, examples

@@ -108,7 +108,7 @@
     margin-bottom: 0.25rem;
 }
 
-.frontmatter-date-manager-filter-reference h6 {
+.frontmatter-date-manager-filter-reference .frontmatter-date-manager-ref-section-title {
     margin: 0.75rem 0 0.25rem;
     padding: 0;
     color: var(--text-normal);
@@ -148,7 +148,7 @@
 }
 
 .frontmatter-date-manager-bulk-modal {
-    .progress-section {
+    .frontmatter-date-manager-progress-section {
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -166,7 +166,7 @@
         flex-wrap: wrap;
     }
 
-    .progress-section {
+    .frontmatter-date-manager-progress-section {
         display: flex;
         align-items: center;
         gap: 1rem;

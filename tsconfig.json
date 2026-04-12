@@ -13,5 +13,10 @@
     "lib": ["dom", "es2018"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["src/__tests__/**", "src/__mocks__/**", "vitest.config.ts"]
+  "exclude": [
+    "src/__tests__/**",
+    "src/__mocks__/**",
+    "vitest.config.ts",
+    "tmp/**"
+  ]
 }

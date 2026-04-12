@@ -62,7 +62,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   }
 
   display(): void {
-    let { containerEl } = this;
+    const { containerEl } = this;
 
     containerEl.empty();
 
@@ -202,7 +202,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setDesc('Frontmatter key name for the last-modified date.')
       .addText((text) =>
         text
-          .setPlaceholder('updated')
+          .setPlaceholder('Updated')
           .setValue(this.plugin.settings.headerUpdated ?? '')
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -237,7 +237,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setDesc('Frontmatter key name for the creation date.')
       .addText((text) =>
         text
-          .setPlaceholder('created')
+          .setPlaceholder('Created')
           .setValue(this.plugin.settings.headerCreated ?? '')
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -480,7 +480,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     refEl.createEl('summary', { text: 'Pattern syntax reference' });
 
     const addSection = (title: string, rows: [string, string][]): void => {
-      refEl.createEl('h6', { text: title });
+      refEl.createEl('div', {
+        text: title,
+        cls: 'frontmatter-date-manager-ref-section-title',
+      });
       const table = refEl.createEl('table');
       for (const [pattern, desc] of rows) {
         const tr = table.createEl('tr');
@@ -632,7 +635,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           'The created/updated keys are always ignored automatically.',
       )
       .addText((text) => {
-        text.setPlaceholder('e.g. aliases, tags, cssclasses');
+        text.setPlaceholder('Aliases, tags, cssclasses');
         text.onChange((value) => {
           inputValue = value;
         });
@@ -676,7 +679,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     new Setting(parent)
       .setName('New file delay')
       .setDesc(
-        'Wait this many milliseconds before processing new files. Helps compatibility with Templater, Daily Notes, etc. 0 to disable.',
+        'Wait this many milliseconds before processing newly created files. Helps avoid conflicts with template plugins. Set to 0 to disable.',
       )
       .addText((text) =>
         text
@@ -731,8 +734,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .addDropdown((dropdown) => {
         dropdown.addOption('', 'None');
         // Obsidian internal API — no public typings available
-        const commands: Record<string, { name: string }> = (this.app as any)
-          .commands.commands;
+        const internalApp = this.app as unknown as {
+          commands: { commands: Record<string, { name: string }> };
+        };
+        const commands = internalApp.commands.commands;
         for (const [id, cmd] of Object.entries(commands)) {
           dropdown.addOption(id, cmd.name);
         }
@@ -772,7 +777,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         'Check ',
         descr.createEl('a', {
           href: 'https://date-fns.org/v4.1.0/docs/format',
-          text: 'date-fns documentation',
+          text: 'Date-fns documentation',
         }),
         descr.createEl('br'),
         preview,

@@ -11,9 +11,9 @@ Automatically update `created` and `updated` dates in YAML frontmatter when edit
 
 - **Manual timestamp maintenance is tedious.** Updating `created` and `updated` in frontmatter by hand every time you edit a note is error-prone and breaks your writing flow.
 - **Obsidian has no built-in frontmatter date management.** It tracks `ctime`/`mtime` at the filesystem level but doesn't automatically write or maintain date properties inside your notes.
-- **Sync tools cause false updates.** Obsidian Sync, iCloud, Syncthing, Dropbox, and Git-based sync modify files without real content changes. Without content hashing, every sync would trigger a timestamp update — creating noise and potentially infinite sync loops.
+- **Sync tools cause false updates.** Obsidian Sync, iCloud, Syncthing, Dropbox, and Git-based sync modify files without real content changes. Without content hashing, every sync would trigger a timestamp update - creating noise and potentially infinite sync loops.
 - **Templates and automation plugins conflict.** Templater, Daily Notes, QuickAdd, and similar plugins create and immediately modify files. Without a configurable delay, timestamps get written before the template is fully applied, resulting in incorrect dates.
-- **Existing vaults lack timestamps.** When you adopt the plugin on a vault with hundreds or thousands of notes, you need a way to bulk-populate timestamps from filesystem dates — not update each note one by one.
+- **Existing vaults lack timestamps.** When you adopt the plugin on a vault with hundreds or thousands of notes, you need a way to bulk-populate timestamps from filesystem dates - not update each note one by one.
 - **Manual entry leads to inconsistent formats.** Different notes end up with `2024-01-15`, `Jan 15, 2024`, `15.01.2024`, and other variations. The plugin enforces a single configurable format across the entire vault.
 
 ## Features
@@ -58,7 +58,7 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 | **Toggle auto-update on/off**          | Enable or disable automatic timestamp updates           |
 | **Pause auto-update for 5 minutes**    | Temporarily pause updates with automatic resume         |
 
-**Status bar indicator** — shows current state (`FDM: paused` or `FDM: paused (Xm)`); click to toggle auto-update on/off.
+**Status bar indicator** - shows current state (`Paused` or `Paused (Xm)`); click to toggle auto-update on/off.
 
 ## Settings
 

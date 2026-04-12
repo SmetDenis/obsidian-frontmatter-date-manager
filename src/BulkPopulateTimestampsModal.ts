@@ -119,7 +119,9 @@ export class BulkPopulateTimestampsModal extends Modal {
         btn
           .setButtonText('Scan & preview')
           .setCta()
-          .onClick(() => this.renderPreviewPhase()),
+          .onClick(() => {
+            void this.renderPreviewPhase();
+          }),
       )
       .addButton((btn) =>
         btn.setButtonText('Cancel').onClick(() => this.close()),
@@ -204,7 +206,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     overwriteWarning.empty();
     if (this.overrideMode === 'overwrite-all') {
       overwriteWarning.setText(
-        'WARNING: This will REPLACE existing frontmatter dates. This operation cannot be undone. Make a backup first.',
+        'This will replace existing frontmatter dates. This operation cannot be undone. Make a backup first.',
       );
     }
   }
@@ -214,12 +216,17 @@ export class BulkPopulateTimestampsModal extends Modal {
   computePreviewEntry(file: TFile): FilePreviewEntry {
     const createdKey = this.plugin.settings.headerCreated?.trim();
     const updatedKey = this.plugin.settings.headerUpdated?.trim();
-    const cached = this.app.metadataCache?.getFileCache(file)?.frontmatter;
+    const cached: Record<string, unknown> | undefined =
+      this.app.metadataCache?.getFileCache(file)?.frontmatter;
 
-    const existingCreated =
-      createdKey && cached?.[createdKey] != null ? cached[createdKey] : null;
-    const existingUpdated =
-      updatedKey && cached?.[updatedKey] != null ? cached[updatedKey] : null;
+    const existingCreated: string | number | null =
+      createdKey && cached?.[createdKey] != null
+        ? (cached[createdKey] as string | number)
+        : null;
+    const existingUpdated: string | number | null =
+      updatedKey && cached?.[updatedKey] != null
+        ? (cached[updatedKey] as string | number)
+        : null;
 
     let proposedCreated: string | number | null = null;
     let proposedUpdated: string | number | null = null;
@@ -289,7 +296,9 @@ export class BulkPopulateTimestampsModal extends Modal {
       text: 'Scanning files...',
     });
 
-    const progressWrapper = contentEl.createDiv({ cls: 'progress-section' });
+    const progressWrapper = contentEl.createDiv({
+      cls: 'frontmatter-date-manager-progress-section',
+    });
     const progressBar = progressWrapper.createEl('progress');
     const progressCounter = progressWrapper.createEl('span');
 
@@ -319,7 +328,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     const willChangeEntries = this.previewEntries.filter((e) => e.willChange);
     const skippedEntries = this.previewEntries.filter((e) => !e.willChange);
 
-    header.setText('Preview: Populate timestamps');
+    header.setText('Preview: populate timestamps');
     contentEl.append(header);
 
     if (willChangeEntries.length === 0) {
@@ -425,7 +434,9 @@ export class BulkPopulateTimestampsModal extends Modal {
         btn
           .setButtonText('Run')
           .setCta()
-          .onClick(() => this.renderExecutePhase()),
+          .onClick(() => {
+            void this.renderExecutePhase();
+          }),
       )
       .addButton((btn) =>
         btn.setButtonText('Back').onClick(() => this.renderConfigurePhase()),
@@ -458,7 +469,9 @@ export class BulkPopulateTimestampsModal extends Modal {
 
     const entriesToProcess = this.previewEntries.filter((e) => e.willChange);
 
-    const wrapperBar = contentEl.createDiv({ cls: 'progress-section' });
+    const wrapperBar = contentEl.createDiv({
+      cls: 'frontmatter-date-manager-progress-section',
+    });
     const progress = wrapperBar.createEl('progress');
     progress.setAttr('max', entriesToProcess.length);
 
@@ -521,7 +534,7 @@ export class BulkPopulateTimestampsModal extends Modal {
 
     await this.app.fileManager.processFrontMatter(
       currentFile,
-      (frontmatter) => {
+      (frontmatter: Record<string, unknown>) => {
         if (entry.proposedCreated !== null && createdKey) {
           frontmatter[createdKey] = entry.proposedCreated;
         }

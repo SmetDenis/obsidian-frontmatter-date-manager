@@ -1,12 +1,11 @@
 import { AbstractInputSuggest, App } from 'obsidian';
 
-declare namespace Intl {
-  function supportedValuesOf(key: string): string[];
-}
-
 const TIMEZONES: string[] = (() => {
   try {
-    return Intl.supportedValuesOf('timeZone');
+    // Intl.supportedValuesOf is available in all modern browsers (ES2022+)
+    return (
+      Intl as unknown as { supportedValuesOf: (key: string) => string[] }
+    ).supportedValuesOf('timeZone');
   } catch {
     return [];
   }

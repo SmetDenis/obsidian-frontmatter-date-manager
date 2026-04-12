@@ -49,7 +49,7 @@ export abstract class BaseBulkModal extends Modal {
     header.setText(this.getRunningMessage());
 
     const wrapperBar = this.divContainer.createEl('div');
-    wrapperBar.addClass('progress-section');
+    wrapperBar.addClass('frontmatter-date-manager-progress-section');
 
     const progress = wrapperBar.createEl('progress');
     progress.setAttr('max', allMdFiles.length);
@@ -101,11 +101,11 @@ export abstract class BaseBulkModal extends Modal {
     this.divContainer.createEl('br');
     this.divContainer.createEl('br');
 
-    const el = new Setting(this.divContainer).addButton((btn) => {
+    new Setting(this.divContainer).addButton((btn) => {
       btn.setButtonText('Close').onClick(() => {
         this.close();
       });
-    }).settingEl;
+    });
   }
 
   async onOpen() {
@@ -152,9 +152,11 @@ export abstract class BaseBulkModal extends Modal {
           btn.setCta();
         }
         btn.setButtonText('Run').onClick(() => {
-          this.onRun();
+          void this.onRun();
         });
-        setRunDisabled = (disabled) => btn.setDisabled(disabled);
+        setRunDisabled = (disabled) => {
+          btn.setDisabled(disabled);
+        };
       })
       .addButton((btn) => {
         btn.setButtonText('Cancel').onClick(() => {
