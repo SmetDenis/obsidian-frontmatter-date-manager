@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "module": "ESNext",
+    "target": "es6",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "strict": true,
+    "lib": ["dom", "es5", "scripthost", "es2015"]
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["src/__tests__/**", "src/__mocks__/**", "vitest.config.ts"]
+}

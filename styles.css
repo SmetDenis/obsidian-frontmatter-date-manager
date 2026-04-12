@@ -1,0 +1,268 @@
+.frontmatter-date-manager--settings--warn {
+    color: #ff5a5a
+}
+
+/* Plugin description block at the top of settings */
+.utoe-plugin-description {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    border-left: 3px solid var(--text-accent);
+}
+
+.utoe-plugin-description p {
+    margin: 0 0 0.4rem;
+}
+
+.utoe-plugin-description p:last-child {
+    margin-bottom: 0;
+}
+
+/* Hint when both timestamp toggles are off */
+.utoe-hint-message {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    font-style: italic;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    border-left: 3px solid var(--text-accent);
+}
+
+.utoe-filter-setting {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.utoe-filter-setting .setting-item-control {
+    width: 100%;
+}
+
+.utoe-filter-textarea {
+    width: 100%;
+    font-family: var(--font-monospace);
+    font-size: var(--font-smaller);
+    resize: vertical;
+    min-height: 150px;
+}
+
+.utoe-filter-warn {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.utoe-filter-errors {
+    color: #ff5a5a;
+    font-size: var(--font-smaller);
+    margin-top: 0.25rem;
+}
+
+.utoe-filter-preview {
+    margin-top: 0.5rem;
+    font-size: var(--font-smaller);
+}
+
+.utoe-filter-preview-summary {
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.utoe-filter-preview details {
+    margin-top: 0.25rem;
+}
+
+.utoe-filter-preview ul {
+    margin: 0.25rem 0;
+    padding-left: 1.5rem;
+}
+
+.utoe-filter-preview li {
+    font-family: var(--font-monospace);
+    font-size: var(--font-smaller);
+    color: var(--text-muted);
+}
+
+/* Filter rules: collapsible syntax reference */
+.utoe-filter-reference {
+    margin: 0.5rem 0;
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+}
+
+.utoe-filter-reference > summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: var(--font-semibold);
+    margin-bottom: 0.25rem;
+}
+
+.utoe-filter-reference h6 {
+    margin: 0.75rem 0 0.25rem;
+    padding: 0;
+    color: var(--text-normal);
+    font-size: var(--font-smaller);
+    font-weight: var(--font-semibold);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.utoe-filter-reference table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.utoe-filter-reference td.utoe-ref-pattern {
+    font-family: var(--font-monospace);
+    white-space: nowrap;
+    padding: 0.15rem 1rem 0.15rem 0;
+    color: var(--text-normal);
+    vertical-align: top;
+    width: 40%;
+}
+
+.utoe-filter-reference td.utoe-ref-desc {
+    color: var(--text-muted);
+    padding: 0.15rem 0;
+    vertical-align: top;
+}
+
+.utoe-filter-reference .utoe-ref-note {
+    margin-top: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.utoe-bulk-confirm input[type="text"] {
+    font-family: var(--font-monospace);
+}
+
+.frontmatter-date-manager--bulk-modal {
+    .progress-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        & progress {
+            flex: 1
+        }
+    }
+}
+
+/* Bulk Populate Timestamps Modal */
+.frontmatter-date-manager--bulk-populate-modal {
+
+
+    & .setting-item {
+        flex-wrap: wrap;
+    }
+
+    .progress-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 0.75rem 0;
+
+        & progress {
+            flex: 1
+        }
+    }
+}
+
+.utoe-populate-platform-warning {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+    margin: 0.75rem 0;
+
+    & ul {
+        margin: 0.25rem 0;
+        padding-left: 1.5rem;
+    }
+
+    & p {
+        margin: 0.5rem 0 0;
+    }
+}
+
+.utoe-populate-platform-warning .utoe-current-platform {
+    font-weight: var(--font-bold);
+    color: var(--text-accent);
+}
+
+.utoe-populate-overwrite-warning {
+    color: #ff5a5a;
+    font-weight: var(--font-bold);
+    margin: 0.5rem 0;
+}
+
+.utoe-populate-summary {
+    color: var(--text-muted);
+    margin: 0.5rem 0;
+    font-size: var(--font-smaller);
+}
+
+/* Nested sub-settings (visually indented, tied to a parent toggle) */
+.utoe-nested-setting {
+    padding-left: 1.5rem;
+    border-left: 2px solid var(--background-modifier-border);
+    margin-left: 0.25rem;
+}
+
+/* Advanced collapsible section in settings */
+.utoe-advanced-section {
+    margin-top: 1rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.utoe-advanced-section > summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: var(--font-ui-medium);
+    font-weight: var(--font-semibold);
+    margin-bottom: 0.5rem;
+}
+
+.utoe-populate-preview-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    margin: 0.75rem 0;
+
+    & table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--font-smaller);
+    }
+
+    & th {
+        position: sticky;
+        top: 0;
+        background: var(--background-secondary);
+        padding: 0.4rem 0.5rem;
+        text-align: left;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    & td {
+        padding: 0.25rem 0.5rem;
+        font-family: var(--font-monospace);
+        font-size: var(--font-smaller);
+        border-bottom: 1px solid var(--background-modifier-border-hover);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    & td:first-child {
+        max-width: 300px;
+    }
+}
