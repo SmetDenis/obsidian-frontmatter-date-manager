@@ -18,6 +18,8 @@ export interface HashCacheEntry {
 const HASH_CACHE_FILE = 'hash-cache.json';
 const HASH_CACHE_DEFAULT_MAX_SIZE = 10_000;
 const MODIFY_DEBOUNCE_MS = 2000;
+// Capped debounce pair: DEBOUNCE resets on each dirty event,
+// but MAX_DELAY guarantees a flush even under continuous edits.
 const HASH_CACHE_DEBOUNCE_MS = 30_000;
 const HASH_CACHE_MAX_DELAY_MS = 300_000;
 
@@ -77,6 +79,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       : {};
     try {
       const output = format(input, this.settings.dateFormat, options);
+      // Returning a number (not string) causes processFrontMatter to write
+      // unquoted YAML: `updated: 1712930400` instead of `updated: "1712930400"`.
       if (/^\d+$/.test(output) && this.settings.enableNumberProperties) {
         return parseInt(output);
       }
@@ -271,6 +275,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const frontmatterBlock = fmMatch[1] ?? '';
     const body = fileContent.slice(fmMatch[0].length);
 
+    // Exclude created/updated keys from hash to prevent infinite loop:
+    // plugin writes timestamp -> hash changes -> plugin detects change -> writes again.
     const excludedKeys = new Set<string>();
     const createdKey = this.settings.headerCreated.trim();
     const updatedKey = this.settings.headerUpdated.trim();
@@ -293,6 +299,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return filteredFrontmatter + body;
   }
 
+  // Line-by-line YAML key filter. The regex intentionally supports Unicode
+  // (CJK, Cyrillic) and dotted keys (app.version). skipCurrent carries forward
+  // to skip continuation lines of multi-line YAML values (arrays, nested objects).
   private filterFrontmatterKeys(
     frontmatter: string,
     excludedKeys: Set<string>,
@@ -514,6 +523,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     if (!hasChanges) {
       this.log('Skipping processFrontMatter — no changes needed');
+      // Still cache the hash so this file is not re-scanned on every
+      // subsequent modification event.
       if (checkResult.fileContent) {
         await this.populateCacheForFile(file, checkResult.fileContent);
       }
@@ -534,6 +545,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             frontmatter[this.settings.headerUpdated] = updates.updatedValue;
           }
         },
+        // Preserve original timestamps — without this, processFrontMatter
+        // would update mtime, potentially triggering another modify event.
         { ctime: file.stat.ctime, mtime: file.stat.mtime },
       );
       // Re-read after processFrontMatter modified the file
@@ -577,6 +590,8 @@ ${e.message}`;
     };
   }
 
+  // processingFiles Set prevents concurrent processFrontMatter on the same file.
+  // If another modify fires mid-processing, we re-schedule instead of dropping it.
   private async processFileWithLock(file: TFile): Promise<void> {
     if (this.processingFiles.has(file.path)) {
       // Already processing this file — re-schedule
@@ -599,6 +614,9 @@ ${e.message}`;
   setupOnEditHandler() {
     this.log('Setup handler');
 
+    // Template plugins (Templater, Daily Notes) modify files immediately after
+    // creation. Without this delay, the plugin captures template content as the
+    // initial file state, producing a false "content changed" detection.
     this.registerEvent(
       this.app.vault.on('create', (file) => {
         if (isTFile(file) && this.settings.delayForNewFiles > 0) {
@@ -752,6 +770,8 @@ ${e.message}`;
           validated[key] = entry as HashCacheEntry;
         }
       }
+      // Invalid/old-format entries are pruned above; dirty flag ensures
+      // the cleaned cache is persisted on next flush.
       if (Object.keys(validated).length < Object.keys(record).length) {
         this._hashCacheDirty = true;
       }
@@ -793,6 +813,9 @@ ${e.message}`;
     this.log(`LRU: evicted ${excess} oldest cache entries`);
   }
 
+  // Capped debounce: each call resets the debounce timer, but
+  // _hashCacheFirstDirtyAt (set only on the first dirty in a burst)
+  // caps the total delay at HASH_CACHE_MAX_DELAY_MS via remainingCap.
   markHashCacheDirty() {
     this._hashCacheDirty = true;
 

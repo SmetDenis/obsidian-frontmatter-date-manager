@@ -74,6 +74,9 @@ export function parseFilterRules(text: string): ParseResult {
   return { rules, errors };
 }
 
+// Last matching rule wins (gitignore semantics). The loop intentionally does NOT
+// short-circuit — this enables allowlist mode: `**` (exclude all) then `!projects/`
+// (re-include). Do not optimize with an early break.
 export function isFileExcluded(filePath: string, rules: FilterRule[]): boolean {
   let excluded = false;
 

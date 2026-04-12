@@ -56,6 +56,8 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
 
 export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   plugin: FrontmatterDateManagerPlugin;
+  // Obsidian re-renders the entire settings tab (calls display()) on any
+  // setting change. This preserves the collapsible section's open/closed state.
   private advancedOpen = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
@@ -308,10 +310,12 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           .onChange(async (value) => {
             const trimmed = value.trim();
             if (trimmed.length > 0) {
+              // Intl.DateTimeFormat constructor throws on invalid timezone strings;
+              // used here as validation. Silent return prevents saving invalid value.
               try {
                 Intl.DateTimeFormat(undefined, { timeZone: trimmed });
               } catch {
-                return; // Invalid timezone — don't save
+                return;
               }
             }
             this.plugin.settings.timezone = trimmed;

@@ -70,6 +70,7 @@ export abstract class BaseBulkModal extends Modal {
     this.plugin.bulkRunning = true;
     try {
       for (let i = 0; i < allMdFiles.length; i++) {
+        // User can close the modal mid-operation; skip remaining files.
         if (!this.isOpened) {
           new Notice('Bulk operation stopped.', 2000);
           return;

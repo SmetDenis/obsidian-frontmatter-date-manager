@@ -337,6 +337,8 @@ export class BulkPopulateTimestampsModal extends Modal {
       if ((i + 1) % SCAN_BATCH_SIZE === 0 || i === allFiles.length - 1) {
         progressBar.setAttr('value', i + 1);
         progressCounter.setText(`${i + 1}/${allFiles.length}`);
+        // Yield to browser event loop between batches to prevent UI freeze
+        // on large vaults (10k+ files).
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }

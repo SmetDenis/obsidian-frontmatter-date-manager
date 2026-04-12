@@ -313,6 +313,7 @@ export class ReformatDateModal extends Modal {
       if ((i + 1) % SCAN_BATCH_SIZE === 0 || i === allFiles.length - 1) {
         progressBar.setAttr('value', i + 1);
         progressCounter.setText(`${i + 1}/${allFiles.length}`);
+        // Yield to event loop between batches (see BulkPopulateTimestampsModal).
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
