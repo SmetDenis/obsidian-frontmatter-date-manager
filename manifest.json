@@ -1,7 +1,7 @@
 {
   "id": "frontmatter-date-manager",
   "name": "Frontmatter Date Manager",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "minAppVersion": "1.12.7",
   "description": "Automatically update created and modified dates in frontmatter when editing notes.",
   "author": "SmetDenis",
