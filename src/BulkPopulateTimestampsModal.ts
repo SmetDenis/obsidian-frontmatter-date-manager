@@ -260,6 +260,23 @@ export class BulkPopulateTimestampsModal extends Modal {
       }
     }
 
+    // Null out proposed values that match existing — no real change
+    if (
+      proposedCreated !== null &&
+      existingCreated !== null &&
+      String(proposedCreated) === String(existingCreated)
+    ) {
+      proposedCreated = null;
+    }
+
+    if (
+      proposedUpdated !== null &&
+      existingUpdated !== null &&
+      String(proposedUpdated) === String(existingUpdated)
+    ) {
+      proposedUpdated = null;
+    }
+
     return {
       file,
       proposedCreated,

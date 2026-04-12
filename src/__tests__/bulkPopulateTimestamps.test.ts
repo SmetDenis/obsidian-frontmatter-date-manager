@@ -252,6 +252,88 @@ describe('BulkPopulateTimestampsModal - computePreviewEntry', () => {
     });
   });
 
+  describe('same-value suppression', () => {
+    it('willChange is false when both proposed values equal existing', () => {
+      const modal = createModal(
+        'both',
+        'overwrite-all',
+        {},
+        {
+          'notes/test.md': {
+            created: '2023-06-20T14:00:00',
+            updated: '2024-01-15T10:30:00',
+          },
+        },
+      );
+      const file = createMockFile('notes/test.md', ts2023, ts2024);
+      const entry = modal.testComputePreviewEntry(file);
+
+      expect(entry.willChange).toBe(false);
+      expect(entry.proposedCreated).toBeNull();
+      expect(entry.proposedUpdated).toBeNull();
+    });
+
+    it('suppresses only created when it matches, updated still proposed', () => {
+      const modal = createModal(
+        'both',
+        'overwrite-all',
+        {},
+        {
+          'notes/test.md': {
+            created: '2023-06-20T14:00:00',
+            updated: '2020-01-01T00:00:00',
+          },
+        },
+      );
+      const file = createMockFile('notes/test.md', ts2023, ts2024);
+      const entry = modal.testComputePreviewEntry(file);
+
+      expect(entry.willChange).toBe(true);
+      expect(entry.proposedCreated).toBeNull();
+      expect(entry.proposedUpdated).not.toBeNull();
+    });
+
+    it('suppresses only updated when it matches, created still proposed', () => {
+      const modal = createModal(
+        'both',
+        'overwrite-all',
+        {},
+        {
+          'notes/test.md': {
+            created: '2020-01-01T00:00:00',
+            updated: '2024-01-15T10:30:00',
+          },
+        },
+      );
+      const file = createMockFile('notes/test.md', ts2023, ts2024);
+      const entry = modal.testComputePreviewEntry(file);
+
+      expect(entry.willChange).toBe(true);
+      expect(entry.proposedCreated).not.toBeNull();
+      expect(entry.proposedUpdated).toBeNull();
+    });
+
+    it('handles cross-type equality via String() coercion', () => {
+      const tsRound = new Date(2024, 0, 15).getTime();
+      const modal = createModal(
+        'created',
+        'overwrite-all',
+        {
+          dateFormat: 'yyyyMMdd',
+          enableNumberProperties: true,
+        },
+        {
+          'notes/test.md': { created: '20240115' },
+        },
+      );
+      const file = createMockFile('notes/test.md', tsRound, tsRound);
+      const entry = modal.testComputePreviewEntry(file);
+
+      expect(entry.willChange).toBe(false);
+      expect(entry.proposedCreated).toBeNull();
+    });
+  });
+
   describe('formatting', () => {
     it('proposed values use plugin formatDate output', () => {
       const modal = createModal('both', 'fill-missing', {
