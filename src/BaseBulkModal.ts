@@ -75,11 +75,12 @@ export abstract class BaseBulkModal extends Modal {
           return;
         }
         updateCount(i + 1);
+        const file = allMdFiles[i]!;
         try {
-          await this.processFile(allMdFiles[i]);
+          await this.processFile(file);
         } catch (e) {
           errorCount++;
-          this.plugin.logError('Error processing', allMdFiles[i].path, e);
+          this.plugin.logError('Error processing', file.path, e);
         }
       }
     } finally {

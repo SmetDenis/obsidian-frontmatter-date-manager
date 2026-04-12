@@ -92,6 +92,11 @@ These conventions follow Obsidian community plugin review requirements and are e
 - **Console output**: Only `console.debug` and `console.error` are allowed (`console.log`/`console.info` are banned by ESLint). All console calls must go through `plugin.log()` / `plugin.logError()` which are gated behind `__DEV_MODE__`.
 - **No `any` types**: The `@typescript-eslint/no-explicit-any` rule is enforced. Use `unknown` with type narrowing instead.
 - **Floating promises**: All promises in fire-and-forget positions (setTimeout callbacks, onClick handlers, etc.) must be prefixed with `void`. The `@typescript-eslint/no-floating-promises` rule is enforced.
+- **Strict indexed access**: `noUncheckedIndexedAccess` is enabled — `arr[i]` returns `T | undefined`. Use `!` for bounds-checked loops, proper guards elsewhere.
+- **No unnecessary optional chaining**: `headerCreated` and `headerUpdated` are `string` (not optional) — use `.trim()`, not `?.trim()`. Same for `app.metadataCache` (always defined).
+- **Strict equality**: `eqeqeq` rule enforced — use `===`/`!==` (exception: `== null` / `!= null` allowed).
+- **Prefer const**: `prefer-const` at error level — always use `const` unless reassignment is needed.
+- **Prefer nullish coalescing**: Use `??` / `??=` instead of `||` for null/undefined checks.
 - **Async lifecycle methods**: `onunload()` must NOT be async (returns void per Plugin interface). Use `void this.method()` for async cleanup.
 - **No plugin name in settings heading**: The settings tab must not display the plugin name as a top-level heading.
 

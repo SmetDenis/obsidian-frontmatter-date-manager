@@ -124,7 +124,9 @@ export class BulkPopulateTimestampsModal extends Modal {
           }),
       )
       .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => this.close()),
+        btn.setButtonText('Cancel').onClick(() => {
+          this.close();
+        }),
       );
   }
 
@@ -214,10 +216,10 @@ export class BulkPopulateTimestampsModal extends Modal {
   // --- Computation ---
 
   computePreviewEntry(file: TFile): FilePreviewEntry {
-    const createdKey = this.plugin.settings.headerCreated?.trim();
-    const updatedKey = this.plugin.settings.headerUpdated?.trim();
+    const createdKey = this.plugin.settings.headerCreated.trim();
+    const updatedKey = this.plugin.settings.headerUpdated.trim();
     const cached: Record<string, unknown> | undefined =
-      this.app.metadataCache?.getFileCache(file)?.frontmatter;
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
 
     const existingCreated: string | number | null =
       createdKey && cached?.[createdKey] != null
@@ -272,8 +274,8 @@ export class BulkPopulateTimestampsModal extends Modal {
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
-    const createdKey = this.plugin.settings.headerCreated?.trim();
-    const updatedKey = this.plugin.settings.headerUpdated?.trim();
+    const createdKey = this.plugin.settings.headerCreated.trim();
+    const updatedKey = this.plugin.settings.headerUpdated.trim();
 
     const includeCreated =
       this.populateMode === 'created' || this.populateMode === 'both';
@@ -313,7 +315,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     for (let i = 0; i < allFiles.length; i++) {
       if (!this.isOpen) return;
 
-      this.previewEntries.push(this.computePreviewEntry(allFiles[i]));
+      this.previewEntries.push(this.computePreviewEntry(allFiles[i]!));
 
       if ((i + 1) % SCAN_BATCH_SIZE === 0 || i === allFiles.length - 1) {
         progressBar.setAttr('value', i + 1);
@@ -338,7 +340,9 @@ export class BulkPopulateTimestampsModal extends Modal {
       });
 
       new Setting(contentEl).addButton((btn) =>
-        btn.setButtonText('Close').onClick(() => this.close()),
+        btn.setButtonText('Close').onClick(() => {
+          this.close();
+        }),
       );
       return;
     }
@@ -371,7 +375,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     const displayCount = Math.min(willChangeEntries.length, PREVIEW_MAX_ROWS);
 
     for (let i = 0; i < displayCount; i++) {
-      const entry = willChangeEntries[i];
+      const entry = willChangeEntries[i]!;
       const row = tbody.createEl('tr');
       row.createEl('td', { text: entry.file.path });
       if (includeCreated && createdKey) {
@@ -418,7 +422,7 @@ export class BulkPopulateTimestampsModal extends Modal {
       const skippedList = details.createEl('ul');
       const skippedDisplay = Math.min(skippedEntries.length, PREVIEW_MAX_ROWS);
       for (let i = 0; i < skippedDisplay; i++) {
-        skippedList.createEl('li', { text: skippedEntries[i].file.path });
+        skippedList.createEl('li', { text: skippedEntries[i]!.file.path });
       }
       if (skippedEntries.length > PREVIEW_MAX_ROWS) {
         skippedList.createEl('li', {
@@ -439,10 +443,14 @@ export class BulkPopulateTimestampsModal extends Modal {
           }),
       )
       .addButton((btn) =>
-        btn.setButtonText('Back').onClick(() => this.renderConfigurePhase()),
+        btn.setButtonText('Back').onClick(() => {
+          this.renderConfigurePhase();
+        }),
       )
       .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => this.close()),
+        btn.setButtonText('Cancel').onClick(() => {
+          this.close();
+        }),
       );
   }
 
@@ -493,13 +501,14 @@ export class BulkPopulateTimestampsModal extends Modal {
         }
         updateCount(i + 1);
 
+        const entry = entriesToProcess[i]!;
         try {
-          await this.applyTimestamps(entriesToProcess[i]);
+          await this.applyTimestamps(entry);
         } catch (e: unknown) {
           errorCount++;
           this.plugin.logError(
             'Error populating timestamps for',
-            entriesToProcess[i].file.path,
+            entry.file.path,
             e,
           );
         }
@@ -518,13 +527,15 @@ export class BulkPopulateTimestampsModal extends Modal {
     wrapperBar.remove();
 
     new Setting(contentEl).addButton((btn) =>
-      btn.setButtonText('Close').onClick(() => this.close()),
+      btn.setButtonText('Close').onClick(() => {
+        this.close();
+      }),
     );
   }
 
   private async applyTimestamps(entry: FilePreviewEntry): Promise<void> {
-    const createdKey = this.plugin.settings.headerCreated?.trim();
-    const updatedKey = this.plugin.settings.headerUpdated?.trim();
+    const createdKey = this.plugin.settings.headerCreated.trim();
+    const updatedKey = this.plugin.settings.headerUpdated.trim();
 
     // Verify file still exists
     const currentFile = this.app.vault.getAbstractFileByPath(entry.file.path);

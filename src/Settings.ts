@@ -203,7 +203,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('Updated')
-          .setValue(this.plugin.settings.headerUpdated ?? '')
+          .setValue(this.plugin.settings.headerUpdated)
           .onChange(async (value) => {
             const trimmed = value.trim();
             if (trimmed.length === 0) return;
@@ -238,7 +238,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .addText((text) =>
         text
           .setPlaceholder('Created')
-          .setValue(this.plugin.settings.headerCreated ?? '')
+          .setValue(this.plugin.settings.headerCreated)
           .onChange(async (value) => {
             const trimmed = value.trim();
             if (trimmed.length === 0) return;
@@ -786,7 +786,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       );
       return descr;
     };
-    let dformat = new Setting(this.containerEl)
+    const dformat = new Setting(this.containerEl)
       .setName(name)
       .setDesc(createDoc())
       .addText((text) =>

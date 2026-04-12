@@ -39,7 +39,7 @@ export function parseFilterRules(text: string): ParseResult {
   const lines = text.split('\n');
 
   for (let i = 0; i < lines.length; i++) {
-    const raw = lines[i];
+    const raw = lines[i]!;
     const trimmed = raw.trim();
 
     if (trimmed.length === 0 || trimmed.startsWith('#')) {

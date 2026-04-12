@@ -172,7 +172,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
                   new Notice('Timestamps updated.');
                 } else if (result.status === 'ignored') {
                   new Notice('File is ignored by plugin settings.');
-                } else if (result.status === 'error') {
+                } else {
                   new Notice(
                     'Failed to update timestamps. Check console for details.',
                   );
@@ -274,8 +274,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const body = fileContent.slice(fmMatch[0].length);
 
     const excludedKeys = new Set<string>();
-    const createdKey = this.settings.headerCreated?.trim();
-    const updatedKey = this.settings.headerUpdated?.trim();
+    const createdKey = this.settings.headerCreated.trim();
+    const updatedKey = this.settings.headerUpdated.trim();
     if (createdKey) excludedKeys.add(createdKey);
     if (updatedKey) excludedKeys.add(updatedKey);
     for (const key of this.settings.frontmatterHashExcludeKeys ?? []) {
@@ -308,7 +308,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     for (const line of lines) {
       const keyMatch = line.match(/^([a-zA-Z0-9_-]+)\s*:/);
       if (keyMatch) {
-        skipCurrent = excludedKeys.has(keyMatch[1]);
+        skipCurrent = excludedKeys.has(keyMatch[1]!);
       } else if (/^\S/.test(line) && line.trim().length > 0) {
         skipCurrent = false;
       }
@@ -328,7 +328,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     if (!file.path) {
       return { ignored: true };
     }
-    if (file.extension != 'md') {
+    if (file.extension !== 'md') {
       return { ignored: true };
     }
     // Canvas files are created as 'Canvas.md',
@@ -433,8 +433,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     createdValue?: string | number;
     updatedValue?: string | number;
   } | null {
-    const updatedKey = this.settings.headerUpdated?.trim();
-    const createdKey = this.settings.headerCreated?.trim();
+    const updatedKey = this.settings.headerUpdated.trim();
+    const createdKey = this.settings.headerCreated.trim();
 
     if (!updatedKey && !createdKey) {
       return null;
@@ -449,7 +449,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     }
 
     const cached: Record<string, unknown> | undefined =
-      this.app.metadataCache?.getFileCache(file)?.frontmatter;
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
 
     const result: {
       createdValue?: string | number;
@@ -788,10 +788,11 @@ ${e.message}`;
     const excess = keys.length - maxSize;
     if (excess <= 0) return;
     const sorted = keys.sort(
-      (a, b) => this.hashCache[a].lastAccessed - this.hashCache[b].lastAccessed,
+      (a, b) =>
+        this.hashCache[a]!.lastAccessed - this.hashCache[b]!.lastAccessed,
     );
     for (let i = 0; i < excess; i++) {
-      delete this.hashCache[sorted[i]];
+      delete this.hashCache[sorted[i]!];
     }
     this.log(`LRU: evicted ${excess} oldest cache entries`);
   }
@@ -799,9 +800,7 @@ ${e.message}`;
   markHashCacheDirty() {
     this._hashCacheDirty = true;
 
-    if (this._hashCacheFirstDirtyAt === null) {
-      this._hashCacheFirstDirtyAt = Date.now();
-    }
+    this._hashCacheFirstDirtyAt ??= Date.now();
 
     if (this._hashCacheSaveTimer) {
       clearTimeout(this._hashCacheSaveTimer);
