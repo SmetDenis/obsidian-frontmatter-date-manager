@@ -302,6 +302,33 @@ describe('getContentForHashing', () => {
       expect(result).toContain('status: draft');
     });
 
+    it('excludes Unicode frontmatter keys', () => {
+      const plugin = createPlugin({
+        hashTrackingMode: 'both',
+        headerCreated: 'created',
+        headerUpdated: 'updated',
+        frontmatterHashExcludeKeys: ['创建日期'],
+      });
+      const content = '---\n创建日期: 2024-01-01\ntitle: Test\n---\nBody';
+      const result = plugin.getContentForHashing(content);
+      expect(result).not.toContain('创建日期:');
+      expect(result).toContain('title: Test');
+      expect(result).toContain('Body');
+    });
+
+    it('excludes dotted frontmatter keys', () => {
+      const plugin = createPlugin({
+        hashTrackingMode: 'both',
+        headerCreated: 'created',
+        headerUpdated: 'updated',
+        frontmatterHashExcludeKeys: ['app.version'],
+      });
+      const content = '---\napp.version: 1.2.3\ntitle: Test\n---\nBody';
+      const result = plugin.getContentForHashing(content);
+      expect(result).not.toContain('app.version:');
+      expect(result).toContain('title: Test');
+    });
+
     it('handles consecutive excluded keys', () => {
       const plugin = createPlugin({
         hashTrackingMode: 'both',

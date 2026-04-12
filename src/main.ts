@@ -221,20 +221,18 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           }, 30_000),
         );
 
-        this._pauseResumeTimer = this.registerInterval(
-          window.setTimeout(
-            () => {
-              this._pauseResumeTimer = null;
-              this._pausedUntil = 0;
-              if (this._pauseCountdownTimer) {
-                clearInterval(this._pauseCountdownTimer);
-                this._pauseCountdownTimer = null;
-              }
-              this.updateStatusBar();
-              new Notice('Auto-update resumed.');
-            },
-            PAUSE_MINUTES * 60 * 1000,
-          ),
+        this._pauseResumeTimer = window.setTimeout(
+          () => {
+            this._pauseResumeTimer = null;
+            this._pausedUntil = 0;
+            if (this._pauseCountdownTimer) {
+              clearInterval(this._pauseCountdownTimer);
+              this._pauseCountdownTimer = null;
+            }
+            this.updateStatusBar();
+            new Notice('Auto-update resumed.');
+          },
+          PAUSE_MINUTES * 60 * 1000,
         );
       },
     });
@@ -306,7 +304,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     let skipCurrent = false;
 
     for (const line of lines) {
-      const keyMatch = line.match(/^([a-zA-Z0-9_-]+)\s*:/);
+      const keyMatch = line.match(/^([^\s:][^:]*?)\s*:/);
       if (keyMatch) {
         skipCurrent = excludedKeys.has(keyMatch[1]!);
       } else if (/^\S/.test(line) && line.trim().length > 0) {
@@ -605,11 +603,9 @@ ${e.message}`;
       this.app.vault.on('create', (file) => {
         if (isTFile(file) && this.settings.delayForNewFiles > 0) {
           this.recentlyCreated.add(file.path);
-          this.registerInterval(
-            window.setTimeout(
-              () => this.recentlyCreated.delete(file.path),
-              this.settings.delayForNewFiles,
-            ),
+          window.setTimeout(
+            () => this.recentlyCreated.delete(file.path),
+            this.settings.delayForNewFiles,
           );
         }
       }),
@@ -811,24 +807,21 @@ ${e.message}`;
     const remainingCap = Math.max(0, HASH_CACHE_MAX_DELAY_MS - elapsed);
     const delay = Math.min(HASH_CACHE_DEBOUNCE_MS, remainingCap);
 
-    this._hashCacheSaveTimer = this.registerInterval(
-      window.setTimeout(() => {
-        this._hashCacheSaveTimer = null;
-        this.flushHashCache().catch((err) => {
-          this.logError('Failed to flush hash cache:', err);
-          this._hashCacheDirty = true;
-        });
-      }, delay),
-    );
+    this._hashCacheSaveTimer = window.setTimeout(() => {
+      this._hashCacheSaveTimer = null;
+      this.flushHashCache().catch((err) => {
+        this.logError('Failed to flush hash cache:', err);
+        this._hashCacheDirty = true;
+      });
+    }, delay);
   }
 
   async flushHashCache() {
     if (!this._hashCacheDirty) return;
+    const json = JSON.stringify(this.hashCache);
+    await this.app.vault.adapter.write(this.getHashCachePath(), json);
+    // Reset flags only after successful write to avoid data loss on failure
     this._hashCacheDirty = false;
     this._hashCacheFirstDirtyAt = null;
-    await this.app.vault.adapter.write(
-      this.getHashCachePath(),
-      JSON.stringify(this.hashCache),
-    );
   }
 }
