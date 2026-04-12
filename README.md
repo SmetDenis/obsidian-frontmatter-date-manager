@@ -98,6 +98,67 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 > **Note:** This plugin uses **date-fns**, not Moment.js. Common migration: `YYYY` -> `yyyy`, `DD` -> `dd`.
 
+## FAQ
+
+### First installation
+
+**Will the plugin modify all my existing notes when I first enable it?**
+No. The plugin only processes a file when you edit it. On first load it builds a background hash cache of your existing files to prepare for change detection, but it never writes timestamps during this process. Your vault stays untouched until you actually edit a note.
+
+**How do I add timestamps to notes I wrote before installing?**
+Use Settings → Bulk operations → Populate from filesystem. It reads filesystem dates (ctime/mtime) and writes them into frontmatter, with a dry-run preview so you can review before committing. Default mode is "Fill missing only" - existing dates are not overwritten. If your vault syncs via iCloud or Obsidian Sync, filesystem timestamps may have been reset by the sync service - review the preview carefully.
+
+**I use Templater / Daily Notes / QuickAdd. Will the plugin conflict with them?**
+No. The plugin waits 5 seconds (configurable: Settings → Behavior → Advanced → New file delay) before processing newly created files, giving template plugins time to finish.
+
+**Do I need to add frontmatter to every note manually first?**
+No. If a note has no frontmatter, the plugin creates the `---` block and inserts timestamps on the next edit. If frontmatter already exists, it adds timestamp fields alongside your existing keys.
+
+**What date format works best with Dataview?**
+The default `yyyy-MM-dd'T'HH:mm:ss` (ISO 8601) works out of the box. Dataview can parse, sort, and compare it natively.
+
+**The plugin uses date-fns, not Moment.js. Does that affect me?**
+Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) for year, `dd` (not `DD`) for day. The plugin shows a hint in settings if it detects a Moment.js-style format.
+
+### Everyday usage
+
+**I edited tags or aliases, but `updated` didn't change. Is that a bug?**
+No. By default, hash tracking mode is "Body only" - only changes below the frontmatter block trigger a timestamp update. To include frontmatter changes, switch Settings → Change detection → Tracking mode to "Both".
+
+**Will syncing (iCloud / Obsidian Sync / Dropbox) cause false timestamps?**
+No. The plugin compares file content via SHA-256 hashing. If a sync service rewrites a file without changing its content, the hash matches and no timestamp is updated. Enabled by default.
+
+**I renamed or moved a note. Does the plugin lose track of it?**
+No. The hash cache entry is automatically migrated to the new path. Existing timestamps are preserved.
+
+**I changed the date format. Will old timestamps be converted?**
+No. Existing values stay as-is. Only new writes use the new format.
+
+**I changed the timezone. Will old timestamps be recalculated?**
+No. Same principle - old values are left untouched. New writes use the new timezone.
+
+**What happens if a note has broken YAML frontmatter?**
+The plugin skips that file and shows a notice with the file path and error details. It never writes to a file with malformed YAML. Fix the syntax and the plugin will pick it up on the next edit.
+
+**I'm saving rapidly. Will the timestamp update on every save?**
+No. There is a minimum 30-second interval between updates (configurable: 5–300 seconds) plus a 2-second debounce, so rapid edits are consolidated into a single timestamp write.
+
+## Sync and version control
+
+The plugin stores a local cache file `hash-cache.json` inside its data directory (`.obsidian/plugins/frontmatter-date-manager/`). This file contains SHA-256 hashes used for content change detection. It rebuilds automatically on startup, so excluding it is safe and recommended.
+
+**Why exclude:** the cache updates on every file edit, so multiple devices modify it independently - causing frequent sync conflicts and unnecessary traffic. Since it rebuilds automatically, syncing provides no benefit.
+
+Add to your `.gitignore`:
+
+```
+.obsidian/plugins/frontmatter-date-manager/hash-cache.json
+```
+
+For **Obsidian Sync**: the file is already excluded automatically (Sync does not sync plugin data files beyond `data.json`).
+
+For **iCloud, Syncthing, Dropbox, or other file-based sync**: add `hash-cache.json` to your sync tool's ignore/exclusion list for the plugin directory.
+
 ## License
 
 [MIT](LICENSE)
