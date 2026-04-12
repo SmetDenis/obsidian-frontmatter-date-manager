@@ -97,6 +97,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     await this.loadSettings();
 
     this.setupOnEditHandler();
+    this.setupFileOpenHandler();
     this.setupStatusBar();
     this.setupCommands();
 
@@ -282,6 +283,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const updatedKey = this.settings.headerUpdated.trim();
     if (createdKey) excludedKeys.add(createdKey);
     if (updatedKey) excludedKeys.add(updatedKey);
+    const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
+    if (viewedKey) excludedKeys.add(viewedKey);
     for (const key of this.settings.frontmatterHashExcludeKeys ?? []) {
       const trimmed = key.trim();
       if (trimmed) excludedKeys.add(trimmed);
@@ -606,6 +609,82 @@ ${e.message}`;
     try {
       this.log('TRIGGER FROM MODIFY (debounced)');
       await this.handleFileChange(file, 'modify');
+    } finally {
+      this.processingFiles.delete(file.path);
+    }
+  }
+
+  private setupFileOpenHandler() {
+    this.registerEvent(
+      this.app.workspace.on('file-open', (file: TFile | null) => {
+        if (!file) return;
+        if (!(this.settings.enableLastViewed ?? false)) return;
+        if (!this.settings.enableAutoUpdate) return;
+        if (this.bulkRunning) return;
+        if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
+        void this.handleFileOpen(file);
+      }),
+    );
+  }
+
+  private async handleFileOpen(file: TFile): Promise<void> {
+    const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
+    if (!viewedKey) return;
+
+    // Respect filter rules (same checks as shouldFileBeIgnored)
+    if (file.extension !== 'md') return;
+    if (this.isExcalidrawFile(file)) return;
+    if (
+      this._compiledRules.length > 0 &&
+      isFileExcluded(file.path, this._compiledRules)
+    ) {
+      return;
+    }
+
+    // Rate-limiting via shouldUpdateValue
+    const cached: Record<string, unknown> | undefined =
+      this.app.metadataCache.getFileCache(file)?.frontmatter as
+        | Record<string, unknown>
+        | undefined;
+    const existingViewed = cached?.[viewedKey] as string | number | undefined;
+    if (existingViewed) {
+      const existingDate = this.parseDate(existingViewed);
+      if (existingDate && !this.shouldUpdateValue(new Date(), existingDate)) {
+        return;
+      }
+    }
+
+    // Share processingFiles lock — skip if file is mid-write
+    if (this.processingFiles.has(file.path)) return;
+
+    this.processingFiles.add(file.path);
+    try {
+      const now = new Date();
+      const formattedNow = this.formatDate(now);
+      if (formattedNow === undefined) return;
+
+      await this.app.fileManager.processFrontMatter(
+        file,
+        (frontmatter: Record<string, unknown>) => {
+          frontmatter[viewedKey] = formattedNow;
+        },
+        { ctime: file.stat.ctime, mtime: file.stat.mtime },
+      );
+
+      // Update hash cache so subsequent modify event finds matching hash
+      if (this.settings.enableContentHashCheck) {
+        await this.populateCacheForFile(file);
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'YAMLParseError') {
+        this.logError(
+          'Malformed frontmatter, skipping viewed update:',
+          file.path,
+          e.message,
+        );
+      } else {
+        this.logError('Error updating viewed timestamp:', file.path, e);
+      }
     } finally {
       this.processingFiles.delete(file.path);
     }

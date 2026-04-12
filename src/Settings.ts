@@ -27,6 +27,9 @@ export interface FrontmatterDateManagerSettings {
   filterRules?: string;
   enableModifiedTime?: boolean;
 
+  enableLastViewed?: boolean;
+  headerLastViewed?: string;
+
   enableContentHashCheck?: boolean;
   hashTrackingMode?: HashTrackingMode;
   frontmatterHashExcludeKeys?: string[];
@@ -47,6 +50,8 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   postUpdateCommand: '',
   filterRules: '',
   enableModifiedTime: true,
+  enableLastViewed: false,
+  headerLastViewed: 'viewed',
   enableContentHashCheck: true,
   hashTrackingMode: 'body',
   frontmatterHashExcludeKeys: [],
@@ -88,10 +93,17 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     this.addFrontMatterCreated();
     this.addEnableModifiedTime();
     this.addFrontMatterUpdated();
+    this.addEnableLastViewed();
+    this.addFrontMatterLastViewed();
 
     const modifiedEnabled = this.plugin.settings.enableModifiedTime ?? true;
+    const viewedEnabled = this.plugin.settings.enableLastViewed ?? false;
 
-    if (!this.plugin.settings.enableCreateTime && !modifiedEnabled) {
+    if (
+      !this.plugin.settings.enableCreateTime &&
+      !modifiedEnabled &&
+      !viewedEnabled
+    ) {
       containerEl.createEl('div', {
         cls: 'frontmatter-date-manager-hint-message',
         text: 'Enable at least one timestamp type above to configure the plugin.',
@@ -269,6 +281,41 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       );
   }
 
+  addEnableLastViewed(): void {
+    new Setting(this.containerEl)
+      .setName("Track 'viewed' timestamp")
+      .setDesc('Record when a file was last opened in the Obsidian UI.')
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.enableLastViewed ?? false)
+          .onChange(async (newValue) => {
+            this.plugin.settings.enableLastViewed = newValue;
+            await this.saveSettings();
+            this.display();
+          }),
+      );
+  }
+
+  addFrontMatterLastViewed(): void {
+    if (!(this.plugin.settings.enableLastViewed ?? false)) {
+      return;
+    }
+    new Setting(this.containerEl)
+      .setName('Viewed key')
+      .setDesc('Frontmatter key name for the last-viewed date.')
+      .addText((text) =>
+        text
+          .setPlaceholder('Viewed')
+          .setValue(this.plugin.settings.headerLastViewed ?? 'viewed')
+          .onChange(async (value) => {
+            const trimmed = value.trim();
+            if (trimmed.length === 0) return;
+            this.plugin.settings.headerLastViewed = trimmed;
+            await this.saveSettings();
+          }),
+      );
+  }
+
   // --- Date formatting ---
 
   addDateFormat(): void {
@@ -369,12 +416,16 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   }
 
   addTimeBetweenUpdates(): void {
-    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
+    const modifiedEnabled = this.plugin.settings.enableModifiedTime ?? true;
+    const viewedEnabled = this.plugin.settings.enableLastViewed ?? false;
+    if (!modifiedEnabled && !viewedEnabled) {
       return;
     }
     new Setting(this.containerEl)
       .setName('Minimum seconds between updates')
-      .setDesc('Prevent frequent updates during rapid editing.')
+      .setDesc(
+        'Prevent frequent timestamp updates during rapid editing or tab switching.',
+      )
       .addSlider((slider) =>
         slider
           .setLimits(5, 300, 5)
@@ -669,7 +720,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setName('Ignore frontmatter keys')
       .setDesc(
         'Changes to these keys will not trigger a timestamp update. ' +
-          'The created/updated keys are always ignored automatically.',
+          'The created/updated/viewed keys are always ignored automatically.',
       )
       .addText((text) => {
         text.setPlaceholder('Aliases, tags, cssclasses');

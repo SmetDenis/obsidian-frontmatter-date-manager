@@ -3,7 +3,7 @@ import { format, parse, parseISO } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import FrontmatterDateManagerPlugin from './main';
 
-export type ReformatScope = 'created' | 'updated' | 'both';
+export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
 
 export interface ReformatPreviewEntry {
   file: TFile;
@@ -13,6 +13,9 @@ export interface ReformatPreviewEntry {
   updatedOldValue: string | number | null;
   updatedNewValue: string | number | null;
   updatedError: boolean;
+  viewedOldValue: string | number | null;
+  viewedNewValue: string | number | null;
+  viewedError: boolean;
   willChange: boolean;
 }
 
@@ -49,7 +52,7 @@ const COMMON_DATE_FORMATS = [
 
 export class ReformatDateModal extends Modal {
   private plugin: FrontmatterDateManagerPlugin;
-  private reformatScope: ReformatScope = 'both';
+  private reformatScope: ReformatScope = 'all';
   private previewEntries: ReformatPreviewEntry[] = [];
   private isOpen = false;
 
@@ -172,16 +175,18 @@ export class ReformatDateModal extends Modal {
     new Setting(contentEl)
       .setName('Which fields to reformat')
       .setDesc('Choose which timestamp fields to standardize.')
-      .addDropdown((dd) =>
-        dd
-          .addOption('both', 'Both created and updated')
-          .addOption('created', 'Created only')
-          .addOption('updated', 'Updated only')
-          .setValue(this.reformatScope)
-          .onChange((val) => {
-            this.reformatScope = val as ReformatScope;
-          }),
-      );
+      .addDropdown((dd) => {
+        dd.addOption('all', 'All timestamp fields');
+        dd.addOption('created', 'Created only');
+        dd.addOption('updated', 'Updated only');
+        if (this.plugin.settings.enableLastViewed ?? false) {
+          dd.addOption('viewed', 'Viewed only');
+        }
+        dd.setValue(this.reformatScope);
+        dd.onChange((val) => {
+          this.reformatScope = val as ReformatScope;
+        });
+      });
 
     contentEl.createDiv({
       cls: 'frontmatter-date-manager-reformat-note',
@@ -210,13 +215,17 @@ export class ReformatDateModal extends Modal {
   computePreviewEntry(file: TFile): ReformatPreviewEntry {
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const viewedKey = (
+      this.plugin.settings.headerLastViewed ?? 'viewed'
+    ).trim();
     const cached: Record<string, unknown> | undefined =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
 
-    const includeCreated =
-      this.reformatScope === 'created' || this.reformatScope === 'both';
-    const includeUpdated =
-      this.reformatScope === 'updated' || this.reformatScope === 'both';
+    const scopeAll =
+      this.reformatScope === 'all' || this.reformatScope === 'both';
+    const includeCreated = this.reformatScope === 'created' || scopeAll;
+    const includeUpdated = this.reformatScope === 'updated' || scopeAll;
+    const includeViewed = this.reformatScope === 'viewed' || scopeAll;
 
     let createdOldValue: string | number | null = null;
     let createdNewValue: string | number | null = null;
@@ -225,6 +234,10 @@ export class ReformatDateModal extends Modal {
     let updatedOldValue: string | number | null = null;
     let updatedNewValue: string | number | null = null;
     let updatedError = false;
+
+    let viewedOldValue: string | number | null = null;
+    let viewedNewValue: string | number | null = null;
+    let viewedError = false;
 
     if (includeCreated && createdKey && cached?.[createdKey] != null) {
       createdOldValue = cached[createdKey] as string | number;
@@ -256,6 +269,26 @@ export class ReformatDateModal extends Modal {
       }
     }
 
+    if (
+      includeViewed &&
+      viewedKey &&
+      (this.plugin.settings.enableLastViewed ?? false) &&
+      cached?.[viewedKey] != null
+    ) {
+      viewedOldValue = cached[viewedKey] as string | number;
+      const parsed = this.tryParseDate(viewedOldValue);
+      if (parsed) {
+        const formatted = this.formatWithNewFormat(parsed);
+        if (formatted !== undefined) {
+          if (String(viewedOldValue) !== String(formatted)) {
+            viewedNewValue = formatted;
+          }
+        }
+      } else {
+        viewedError = true;
+      }
+    }
+
     return {
       file,
       createdOldValue,
@@ -264,7 +297,13 @@ export class ReformatDateModal extends Modal {
       updatedOldValue,
       updatedNewValue,
       updatedError,
-      willChange: createdNewValue !== null || updatedNewValue !== null,
+      viewedOldValue,
+      viewedNewValue,
+      viewedError,
+      willChange:
+        createdNewValue !== null ||
+        updatedNewValue !== null ||
+        viewedNewValue !== null,
     };
   }
 
@@ -274,16 +313,21 @@ export class ReformatDateModal extends Modal {
     const { contentEl } = this;
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const viewedKey = (
+      this.plugin.settings.headerLastViewed ?? 'viewed'
+    ).trim();
 
-    const includeCreated =
-      this.reformatScope === 'created' || this.reformatScope === 'both';
-    const includeUpdated =
-      this.reformatScope === 'updated' || this.reformatScope === 'both';
+    const scopeAll =
+      this.reformatScope === 'all' || this.reformatScope === 'both';
+    const includeCreated = this.reformatScope === 'created' || scopeAll;
+    const includeUpdated = this.reformatScope === 'updated' || scopeAll;
+    const includeViewed = this.reformatScope === 'viewed' || scopeAll;
 
-    if ((includeCreated && !createdKey) || (includeUpdated && !updatedKey)) {
-      const missing = [];
-      if (includeCreated && !createdKey) missing.push('created');
-      if (includeUpdated && !updatedKey) missing.push('updated');
+    const missing = [];
+    if (includeCreated && !createdKey) missing.push('created');
+    if (includeUpdated && !updatedKey) missing.push('updated');
+    if (includeViewed && !viewedKey) missing.push('viewed');
+    if (missing.length > 0) {
       new Notice(
         `No frontmatter key configured for: ${missing.join(', ')}. Check plugin settings.`,
       );
@@ -322,10 +366,11 @@ export class ReformatDateModal extends Modal {
 
     const willChangeEntries = this.previewEntries.filter((e) => e.willChange);
     const errorEntries = this.previewEntries.filter(
-      (e) => e.createdError || e.updatedError,
+      (e) => e.createdError || e.updatedError || e.viewedError,
     );
     const skippedEntries = this.previewEntries.filter(
-      (e) => !e.willChange && !e.createdError && !e.updatedError,
+      (e) =>
+        !e.willChange && !e.createdError && !e.updatedError && !e.viewedError,
     );
 
     header.setText('Preview: standardize dates');
@@ -381,6 +426,9 @@ export class ReformatDateModal extends Modal {
     if (includeUpdated && updatedKey) {
       headerRow.createEl('th', { text: `Updated (${updatedKey})` });
     }
+    if (includeViewed && viewedKey) {
+      headerRow.createEl('th', { text: `Viewed (${viewedKey})` });
+    }
 
     const tbody = table.createEl('tbody');
     const displayCount = Math.min(willChangeEntries.length, PREVIEW_MAX_ROWS);
@@ -408,6 +456,15 @@ export class ReformatDateModal extends Modal {
           ),
         });
       }
+      if (includeViewed && viewedKey) {
+        row.createEl('td', {
+          text: this.formatPreviewCell(
+            entry.viewedOldValue,
+            entry.viewedNewValue,
+            entry.viewedError,
+          ),
+        });
+      }
     }
 
     if (willChangeEntries.length > PREVIEW_MAX_ROWS) {
@@ -418,7 +475,8 @@ export class ReformatDateModal extends Modal {
         String(
           1 +
             (includeCreated && createdKey ? 1 : 0) +
-            (includeUpdated && updatedKey ? 1 : 0),
+            (includeUpdated && updatedKey ? 1 : 0) +
+            (includeViewed && viewedKey ? 1 : 0),
         ),
       );
       moreCell.setText(
@@ -489,6 +547,9 @@ export class ReformatDateModal extends Modal {
     const { contentEl } = this;
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const viewedKey = (
+      this.plugin.settings.headerLastViewed ?? 'viewed'
+    ).trim();
 
     contentEl.empty();
 
@@ -540,6 +601,9 @@ export class ReformatDateModal extends Modal {
               }
               if (entry.updatedNewValue !== null && updatedKey) {
                 frontmatter[updatedKey] = entry.updatedNewValue;
+              }
+              if (entry.viewedNewValue !== null && viewedKey) {
+                frontmatter[viewedKey] = entry.viewedNewValue;
               }
             },
             {
