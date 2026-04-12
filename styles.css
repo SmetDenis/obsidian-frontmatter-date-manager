@@ -1,9 +1,13 @@
-.frontmatter-date-manager--settings--warn {
-    color: #ff5a5a
+.frontmatter-date-manager-settings-warn {
+    color: var(--text-error)
+}
+
+.frontmatter-date-manager-hidden {
+    display: none;
 }
 
 /* Plugin description block at the top of settings */
-.utoe-plugin-description {
+.frontmatter-date-manager-plugin-description {
     color: var(--text-muted);
     font-size: var(--font-smaller);
     line-height: 1.6;
@@ -14,16 +18,16 @@
     border-left: 3px solid var(--text-accent);
 }
 
-.utoe-plugin-description p {
+.frontmatter-date-manager-plugin-description p {
     margin: 0 0 0.4rem;
 }
 
-.utoe-plugin-description p:last-child {
+.frontmatter-date-manager-plugin-description p:last-child {
     margin-bottom: 0;
 }
 
 /* Hint when both timestamp toggles are off */
-.utoe-hint-message {
+.frontmatter-date-manager-hint-message {
     color: var(--text-muted);
     font-size: var(--font-smaller);
     font-style: italic;
@@ -34,17 +38,17 @@
     border-left: 3px solid var(--text-accent);
 }
 
-.utoe-filter-setting {
+.frontmatter-date-manager-filter-setting {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
 }
 
-.utoe-filter-setting .setting-item-control {
+.frontmatter-date-manager-filter-setting .setting-item-control {
     width: 100%;
 }
 
-.utoe-filter-textarea {
+.frontmatter-date-manager-filter-textarea {
     width: 100%;
     font-family: var(--font-monospace);
     font-size: var(--font-smaller);
@@ -52,59 +56,59 @@
     min-height: 150px;
 }
 
-.utoe-filter-warn {
+.frontmatter-date-manager-filter-warn {
     color: var(--text-muted);
     font-size: var(--font-smaller);
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
 }
 
-.utoe-filter-errors {
-    color: #ff5a5a;
+.frontmatter-date-manager-filter-errors {
+    color: var(--text-error);
     font-size: var(--font-smaller);
     margin-top: 0.25rem;
 }
 
-.utoe-filter-preview {
+.frontmatter-date-manager-filter-preview {
     margin-top: 0.5rem;
     font-size: var(--font-smaller);
 }
 
-.utoe-filter-preview-summary {
+.frontmatter-date-manager-filter-preview-summary {
     color: var(--text-muted);
     margin-bottom: 0.25rem;
 }
 
-.utoe-filter-preview details {
+.frontmatter-date-manager-filter-preview details {
     margin-top: 0.25rem;
 }
 
-.utoe-filter-preview ul {
+.frontmatter-date-manager-filter-preview ul {
     margin: 0.25rem 0;
     padding-left: 1.5rem;
 }
 
-.utoe-filter-preview li {
+.frontmatter-date-manager-filter-preview li {
     font-family: var(--font-monospace);
     font-size: var(--font-smaller);
     color: var(--text-muted);
 }
 
 /* Filter rules: collapsible syntax reference */
-.utoe-filter-reference {
+.frontmatter-date-manager-filter-reference {
     margin: 0.5rem 0;
     font-size: var(--font-smaller);
     line-height: 1.5;
 }
 
-.utoe-filter-reference > summary {
+.frontmatter-date-manager-filter-reference > summary {
     cursor: pointer;
     color: var(--text-muted);
     font-weight: var(--font-semibold);
     margin-bottom: 0.25rem;
 }
 
-.utoe-filter-reference h6 {
+.frontmatter-date-manager-filter-reference h6 {
     margin: 0.75rem 0 0.25rem;
     padding: 0;
     color: var(--text-normal);
@@ -113,12 +117,12 @@
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.utoe-filter-reference table {
+.frontmatter-date-manager-filter-reference table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.utoe-filter-reference td.utoe-ref-pattern {
+.frontmatter-date-manager-filter-reference td.frontmatter-date-manager-ref-pattern {
     font-family: var(--font-monospace);
     white-space: nowrap;
     padding: 0.15rem 1rem 0.15rem 0;
@@ -127,23 +131,23 @@
     width: 40%;
 }
 
-.utoe-filter-reference td.utoe-ref-desc {
+.frontmatter-date-manager-filter-reference td.frontmatter-date-manager-ref-desc {
     color: var(--text-muted);
     padding: 0.15rem 0;
     vertical-align: top;
 }
 
-.utoe-filter-reference .utoe-ref-note {
+.frontmatter-date-manager-filter-reference .frontmatter-date-manager-ref-note {
     margin-top: 0.75rem;
     color: var(--text-muted);
     font-style: italic;
 }
 
-.utoe-bulk-confirm input[type="text"] {
+.frontmatter-date-manager-bulk-confirm input[type="text"] {
     font-family: var(--font-monospace);
 }
 
-.frontmatter-date-manager--bulk-modal {
+.frontmatter-date-manager-bulk-modal {
     .progress-section {
         display: flex;
         align-items: center;
@@ -156,8 +160,7 @@
 }
 
 /* Bulk Populate Timestamps Modal */
-.frontmatter-date-manager--bulk-populate-modal {
-
+.frontmatter-date-manager-bulk-populate-modal {
 
     & .setting-item {
         flex-wrap: wrap;
@@ -175,7 +178,7 @@
     }
 }
 
-.utoe-populate-platform-warning {
+.frontmatter-date-manager-populate-platform-warning {
     color: var(--text-muted);
     font-size: var(--font-smaller);
     line-height: 1.5;
@@ -191,38 +194,38 @@
     }
 }
 
-.utoe-populate-platform-warning .utoe-current-platform {
+.frontmatter-date-manager-populate-platform-warning .frontmatter-date-manager-current-platform {
     font-weight: var(--font-bold);
     color: var(--text-accent);
 }
 
-.utoe-populate-overwrite-warning {
-    color: #ff5a5a;
+.frontmatter-date-manager-populate-overwrite-warning {
+    color: var(--text-error);
     font-weight: var(--font-bold);
     margin: 0.5rem 0;
 }
 
-.utoe-populate-summary {
+.frontmatter-date-manager-populate-summary {
     color: var(--text-muted);
     margin: 0.5rem 0;
     font-size: var(--font-smaller);
 }
 
 /* Nested sub-settings (visually indented, tied to a parent toggle) */
-.utoe-nested-setting {
+.frontmatter-date-manager-nested-setting {
     padding-left: 1.5rem;
     border-left: 2px solid var(--background-modifier-border);
     margin-left: 0.25rem;
 }
 
 /* Advanced collapsible section in settings */
-.utoe-advanced-section {
+.frontmatter-date-manager-advanced-section {
     margin-top: 1rem;
     padding: 0.5rem 0;
     border-top: 1px solid var(--background-modifier-border);
 }
 
-.utoe-advanced-section > summary {
+.frontmatter-date-manager-advanced-section > summary {
     cursor: pointer;
     color: var(--text-muted);
     font-size: var(--font-ui-medium);
@@ -230,7 +233,7 @@
     margin-bottom: 0.5rem;
 }
 
-.utoe-populate-preview-list {
+.frontmatter-date-manager-populate-preview-list {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid var(--background-modifier-border);

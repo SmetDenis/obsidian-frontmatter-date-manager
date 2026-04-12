@@ -1,6 +1,6 @@
 {
   "name": "obsidian-frontmatter-date-manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Automatically update created and modified dates in frontmatter when editing notes.",
   "main": "main.js",
   "scripts": {

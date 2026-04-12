@@ -58,7 +58,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
         return parsedDate;
       } catch (e) {
-        console.error(e);
+        this.logError('parseDate error:', e);
         return undefined;
       }
     }
@@ -81,7 +81,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
       return output;
     } catch (e) {
-      console.error('[FDM] formatDate error:', this.settings.dateFormat, e);
+      this.logError('formatDate error:', this.settings.dateFormat, e);
       return undefined;
     }
   }
@@ -165,17 +165,21 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (file) {
           if (!checking) {
-            this.handleFileChange(file, 'modify').then((result) => {
-              if (result.status === 'ok') {
-                new Notice('Timestamps updated.');
-              } else if (result.status === 'ignored') {
-                new Notice('File is ignored by plugin settings.');
-              } else if (result.status === 'error') {
-                new Notice(
-                  'Failed to update timestamps. Check console for details.',
-                );
-              }
-            });
+            this.handleFileChange(file, 'modify')
+              .then((result) => {
+                if (result.status === 'ok') {
+                  new Notice('Timestamps updated.');
+                } else if (result.status === 'ignored') {
+                  new Notice('File is ignored by plugin settings.');
+                } else if (result.status === 'error') {
+                  new Notice(
+                    'Failed to update timestamps. Check console for details.',
+                  );
+                }
+              })
+              .catch(() => {
+                new Notice('Failed to update timestamps.');
+              });
           }
           return true;
         }
@@ -467,7 +471,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     file: TAbstractFile,
     triggerSource: 'modify' | 'bulk',
   ): Promise<
-    { status: 'ok' } | { status: 'error'; error: any } | { status: 'ignored' }
+    | { status: 'ok' }
+    | { status: 'error'; error: unknown }
+    | { status: 'ignored' }
   > {
     if (!isTFile(file)) {
       return { status: 'ignored' };
@@ -521,22 +527,23 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           // @ts-expect-error executeCommandById is not in public API typings
           this.app.commands.executeCommandById(this.settings.postUpdateCommand);
         } catch (cmdErr) {
-          console.error(
-            `[FDM] Post-update command failed (${this.settings.postUpdateCommand}):`,
+          this.logError(
+            'Post-update command failed:',
+            this.settings.postUpdateCommand,
             cmdErr,
           );
         }
       }
-    } catch (e: any) {
-      if (e?.name === 'YAMLParseError') {
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === 'YAMLParseError') {
         const errorMessage = `Frontmatter Date Manager failed
 Malformed frontmatter on this file: ${file.path}
 
 ${e.message}`;
         new Notice(errorMessage, 4000);
-        console.error(errorMessage);
+        this.logError(errorMessage);
       } else {
-        console.error(`[FDM] Error processing ${file.path}:`, e);
+        this.logError('Error processing', file.path, e);
       }
       return {
         status: 'error',
@@ -669,11 +676,14 @@ ${e.message}`;
     this.updateStatusBar();
   }
 
-  log(...data: any[]) {
-    if (!__DEV_MODE__) {
-      return;
-    }
+  log(...data: unknown[]) {
+    if (!__DEV_MODE__) return;
     console.log('[FDM]:', ...data);
+  }
+
+  logError(...data: unknown[]) {
+    if (!__DEV_MODE__) return;
+    console.error('[FDM]:', ...data);
   }
 
   async loadSettings() {
@@ -777,7 +787,7 @@ ${e.message}`;
     this._hashCacheSaveTimer = setTimeout(() => {
       this._hashCacheSaveTimer = null;
       this.flushHashCache().catch((err) => {
-        console.error('[FDM] Failed to flush hash cache:', err);
+        this.logError('Failed to flush hash cache:', err);
         this._hashCacheDirty = true;
       });
     }, delay);

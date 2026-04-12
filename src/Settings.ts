@@ -68,7 +68,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     // --- Plugin description ---
     const descEl = containerEl.createEl('div', {
-      cls: 'utoe-plugin-description',
+      cls: 'frontmatter-date-manager-plugin-description',
     });
     descEl.createEl('p', {
       text: 'Sync services, backup tools, and other plugins often rewrite files without changing their content — resetting filesystem dates in the process. This makes it impossible to tell when you actually last edited a note.',
@@ -78,7 +78,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     });
 
     // --- Section 1: Timestamp fields ---
-    containerEl.createEl('h2', { text: 'Timestamp fields' });
+    new Setting(containerEl).setHeading().setName('Timestamp fields');
 
     this.addEnableCreated();
     this.addFrontMatterCreated();
@@ -89,21 +89,21 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     if (!this.plugin.settings.enableCreateTime && !modifiedEnabled) {
       containerEl.createEl('div', {
-        cls: 'utoe-hint-message',
+        cls: 'frontmatter-date-manager-hint-message',
         text: 'Enable at least one timestamp type above to configure the plugin.',
       });
       return;
     }
 
     // --- Section 2: Date formatting ---
-    containerEl.createEl('h2', { text: 'Date formatting' });
+    new Setting(containerEl).setHeading().setName('Date formatting');
 
     this.addDateFormat();
     this.addTimezone();
     this.addEnableNumberProperties();
 
     // --- Section 3: Behavior ---
-    containerEl.createEl('h2', { text: 'Behavior' });
+    new Setting(containerEl).setHeading().setName('Behavior');
 
     this.addEnableAutoUpdate();
     this.addTimeBetweenUpdates();
@@ -112,11 +112,12 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     // Advanced (collapsible)
     const advancedDetails = containerEl.createEl('details', {
-      cls: 'utoe-advanced-section',
+      cls: 'frontmatter-date-manager-advanced-section',
     });
     if (this.advancedOpen) {
       advancedDetails.setAttribute('open', '');
     }
+    // Listener is cleaned up when containerEl.empty() destroys the element
     advancedDetails.addEventListener('toggle', () => {
       this.advancedOpen = advancedDetails.open;
     });
@@ -128,7 +129,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     this.addPostUpdateCommand(advancedDetails);
 
     // --- Section 4: Bulk operations ---
-    containerEl.createEl('h2', { text: 'Bulk operations' });
+    new Setting(containerEl).setHeading().setName('Bulk operations');
 
     new Setting(this.containerEl)
       .setName('Populate from filesystem')
@@ -371,28 +372,28 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     const setting = new Setting(this.containerEl)
       .setName('File filter rules')
       .setDesc(descr);
-    setting.settingEl.addClass('utoe-filter-setting');
+    setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
 
     const warnEl = this.containerEl.createEl('div', {
-      cls: 'utoe-filter-warn',
+      cls: 'frontmatter-date-manager-filter-warn',
       text: 'No filter rules — timestamps will be updated for all .md files.',
     });
 
     const errorsEl = this.containerEl.createEl('div', {
-      cls: 'utoe-filter-errors',
+      cls: 'frontmatter-date-manager-filter-errors',
     });
 
     this.addFilterRulesReference();
 
     const previewEl = this.containerEl.createEl('div', {
-      cls: 'utoe-filter-preview',
+      cls: 'frontmatter-date-manager-filter-preview',
     });
 
     const currentValue = this.plugin.settings.filterRules ?? '';
 
     const updateFeedback = (text: string) => {
       const trimmed = text.trim();
-      warnEl.style.display = trimmed.length === 0 ? '' : 'none';
+      warnEl.toggleClass('frontmatter-date-manager-hidden', trimmed.length > 0);
 
       errorsEl.empty();
       if (trimmed.length > 0) {
@@ -406,7 +407,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     };
 
     setting.addTextArea((textArea) => {
-      textArea.inputEl.addClass('utoe-filter-textarea');
+      textArea.inputEl.addClass('frontmatter-date-manager-filter-textarea');
       textArea.inputEl.rows = 10;
       textArea.inputEl.placeholder = [
         '# Exclude a folder',
@@ -449,7 +450,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
         previewEl.createEl('div', {
           text: `${tracked.length} files tracked, ${excluded.length} files excluded`,
-          cls: 'utoe-filter-preview-summary',
+          cls: 'frontmatter-date-manager-filter-preview-summary',
         });
 
         if (excluded.length > 0) {
@@ -474,7 +475,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addFilterRulesReference(): void {
     const refEl = this.containerEl.createEl('details', {
-      cls: 'utoe-filter-reference',
+      cls: 'frontmatter-date-manager-filter-reference',
     });
     refEl.createEl('summary', { text: 'Pattern syntax reference' });
 
@@ -483,8 +484,14 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       const table = refEl.createEl('table');
       for (const [pattern, desc] of rows) {
         const tr = table.createEl('tr');
-        tr.createEl('td', { text: pattern, cls: 'utoe-ref-pattern' });
-        tr.createEl('td', { text: desc, cls: 'utoe-ref-desc' });
+        tr.createEl('td', {
+          text: pattern,
+          cls: 'frontmatter-date-manager-ref-pattern',
+        });
+        tr.createEl('td', {
+          text: desc,
+          cls: 'frontmatter-date-manager-ref-desc',
+        });
       }
     };
 
@@ -552,7 +559,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       ['!notes/', 'Re-include another folder'],
     ]);
 
-    const noteEl = refEl.createEl('p', { cls: 'utoe-ref-note' });
+    const noteEl = refEl.createEl('p', {
+      cls: 'frontmatter-date-manager-ref-note',
+    });
     noteEl.append(
       'When this field is empty, timestamps are updated for all Markdown (.md) files.',
     );
@@ -606,7 +615,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           this.display();
         });
       });
-    setting.settingEl.addClass('utoe-nested-setting');
+    setting.settingEl.addClass('frontmatter-date-manager-nested-setting');
   }
 
   private addFrontmatterExcludeKeys(): void {
@@ -642,7 +651,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           this.display();
         });
       });
-    setting.settingEl.addClass('utoe-nested-setting');
+    setting.settingEl.addClass('frontmatter-date-manager-nested-setting');
 
     currentList.forEach((entry) => {
       const entrySetting = new Setting(this.containerEl)
@@ -655,7 +664,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
             this.display();
           }),
         );
-      entrySetting.settingEl.addClass('utoe-nested-setting');
+      entrySetting.settingEl.addClass(
+        'frontmatter-date-manager-nested-setting',
+      );
     });
   }
 
@@ -719,6 +730,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       )
       .addDropdown((dropdown) => {
         dropdown.addOption('', 'None');
+        // Obsidian internal API — no public typings available
         const commands: Record<string, { name: string }> = (this.app as any)
           .commands.commands;
         for (const [id, cmd] of Object.entries(commands)) {

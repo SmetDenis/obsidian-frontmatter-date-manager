@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createPlugin } from './helpers';
 
 describe('formatDate', () => {
@@ -77,24 +77,16 @@ describe('formatDate', () => {
   });
 
   it('returns undefined for Moment.js format tokens', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const plugin = createPlugin({ dateFormat: 'YYYY-MM-DD' });
     const date = new Date(2024, 0, 15, 10, 30);
     const result = plugin.formatDate(date);
     expect(result).toBeUndefined();
-    expect(errorSpy).toHaveBeenCalled();
-    errorSpy.mockRestore();
-    warnSpy.mockRestore();
   });
 
   it('returns undefined for unrecognized format token', () => {
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const plugin = createPlugin({ dateFormat: 'yyyy-MM-dd j' });
     const date = new Date(2024, 0, 15, 10, 30);
     const result = plugin.formatDate(date);
     expect(result).toBeUndefined();
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
   });
 });

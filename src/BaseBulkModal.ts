@@ -42,25 +42,25 @@ export abstract class BaseBulkModal extends Modal {
       (await this.plugin.getAllFilesPossiblyAffected({
         skipHashCheck: this.skipHashCheck(),
       }));
-    const progress = document.createElement('progress');
+
+    this.divContainer.empty();
+
+    const header = this.divContainer.createEl('span');
+    header.setText(this.getRunningMessage());
+
+    const wrapperBar = this.divContainer.createEl('div');
+    wrapperBar.addClass('progress-section');
+
+    const progress = wrapperBar.createEl('progress');
     progress.setAttr('max', allMdFiles.length);
 
-    const fileCounter = document.createElement('span');
+    const fileCounter = wrapperBar.createEl('span');
 
     const updateCount = (count: number) => {
       progress.setAttr('value', count);
       fileCounter.setText(`${count}/${allMdFiles.length}`);
     };
     updateCount(0);
-
-    const wrapperBar = document.createElement('div');
-    wrapperBar.append(progress, fileCounter);
-    wrapperBar.addClass('progress-section');
-
-    const header = document.createElement('span');
-    header.setText(this.getRunningMessage());
-
-    this.divContainer.replaceChildren(header, wrapperBar);
 
     if (this.settingsSection) {
       this.contentEl.removeChild(this.settingsSection.settingEl);
@@ -79,7 +79,7 @@ export abstract class BaseBulkModal extends Modal {
           await this.processFile(allMdFiles[i]);
         } catch (e) {
           errorCount++;
-          console.error(`[FDM] Error processing ${allMdFiles[i].path}:`, e);
+          this.plugin.logError('Error processing', allMdFiles[i].path, e);
         }
       }
     } finally {
@@ -93,24 +93,25 @@ export abstract class BaseBulkModal extends Modal {
       doneText = `Done with ${errorCount} error(s). Check the console for details.`;
     }
 
-    const doneMessage = document.createElement('span');
+    this.divContainer.empty();
+
+    const doneMessage = this.divContainer.createEl('span');
     doneMessage.setText(doneText);
 
-    const br = () => document.createElement('br');
+    this.divContainer.createEl('br');
+    this.divContainer.createEl('br');
 
-    const el = new Setting(this.containerEl).addButton((btn) => {
+    const el = new Setting(this.divContainer).addButton((btn) => {
       btn.setButtonText('Close').onClick(() => {
         this.close();
       });
     }).settingEl;
-
-    this.divContainer.replaceChildren(doneMessage, br(), br(), el);
   }
 
   async onOpen() {
     this.isOpened = true;
     const { contentEl } = this;
-    contentEl.addClass('frontmatter-date-manager--bulk-modal');
+    contentEl.addClass('frontmatter-date-manager-bulk-modal');
 
     const header = contentEl.createEl('h2', {
       text: 'Finding eligible files in the vault...',
@@ -125,20 +126,18 @@ export abstract class BaseBulkModal extends Modal {
     const div = contentEl.createDiv();
     this.divContainer = div;
 
-    const br = () => document.createElement('br');
-
-    div.append(div.createSpan({ text: this.getDescription() }), br(), br());
+    div.createSpan({ text: this.getDescription() });
+    div.createEl('br');
+    div.createEl('br');
 
     const warning = this.getWarning(this.cachedFiles.length);
     if (warning) {
-      div.append(
-        div.createSpan({
-          text: warning,
-          cls: 'frontmatter-date-manager--settings--warn',
-        }),
-        br(),
-        br(),
-      );
+      div.createSpan({
+        text: warning,
+        cls: 'frontmatter-date-manager-settings-warn',
+      });
+      div.createEl('br');
+      div.createEl('br');
     }
 
     const confirmation = this.getConfirmationPrompt();
@@ -172,7 +171,9 @@ export abstract class BaseBulkModal extends Modal {
             setRunDisabled(value.trim() !== confirmation.match);
           });
         });
-      confirmSetting.settingEl.addClass('utoe-bulk-confirm');
+      confirmSetting.settingEl.addClass(
+        'frontmatter-date-manager-bulk-confirm',
+      );
       contentEl.insertBefore(
         confirmSetting.settingEl,
         this.settingsSection.settingEl,

@@ -30,7 +30,7 @@ export class BulkPopulateTimestampsModal extends Modal {
 
   onOpen() {
     this.isOpen = true;
-    this.contentEl.addClass('frontmatter-date-manager--bulk-populate-modal');
+    this.contentEl.addClass('frontmatter-date-manager-bulk-populate-modal');
     this.renderConfigurePhase();
   }
 
@@ -88,19 +88,19 @@ export class BulkPopulateTimestampsModal extends Modal {
 
     // Platform warning
     const warningContainer = contentEl.createDiv({
-      cls: 'utoe-populate-platform-warning',
+      cls: 'frontmatter-date-manager-populate-platform-warning',
     });
 
     // Overwrite warning
     const overwriteWarning = contentEl.createDiv({
-      cls: 'utoe-populate-overwrite-warning',
+      cls: 'frontmatter-date-manager-populate-overwrite-warning',
     });
 
     this.updateWarnings(warningContainer, overwriteWarning);
 
     // Auto-update note
     const autoUpdateNote = contentEl.createDiv({
-      cls: 'utoe-populate-auto-update-note',
+      cls: 'frontmatter-date-manager-populate-auto-update-note',
     });
     autoUpdateNote.createEl('strong', {
       text: 'Note about auto-update:',
@@ -117,7 +117,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     new Setting(contentEl)
       .addButton((btn) =>
         btn
-          .setButtonText('Scan & Preview')
+          .setButtonText('Scan & preview')
           .setCta()
           .onClick(() => this.renderPreviewPhase()),
       )
@@ -176,7 +176,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     for (const p of platforms) {
       const li = list.createEl('li');
       if (p.isCurrent) {
-        li.addClass('utoe-current-platform');
+        li.addClass('frontmatter-date-manager-current-platform');
       }
       const prefix = p.reliable ? 'Reliable' : 'UNRELIABLE';
       li.appendText(`${p.name}: ${prefix}`);
@@ -289,10 +289,9 @@ export class BulkPopulateTimestampsModal extends Modal {
       text: 'Scanning files...',
     });
 
-    const progressBar = document.createElement('progress');
-    const progressCounter = document.createElement('span');
     const progressWrapper = contentEl.createDiv({ cls: 'progress-section' });
-    progressWrapper.append(progressBar, progressCounter);
+    const progressBar = progressWrapper.createEl('progress');
+    const progressCounter = progressWrapper.createEl('span');
 
     // Get eligible files
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
@@ -326,7 +325,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     if (willChangeEntries.length === 0) {
       contentEl.createEl('p', {
         text: 'No files need updating. All eligible files already have the requested timestamps.',
-        cls: 'utoe-populate-summary',
+        cls: 'frontmatter-date-manager-populate-summary',
       });
 
       new Setting(contentEl).addButton((btn) =>
@@ -338,12 +337,12 @@ export class BulkPopulateTimestampsModal extends Modal {
     // Summary
     contentEl.createEl('p', {
       text: `${willChangeEntries.length} file(s) will be modified, ${skippedEntries.length} skipped (already have dates).`,
-      cls: 'utoe-populate-summary',
+      cls: 'frontmatter-date-manager-populate-summary',
     });
 
     // Scrollable preview table
     const previewList = contentEl.createDiv({
-      cls: 'utoe-populate-preview-list',
+      cls: 'frontmatter-date-manager-populate-preview-list',
     });
     const table = previewList.createEl('table');
 
@@ -398,7 +397,7 @@ export class BulkPopulateTimestampsModal extends Modal {
       moreCell.setText(
         `\u2026 and ${willChangeEntries.length - PREVIEW_MAX_ROWS} more file(s)`,
       );
-      moreCell.addClass('utoe-populate-summary');
+      moreCell.addClass('frontmatter-date-manager-populate-summary');
     }
 
     // Skipped files in collapsible details
@@ -415,7 +414,7 @@ export class BulkPopulateTimestampsModal extends Modal {
       if (skippedEntries.length > PREVIEW_MAX_ROWS) {
         skippedList.createEl('li', {
           text: `\u2026 and ${skippedEntries.length - PREVIEW_MAX_ROWS} more`,
-          cls: 'utoe-populate-summary',
+          cls: 'frontmatter-date-manager-populate-summary',
         });
       }
     }
@@ -459,19 +458,17 @@ export class BulkPopulateTimestampsModal extends Modal {
 
     const entriesToProcess = this.previewEntries.filter((e) => e.willChange);
 
-    const progress = document.createElement('progress');
+    const wrapperBar = contentEl.createDiv({ cls: 'progress-section' });
+    const progress = wrapperBar.createEl('progress');
     progress.setAttr('max', entriesToProcess.length);
 
-    const fileCounter = document.createElement('span');
+    const fileCounter = wrapperBar.createEl('span');
 
     const updateCount = (count: number) => {
       progress.setAttr('value', count);
       fileCounter.setText(`${count}/${entriesToProcess.length}`);
     };
     updateCount(0);
-
-    const wrapperBar = contentEl.createDiv({ cls: 'progress-section' });
-    wrapperBar.append(progress, fileCounter);
 
     let errorCount = 0;
     this.plugin._bulkRunning = true;
@@ -485,10 +482,11 @@ export class BulkPopulateTimestampsModal extends Modal {
 
         try {
           await this.applyTimestamps(entriesToProcess[i]);
-        } catch (e: any) {
+        } catch (e: unknown) {
           errorCount++;
-          console.error(
-            `[FDM] Error populating timestamps for ${entriesToProcess[i].file.path}:`,
+          this.plugin.logError(
+            'Error populating timestamps for',
+            entriesToProcess[i].file.path,
             e,
           );
         }

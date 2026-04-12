@@ -44,8 +44,8 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 
 ## Architecture
 
-- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`). Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and format migration. Pause/resume with countdown timer and status bar indicator. Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file.
-- **`src/filterRules.ts`** — Gitignore-style filter rule engine. Pure functions, no Obsidian dependency. `parseFilterRules(text)` parses multiline text into `FilterRule[]` with validation errors. `isFileExcluded(filePath, rules)` applies rules top-to-bottom (last match wins). `validatePattern()` checks glob syntax via picomatch `makeRe()`.
+- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`). Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and format migration. Pause/resume with countdown timer and status bar indicator. Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file. `log()` and `logError()` are public methods gated behind `__DEV_MODE__` — used by modals and other files for dev-only logging.
+- **`src/filterRules.ts`** — Gitignore-style filter rule engine. Pure functions, no Obsidian dependency. `parseFilterRules(text)` parses multiline text into `FilterRule[]` with validation errors. `isFileExcluded(filePath, rules)` applies rules top-to-bottom (last match wins).
 - **`src/Settings.ts`** — `FrontmatterDateManagerSettings` interface + `FrontmatterDateManagerSettingsTab` (settings UI). `HashTrackingMode` type (`'body'` | `'frontmatter'` | `'both'`). Manages date format, timezone, frontmatter key names, gitignore-style filter rules (textarea with preview), min time between saves, delay for new files, number property toggle, content hash check toggle, hash tracking mode dropdown, frontmatter key exclusion list, hash cache settings, post-update command.
 - **`src/BaseBulkModal.ts`** — Abstract base class for bulk file operations. Provides progress bar, error counting, Run/Cancel UI. Extended by `UpdateAllModal` and `UpdateAllCacheData`.
 - **`src/UpdateAllModal.ts`** — Modal for bulk-updating all vault files' timestamps.
@@ -62,6 +62,7 @@ vault `modify` event → per-file debounce (2s) → `processFileWithLock()` → 
 
 **File filtering** (`filterRules.ts` + `utils.ts`):
 Single `filterRules` textarea with gitignore-style syntax. Lines are exclude patterns by default; `!` prefix re-includes; `#` for comments; last matching rule wins. Empty rules = all .md files tracked. `parseFilterRules()` parses text into `FilterRule[]` with error collection. `isFileExcluded()` evaluates rules top-to-bottom using `matchesPathPattern()` (picomatch for globs, prefix match for plain folder names). Compiled rules are cached in `_compiledRules` on the plugin instance and recompiled on settings change.
+
 **Bulk operations and hash bypass** (`BaseBulkModal.ts`, `main.ts`):
 All bulk operations (overwrite timestamps, populate from filesystem, rebuild cache) must skip the content hash check in `shouldFileBeIgnored()` via `skipHashCheck: true`. The hash check exists only for automatic change detection on `modify` events — it must not filter files during intentional bulk processing. Note the double-barrier: both the file listing (`getAllFilesPossiblyAffected`) and per-file processing (`handleFileChange`) call `shouldFileBeIgnored`, so `skipHashCheck` must be passed through both. The `BaseBulkModal` exposes `skipHashCheck()` (default `false`) for subclasses to override; `handleFileChange` auto-skips hash when `triggerSource === 'bulk'`.
 
@@ -70,6 +71,24 @@ Buttons that mass-modify data must use `.setWarning()` (red), clearly state cons
 
 **Hash cache lifecycle** (`main.ts`):
 Stored in `hash-cache.json` as `Record<string, {hash, lastAccessed}>`. Loaded on startup with GC (removes entries for deleted files) and optional auto-population. Flushed to disk via debounced writes (30s debounce, 300s max delay). LRU eviction when exceeding configurable max size.
+
+### UI & CSS Conventions
+
+These conventions follow Obsidian community plugin review requirements:
+
+- **CSS class prefix**: All classes use `frontmatter-date-manager-` prefix (e.g. `frontmatter-date-manager-filter-setting`). Never use unprefixed or short-prefix classes.
+- **Section headings**: Use `new Setting(containerEl).setHeading().setName('...')` — not `createEl('h2')`.
+- **DOM elements**: Use Obsidian's `createEl()` / `createDiv()` / `createSpan()` helpers — not `document.createElement()`.
+- **Styling**: Use CSS classes and `toggleClass()` — never assign `element.style.*` in JavaScript.
+- **Colors**: Use Obsidian CSS variables (`var(--text-error)`, `var(--text-muted)`, etc.) — never hardcode hex colors.
+- **Button/label text**: Sentence case (`Scan & preview`, not `Scan & Preview`).
+- **Console output**: All `console.log`/`console.error` must go through `plugin.log()` / `plugin.logError()` which are gated behind `__DEV_MODE__`.
+- **No plugin name in settings heading**: The settings tab must not display the plugin name as a top-level heading.
+
+### Release
+
+Release tags must be exact version numbers **without** `v` prefix (e.g. `1.0.0`, not `v1.0.0`). Obsidian requires this format to find release assets.
+
 ## Key Dependencies
 
 - **date-fns v4** + **@date-fns/tz** — Date formatting/parsing with timezone support via `TZDate`
