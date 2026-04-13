@@ -50,8 +50,7 @@ into `<vault>/.obsidian/plugins/frontmatter-date-manager/`.
 
 ### Community plugins (coming soon)
 
-This plugin has been submitted to the Obsidian community plugin directory.
-Once approved, search for **Frontmatter Date Manager** in Settings > Community plugins > Browse.
+This plugin has been submitted to the Obsidian community plugin directory. Once approved, search for **Frontmatter Date Manager** in Settings > Community plugins > Browse.
 
 ## Usage
 
@@ -71,27 +70,27 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 ## Settings
 
-| Setting                                  | Default                  | Description                                                                     |
-|------------------------------------------|--------------------------|---------------------------------------------------------------------------------|
-| Track 'created' timestamp                | `true`                   | Write the created timestamp to frontmatter                                      |
-| Created key                              | `created`                | Frontmatter key name for the created timestamp                                  |
-| Track 'updated' timestamp                | `true`                   | Write the updated timestamp to frontmatter                                      |
-| Updated key                              | `updated`                | Frontmatter key name for the updated timestamp                                  |
-| Track 'viewed' timestamp                 | `false`                  | Record a timestamp when a file is opened                                        |
-| Viewed key                               | `viewed`                 | Frontmatter key name for the last-viewed timestamp                              |
-| Date format                              | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
-| Timezone                                 | `""` (system)            | IANA timezone identifier; empty uses system timezone                             |
-| Store numeric timestamps without quotes  | `false`                  | Output numbers instead of strings for numeric formats                            |
-| Auto-update                              | `true`                   | Automatically update timestamps on file modification                             |
-| Minimum seconds between updates          | `30`                     | Minimum interval between timestamp updates                                       |
-| File filter rules                        | `""` (all files)         | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments             |
-| Change detection (content hashing)       | `true`                   | Use SHA-256 hashing to detect actual content changes                             |
-| Tracking mode                            | `body`                   | What triggers updates: `body`, `frontmatter`, or `both`                          |
-| Ignore frontmatter keys                  | `[]`                     | Frontmatter keys to ignore in change detection                                   |
-| New file delay                           | `5000` ms                | Wait before processing newly created files                                       |
-| Auto-populate cache on startup           | `true`                   | Hash all uncached files when the plugin loads                                    |
-| Maximum cache entries                    | `10000`                  | Oldest unused entries are evicted when cache exceeds this limit                  |
-| Command after update                     | `""` (none)              | Obsidian command to execute after each timestamp update                           |
+| Setting                                 | Default                 | Description                                                                     |
+|-----------------------------------------|-------------------------|---------------------------------------------------------------------------------|
+| Track 'created' timestamp               | `true`                  | Write the created timestamp to frontmatter                                      |
+| Created key                             | `created`               | Frontmatter key name for the created timestamp                                  |
+| Track 'updated' timestamp               | `true`                  | Write the updated timestamp to frontmatter                                      |
+| Updated key                             | `updated`               | Frontmatter key name for the updated timestamp                                  |
+| Track 'viewed' timestamp                | `false`                 | Record a timestamp when a file is opened                                        |
+| Viewed key                              | `viewed`                | Frontmatter key name for the last-viewed timestamp                              |
+| Date format                             | `yyyy-MM-dd'T'HH:mm:ss` | Date format string ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format)) |
+| Timezone                                | `""` (system)           | IANA timezone identifier; empty uses system timezone                            |
+| Store numeric timestamps without quotes | `false`                 | Output numbers instead of strings for numeric formats                           |
+| Auto-update                             | `true`                  | Automatically update timestamps on file modification                            |
+| Minimum seconds between updates         | `30`                    | Minimum interval between timestamp updates                                      |
+| File filter rules                       | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments             |
+| Change detection (content hashing)      | `true`                  | Use SHA-256 hashing to detect actual content changes                            |
+| Tracking mode                           | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                         |
+| Ignore frontmatter keys                 | `[]`                    | Frontmatter keys to ignore in change detection                                  |
+| New file delay                          | `5000` ms               | Wait before processing newly created files                                      |
+| Auto-populate cache on startup          | `true`                  | Hash all uncached files when the plugin loads                                   |
+| Maximum cache entries                   | `10000`                 | Oldest unused entries are evicted when cache exceeds this limit                 |
+| Command after update                    | `""` (none)             | Obsidian command to execute after each timestamp update                         |
 
 ## Date format examples
 
@@ -109,51 +108,66 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 ### First installation
 
-**Will the plugin modify all my existing notes when I first enable it?**
+> Will the plugin modify all my existing notes when I first enable it?
+
 No. The plugin only processes a file when you edit it. On first load it builds a background hash cache of your existing files to prepare for change detection, but it never writes timestamps during this process. Your vault stays untouched until you actually edit a note.
 
-**How do I add timestamps to notes I wrote before installing?**
+> How do I add timestamps to notes I wrote before installing?
+
 Use Settings → Bulk operations → Populate from filesystem. It reads filesystem dates (ctime/mtime) and writes them into frontmatter, with a dry-run preview so you can review before committing. Default mode is "Fill missing only" - existing dates are not overwritten. If your vault syncs via iCloud or Obsidian Sync, filesystem timestamps may have been reset by the sync service - review the preview carefully.
 
-**I use Templater / Daily Notes / QuickAdd. Will the plugin conflict with them?**
+> I use Templater / Daily Notes / QuickAdd. Will the plugin conflict with them?
+
 No. The plugin waits 5 seconds (configurable: Settings → Behavior → Advanced → New file delay) before processing newly created files, giving template plugins time to finish.
 
-**Do I need to add frontmatter to every note manually first?**
+> Do I need to add frontmatter to every note manually first?
+
 No. If a note has no frontmatter, the plugin creates the `---` block and inserts timestamps on the next edit. If frontmatter already exists, it adds timestamp fields alongside your existing keys.
 
-**What date format works best with Dataview?**
+> What date format works best with Dataview?
+
 The default `yyyy-MM-dd'T'HH:mm:ss` (ISO 8601) works out of the box. Dataview can parse, sort, and compare it natively.
 
-**The plugin uses date-fns, not Moment.js. Does that affect me?**
+> The plugin uses date-fns, not Moment.js. Does that affect me?
+
 Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) for year, `dd` (not `DD`) for day. The plugin shows a hint in settings if it detects a Moment.js-style format.
 
 ### Everyday usage
 
-**I enabled "viewed" timestamps but they don't appear in some notes.**
+> I enabled "viewed" timestamps but they don't appear in some notes.
+
 The viewed timestamp is only written when you open a file. Notes you haven't opened since enabling the feature won't have the field yet. The same filter rules and minimum-interval setting apply to viewed writes.
 
-**I edited tags or aliases, but `updated` didn't change. Is that a bug?**
+> I edited tags or aliases, but `updated` didn't change. Is that a bug?
+
 No. By default, hash tracking mode is "Body only" - only changes below the frontmatter block trigger a timestamp update. To include frontmatter changes, switch Settings → Change detection → Tracking mode to "Both".
 
-**Will syncing (iCloud / Obsidian Sync / Dropbox) cause false timestamps?**
+> Will syncing (iCloud / Obsidian Sync / Dropbox) cause false timestamps?
+
 No. The plugin compares file content via SHA-256 hashing. If a sync service rewrites a file without changing its content, the hash matches and no timestamp is updated. Enabled by default.
 
-**I renamed or moved a note. Does the plugin lose track of it?**
+> I renamed or moved a note. Does the plugin lose track of it?
+
 No. The hash cache entry is automatically migrated to the new path. Existing timestamps are preserved.
 
-**I changed the date format. Will old timestamps be converted?**
+> I changed the date format. Will old timestamps be converted?
+
 Not automatically. Use Settings → Bulk operations → Reformat dates to standardize all values. The plugin auto-detects existing formats (ISO 8601, European, US, numeric timestamps) and rewrites them using your current format. Preview all changes before applying.
 
-**I renamed the frontmatter key (e.g. `created` → `date_created`). What about existing files?**
+> I renamed the frontmatter key (e.g. `created` → `date_created`). What about existing files?
+
 Use Settings → Bulk operations → Rename key. Enter the old and new key names, preview affected files, then apply. You can choose whether to delete the old key or keep both.
 
-**I changed the timezone. Will old timestamps be recalculated?**
+> I changed the timezone. Will old timestamps be recalculated?
+
 No. Same principle - old values are left untouched. New writes use the new timezone.
 
-**What happens if a note has broken YAML frontmatter?**
+> What happens if a note has broken YAML frontmatter?
+
 The plugin skips that file and shows a notice with the file path and error details. It never writes to a file with malformed YAML. Fix the syntax and the plugin will pick it up on the next edit.
 
-**I'm saving rapidly. Will the timestamp update on every save?**
+> I'm saving rapidly. Will the timestamp update on every save?
+
 No. There is a minimum 30-second interval between updates (configurable: 5–300 seconds) plus a 2-second debounce, so rapid edits are consolidated into a single timestamp write.
 
 ## Sync and version control
