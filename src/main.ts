@@ -32,6 +32,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // individual clearing/re-setting. All are cleaned up in onunload().
   private modifyTimers = new Map<string, number>();
   private processingFiles = new Set<string>();
+  // Tracks the mtime set by the last plugin write per file.
+  // Used to detect self-triggered modify events (processFrontMatter fires modify
+  // after writing). Checked before shouldFileBeIgnored to avoid unnecessary
+  // file reads and to break the infinite write loop when content hash checking
+  // is disabled.
+  private lastPluginWriteMtime = new Map<string, number>();
   private _hashCacheDirty = false;
   private _hashCacheSaveTimer: number | null = null;
   private _hashCacheFirstDirtyAt: number | null = null;
@@ -442,6 +448,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   private computeFrontmatterUpdates(file: TFile): {
     createdValue?: string | number;
     updatedValue?: string | number;
+    retryAfterMs?: number;
   } | null {
     const updatedKey = this.settings.headerUpdated.trim();
     const createdKey = this.settings.headerCreated.trim();
@@ -464,6 +471,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const result: {
       createdValue?: string | number;
       updatedValue?: string | number;
+      retryAfterMs?: number;
     } = {};
 
     if (this.settings.enableCreateTime && createdKey) {
@@ -487,8 +495,15 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const currentMTimeOnFile = this.parseDate(existingUpdated);
         if (!currentMTimeOnFile) {
           result.updatedValue = this.formatDate(mTime);
-        } else if (this.shouldUpdateValue(mTime, currentMTimeOnFile)) {
+        } else if (this.shouldUpdateValue(new Date(), currentMTimeOnFile)) {
           result.updatedValue = this.formatDate(mTime);
+        } else {
+          // Rate-limited: signal the caller to retry after the limit expires
+          const nextUpdate = add(currentMTimeOnFile, {
+            seconds: this.settings.minSecondsBetweenSaves,
+          });
+          result.retryAfterMs =
+            Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
         }
       }
     }
@@ -506,6 +521,19 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   > {
     if (!isTFile(file)) {
       return { status: 'ignored' };
+    }
+
+    // Detect self-triggered modify events: after processFrontMatter writes,
+    // the file's mtime is updated. We stored that mtime right after the write
+    // and compare here. Skip early to avoid unnecessary file reads and loops.
+    if (triggerSource === 'modify') {
+      const lastMtime = this.lastPluginWriteMtime.get(file.path);
+      if (lastMtime !== undefined) {
+        this.lastPluginWriteMtime.delete(file.path);
+        if (lastMtime === file.stat.mtime) {
+          return { status: 'ok' };
+        }
+      }
     }
 
     const checkResult = await this.shouldFileBeIgnored(file, {
@@ -526,10 +554,22 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     if (!hasChanges) {
       this.log('Skipping processFrontMatter — no changes needed');
-      // Still cache the hash so this file is not re-scanned on every
-      // subsequent modification event.
-      if (checkResult.fileContent) {
-        await this.populateCacheForFile(file, checkResult.fileContent);
+      if (updates.retryAfterMs != null && updates.retryAfterMs > 0) {
+        // Content changed but rate limit blocked the update.
+        // Don't cache the hash so the retry still detects the change
+        // via shouldFileBeIgnored. Schedule a retry after the limit expires.
+        if (!this.modifyTimers.has(file.path)) {
+          const timer = window.setTimeout(() => {
+            this.modifyTimers.delete(file.path);
+            void this.processFileWithLock(file);
+          }, updates.retryAfterMs);
+          this.modifyTimers.set(file.path, timer);
+        }
+      } else {
+        // Genuinely no changes needed — cache hash to skip future events.
+        if (checkResult.fileContent) {
+          await this.populateCacheForFile(file, checkResult.fileContent);
+        }
       }
       return { status: 'ok' };
     }
@@ -548,10 +588,10 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             frontmatter[this.settings.headerUpdated] = updates.updatedValue;
           }
         },
-        // Preserve original timestamps — without this, processFrontMatter
-        // would update mtime, potentially triggering another modify event.
-        { ctime: file.stat.ctime, mtime: file.stat.mtime },
       );
+      // After write, Obsidian updates file.stat.mtime. Store it so the
+      // self-triggered modify event is detected and skipped.
+      this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
       // Re-read after processFrontMatter modified the file
       await this.populateCacheForFile(file);
 
@@ -670,6 +710,8 @@ ${e.message}`;
         },
         { ctime: file.stat.ctime, mtime: file.stat.mtime },
       );
+      // Track preserved mtime so the self-triggered modify event is detected
+      this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
 
       // Update hash cache so subsequent modify event finds matching hash
       if (this.settings.enableContentHashCheck) {
@@ -737,6 +779,7 @@ ${e.message}`;
           clearTimeout(oldTimer);
           this.modifyTimers.delete(oldPath);
         }
+        this.lastPluginWriteMtime.delete(oldPath);
 
         const entry = this.hashCache[oldPath];
         if (!entry) {
@@ -757,6 +800,7 @@ ${e.message}`;
           clearTimeout(timer);
           this.modifyTimers.delete(file.path);
         }
+        this.lastPluginWriteMtime.delete(file.path);
 
         const entry = this.hashCache[file.path];
         if (!entry) {
@@ -774,6 +818,7 @@ ${e.message}`;
     }
     this.modifyTimers.clear();
     this.processingFiles.clear();
+    this.lastPluginWriteMtime.clear();
     if (this._pauseResumeTimer) {
       clearTimeout(this._pauseResumeTimer);
       this._pauseResumeTimer = null;
