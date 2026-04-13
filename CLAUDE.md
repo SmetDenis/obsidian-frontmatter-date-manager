@@ -66,6 +66,9 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 **File modification pipeline** (spans `main.ts`):
 vault `modify` event → per-file debounce (2s) → `processFileWithLock()` → ignore checks (gitignore-style filter rules via `isFileExcluded()`) → read file → `getContentForHashing()` (body/frontmatter/both per `hashTrackingMode`) → SHA-256 hash → compare with cache → if changed: `computeFrontmatterUpdates()` → `processFrontMatter()` → re-hash updated file → mark cache dirty → debounced cache flush to disk.
 
+**Self-triggered modify event detection** (`main.ts`):
+Never pass `{ ctime, mtime }` to `processFrontMatter()` to preserve timestamps — it prevents Obsidian's editor from reflecting changes (the editor doesn't re-render if mtime is unchanged). Instead, call `processFrontMatter()` without the options argument and use `lastPluginWriteMtime` Map to detect and skip self-triggered modify events: store `file.stat.mtime` immediately after the write, then check it in `handleFileChange` before processing. This pattern applies to ALL automated `processFrontMatter` calls (`handleFileChange`, `handleFileOpen`).
+
 **File filtering** (`filterRules.ts` + `utils.ts`):
 Single `filterRules` textarea with gitignore-style syntax. Lines are exclude patterns by default; `!` prefix re-includes; `#` for comments; last matching rule wins. Empty rules = all .md files tracked. `parseFilterRules()` parses text into `FilterRule[]` with error collection. `isFileExcluded()` evaluates rules top-to-bottom using `matchesPathPattern()` (picomatch for globs, prefix match for plain folder names). Compiled rules are cached in `_compiledRules` on the plugin instance and recompiled on settings change.
 

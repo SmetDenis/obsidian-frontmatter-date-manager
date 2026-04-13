@@ -708,9 +708,9 @@ ${e.message}`;
         (frontmatter: Record<string, unknown>) => {
           frontmatter[viewedKey] = formattedNow;
         },
-        { ctime: file.stat.ctime, mtime: file.stat.mtime },
       );
-      // Track preserved mtime so the self-triggered modify event is detected
+      // After write, Obsidian updates file.stat.mtime. Store it so the
+      // self-triggered modify event is detected and skipped.
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
 
       // Update hash cache so subsequent modify event finds matching hash
