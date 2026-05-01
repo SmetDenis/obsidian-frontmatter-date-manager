@@ -24,7 +24,7 @@ Key Obsidian API used in this plugin:
 
 ```bash
 make                  # Show all available commands
-make install          # Install dependencies (yarn --frozen-lockfile)
+make install          # Install dependencies (npm ci)
 make build            # Type-check + production build → dist/
 make dev              # Dev mode with watch (esbuild + CSS + optional vault sync)
 make lint             # ESLint with eslint-plugin-obsidianmd (matches community review bot)
@@ -36,7 +36,7 @@ make pre-commit       # Run all checks: format, lint, test, build
 make local-test       # Build and copy plugin to local Obsidian vault
 ```
 
-Run a single test file: `yarn test src/__tests__/formatDate.test.ts`
+Run a single test file: `npm test -- src/__tests__/formatDate.test.ts`
 
 ### Local vault testing
 
@@ -117,7 +117,7 @@ Release tags must be exact version numbers **without** `v` prefix (e.g. `1.0.0`,
 This plugin targets the Obsidian community plugin store. All code changes must comply with the review process:
 
 ### Two-phase review
-1. **Automated bot**: Validates `manifest.json`, runs `eslint-plugin-obsidianmd` (30+ rules). Rescans within 6 hours of each push. Locally replicated via `yarn lint`.
+1. **Automated bot**: Validates `manifest.json`, runs `eslint-plugin-obsidianmd` (30+ rules). Rescans within 6 hours of each push. Locally replicated via `npm run lint`.
 2. **Human reviewer**: Checks CSS scoping, code patterns, security, UX. Takes 2-12 weeks. PR goes stale after 30 days, auto-closes after 45.
 
 ### Key ESLint rules (enforced by bot)

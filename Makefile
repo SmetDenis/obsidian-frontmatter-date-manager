@@ -11,28 +11,28 @@ help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install dependencies
-	yarn install --frozen-lockfile
+	npm ci
 
 build: ## Type-check and build for production
-	yarn build
+	npm run build
 
 dev: ## Start dev mode with watch
-	yarn dev
+	npm run dev
 
 lint: ## Run ESLint
-	yarn lint
+	npm run lint
 
 format: ## Fix formatting with Prettier
-	yarn format:write
+	npm run format:write
 
 format-check: ## Check formatting with Prettier
-	yarn format:check
+	npm run format:check
 
 test: ## Run all tests
-	yarn test
+	npm test
 
 test-watch: ## Run tests in watch mode
-	yarn test:watch
+	npm run test:watch
 
 pre-commit: ## Run all checks (format, lint, test, build)
 	@$(MAKE) format-check
