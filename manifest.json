@@ -3,7 +3,7 @@
   "name": "Frontmatter Date Manager",
   "version": "1.0.0",
   "minAppVersion": "1.4.11",
-  "description": "Automatically update created and modified dates in frontmatter when editing notes.",
+  "description": "Automatically update created, modified, and last-viewed dates in frontmatter.",
   "author": "SmetDenis",
   "authorUrl": "https://github.com/SmetDenis",
   "isDesktopOnly": false
