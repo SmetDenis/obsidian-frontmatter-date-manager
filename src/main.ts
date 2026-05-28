@@ -9,6 +9,11 @@ import {
 import { isTFile } from './utils';
 import { sha256 } from 'js-sha256';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
+import {
+  applyInversionFix,
+  isInversion,
+  InversionFixStrategy,
+} from './inversionDetection';
 
 export interface HashCacheEntry {
   hash: string;
@@ -46,6 +51,20 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   private _pauseCountdownTimer: number | null = null;
   private _compiledRules: FilterRule[] = [];
   bulkRunning = false;
+  private _sessionInversionNoticeShown = false;
+  // Injected in tests; in prod uses real Notice.
+  _noticeFactory: (message: string, timeout?: number) => void = (m, t) => {
+    new Notice(m, t);
+  };
+
+  private showInversionNoticeOnce(): void {
+    if (this._sessionInversionNoticeShown) return;
+    this._sessionInversionNoticeShown = true;
+    this._noticeFactory(
+      'Frontmatter Date Manager: inversion detected and auto-fixed. Use "Find inverted timestamps" in settings to review.',
+      8000,
+    );
+  }
 
   parseDate(input: number | string): Date | undefined {
     if (typeof input === 'string') {
@@ -504,6 +523,40 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           });
           result.retryAfterMs =
             Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
+        }
+      }
+    }
+
+    const strategy: InversionFixStrategy =
+      this.settings.inversionFixStrategy ?? 'disabled';
+    if (strategy !== 'disabled' && createdKey && updatedKey) {
+      const finalCreatedRaw =
+        result.createdValue ??
+        (cached?.[createdKey] as string | number | undefined);
+      const finalUpdatedRaw =
+        result.updatedValue ??
+        (cached?.[updatedKey] as string | number | undefined);
+
+      if (finalCreatedRaw != null && finalUpdatedRaw != null) {
+        const finalCreated = this.parseDate(finalCreatedRaw);
+        const finalUpdated = this.parseDate(finalUpdatedRaw);
+        const tolerance = this.settings.inversionToleranceSec ?? 0;
+        if (
+          finalCreated &&
+          finalUpdated &&
+          isInversion(finalCreated, finalUpdated, tolerance)
+        ) {
+          const fixed = applyInversionFix(strategy, {
+            created: finalCreated,
+            updated: finalUpdated,
+            mtime: mTime,
+            ctime: cTime,
+          });
+          const newCreated = this.formatDate(fixed.created);
+          const newUpdated = this.formatDate(fixed.updated);
+          if (newCreated !== undefined) result.createdValue = newCreated;
+          if (newUpdated !== undefined) result.updatedValue = newUpdated;
+          this.showInversionNoticeOnce();
         }
       }
     }
