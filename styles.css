@@ -354,3 +354,36 @@
     line-height: 1.5;
     margin: 0.75rem 0;
 }
+
+.frontmatter-date-manager-inversion-strategy-section {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.frontmatter-date-manager-inversion-empty {
+  color: var(--text-muted);
+  margin: 12px 0;
+}
+
+.frontmatter-date-manager-inversion-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.frontmatter-date-manager-inversion-table th,
+.frontmatter-date-manager-inversion-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  text-align: left;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-small);
+}
+
+.frontmatter-date-manager-inversion-row td {
+  word-break: break-all;
+}
+
+.frontmatter-date-manager-inversion-delta {
+  color: var(--text-error);
+}
