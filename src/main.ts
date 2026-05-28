@@ -37,7 +37,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // after writing). Checked before shouldFileBeIgnored to avoid unnecessary
   // file reads and to break the infinite write loop when content hash checking
   // is disabled.
-  private lastPluginWriteMtime = new Map<string, number>();
+  lastPluginWriteMtime = new Map<string, number>();
   private _hashCacheDirty = false;
   private _hashCacheSaveTimer: number | null = null;
   private _hashCacheFirstDirtyAt: number | null = null;
