@@ -92,6 +92,16 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 | Maximum cache entries                   | `10000`                 | Oldest unused entries are evicted when cache exceeds this limit                 |
 | Command after update                    | `""` (none)             | Obsidian command to execute after each timestamp update                         |
 
+### Timestamp inversion handling
+
+| Setting                    | Default    | Description                                                                                                              |
+|----------------------------|------------|--------------------------------------------------------------------------------------------------------------------------|
+| `Auto-fix strategy`        | `disabled` | How to resolve files where `updated < created`. Applies to automatic edits; `disabled` means detect-only.                |
+| `Tolerance (seconds)`      | `0`        | Ignore inversions smaller than this. Useful to suppress sub-second clock skew.                                           |
+| `Find inverted timestamps` | _(action)_ | Scans eligible files (respects filter rules) and lists ones where `updated < created`. Apply fix strategy in the modal.  |
+
+Available strategies: `Set created = updated` (preserve updated), `Set updated = created` (preserve created), `Set both = max of all known dates`.
+
 ## Date format examples
 
 | Format string           | Example output            |
