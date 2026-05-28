@@ -10,6 +10,7 @@ import { BulkPopulateTimestampsModal } from './BulkPopulateTimestampsModal';
 import { RenameKeyModal } from './RenameKeyModal';
 import { ReformatDateModal } from './ReformatDateModal';
 import { parseFilterRules, isFileExcluded } from './filterRules';
+import { InversionFixStrategy } from './inversionDetection';
 
 export type HashTrackingMode = 'body' | 'frontmatter' | 'both';
 
@@ -35,6 +36,9 @@ export interface FrontmatterDateManagerSettings {
   frontmatterHashExcludeKeys?: string[];
   enableAutoPopulateCache?: boolean;
   hashCacheMaxSize?: number;
+
+  inversionFixStrategy?: InversionFixStrategy;
+  inversionToleranceSec?: number;
 }
 
 export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
@@ -57,6 +61,8 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   frontmatterHashExcludeKeys: [],
   enableAutoPopulateCache: true,
   hashCacheMaxSize: 10_000,
+  inversionFixStrategy: 'disabled',
+  inversionToleranceSec: 0,
 };
 
 export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
