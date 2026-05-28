@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TFile } from 'obsidian';
 import { BaseBulkModal } from '../BaseBulkModal';
 import { createPlugin } from './helpers';
@@ -44,5 +44,51 @@ describe('BaseBulkModal hooks', () => {
   it('canRun returns false on empty list', () => {
     const modal = new NoOpModal({} as any, createPlugin());
     expect((modal as any).canRun([])).toBe(false);
+  });
+});
+
+describe('BaseBulkModal.refreshRunButton', () => {
+  it('does nothing when runButtonRef is null', () => {
+    const modal = new NoOpModal({} as any, createPlugin());
+    expect(() => (modal as any).refreshRunButton()).not.toThrow();
+  });
+
+  it('disables run button when canRun is false (no confirmation)', () => {
+    const modal = new NoOpModal({} as any, createPlugin());
+    const setDisabled = vi.fn();
+    (modal as any).runButtonRef = { setDisabled };
+    (modal as any).cachedFiles = [];
+    (modal as any).refreshRunButton();
+    expect(setDisabled).toHaveBeenCalledWith(true);
+  });
+
+  it('enables run button when canRun is true (no confirmation)', () => {
+    const modal = new NoOpModal({} as any, createPlugin());
+    const setDisabled = vi.fn();
+    (modal as any).runButtonRef = { setDisabled };
+    (modal as any).cachedFiles = [{ path: 'a.md' } as unknown as TFile];
+    (modal as any).refreshRunButton();
+    expect(setDisabled).toHaveBeenCalledWith(false);
+  });
+
+  it('respects confirmation gate when prompt is set', () => {
+    class ConfirmModal extends NoOpModal {
+      protected getConfirmationPrompt() {
+        return { text: 'type X', match: 'X' };
+      }
+    }
+    const modal = new ConfirmModal({} as any, createPlugin());
+    const setDisabled = vi.fn();
+    (modal as any).runButtonRef = { setDisabled };
+    (modal as any).cachedFiles = [{ path: 'a.md' } as unknown as TFile];
+    // canRun true, but confirmation not matched yet
+    (modal as any).confirmMatched = false;
+    (modal as any).refreshRunButton();
+    expect(setDisabled).toHaveBeenLastCalledWith(true);
+
+    // canRun true AND confirmation matched
+    (modal as any).confirmMatched = true;
+    (modal as any).refreshRunButton();
+    expect(setDisabled).toHaveBeenLastCalledWith(false);
   });
 });

@@ -7,6 +7,9 @@ export abstract class BaseBulkModal extends Modal {
   private settingsSection?: Setting;
   private isOpened = false;
   private cachedFiles: TFile[] | null = null;
+  private runButtonRef: { setDisabled: (disabled: boolean) => void } | null =
+    null;
+  private confirmMatched = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -159,8 +162,6 @@ export abstract class BaseBulkModal extends Modal {
 
     const confirmation = this.getConfirmationPrompt();
 
-    let setRunDisabled = (_disabled: boolean) => {};
-
     this.settingsSection = new Setting(contentEl)
       .addButton((btn) => {
         const canStart = this.canRun(this.cachedFiles ?? []);
@@ -173,9 +174,7 @@ export abstract class BaseBulkModal extends Modal {
         btn.setButtonText('Run').onClick(() => {
           void this.onRun();
         });
-        setRunDisabled = (disabled) => {
-          btn.setDisabled(disabled);
-        };
+        this.runButtonRef = btn;
       })
       .addButton((btn) => {
         btn.setButtonText('Cancel').onClick(() => {
@@ -189,9 +188,8 @@ export abstract class BaseBulkModal extends Modal {
         .addText((text) => {
           text.setPlaceholder(confirmation.match);
           text.onChange((value) => {
-            const matched = value.trim() === confirmation.match;
-            const canStart = this.canRun(this.cachedFiles ?? []);
-            setRunDisabled(!matched || !canStart);
+            this.confirmMatched = value.trim() === confirmation.match;
+            this.refreshRunButton();
           });
         });
       confirmSetting.settingEl.addClass(
@@ -204,9 +202,21 @@ export abstract class BaseBulkModal extends Modal {
     }
   }
 
+  protected refreshRunButton(): void {
+    if (!this.runButtonRef) return;
+    const canStart = this.canRun(this.cachedFiles ?? []);
+    const confirmation = this.getConfirmationPrompt();
+    const disabled = confirmation
+      ? !canStart || !this.confirmMatched
+      : !canStart;
+    this.runButtonRef.setDisabled(disabled);
+  }
+
   onClose() {
     this.contentEl.empty();
     this.isOpened = false;
     this.cachedFiles = null;
+    this.runButtonRef = null;
+    this.confirmMatched = false;
   }
 }
