@@ -387,3 +387,10 @@
 .frontmatter-date-manager-inversion-delta {
   color: var(--text-error);
 }
+
+.frontmatter-date-manager-inversion-tolerance-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  margin-top: 4px;
+  margin-bottom: 12px;
+}

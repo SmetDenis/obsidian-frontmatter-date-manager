@@ -12,6 +12,22 @@ export interface InvertedFileEntry {
   updated: Date;
 }
 
+function formatDelta(created: Date, updated: Date): string {
+  const ms = created.getTime() - updated.getTime();
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds <= 0) return '0s';
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+  return parts.join(' ');
+}
+
 const PREVIEW_MAX_ROWS = 50;
 
 export class FindInversionsModal extends BaseBulkModal {
@@ -136,6 +152,12 @@ export class FindInversionsModal extends BaseBulkModal {
           this.plugin.settings.inversionFixStrategy ?? 'disabled';
       });
 
+    const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
+    parent.createEl('div', {
+      text: `Tolerance: ${tolerance} seconds (configurable in plugin settings).`,
+      cls: 'frontmatter-date-manager-inversion-tolerance-hint',
+    });
+
     const table = parent.createEl('table', {
       cls: 'frontmatter-date-manager-inversion-table',
     });
@@ -143,6 +165,7 @@ export class FindInversionsModal extends BaseBulkModal {
     header.createEl('th', { text: 'Path' });
     header.createEl('th', { text: 'Created' });
     header.createEl('th', { text: 'Updated' });
+    header.createEl('th', { text: 'Δ' });
 
     const limit = Math.min(this.invertedEntries.length, PREVIEW_MAX_ROWS);
     for (let i = 0; i < limit; i++) {
@@ -152,8 +175,9 @@ export class FindInversionsModal extends BaseBulkModal {
       });
       row.createEl('td', { text: entry.file.path });
       row.createEl('td', { text: entry.created.toISOString() });
+      row.createEl('td', { text: entry.updated.toISOString() });
       row.createEl('td', {
-        text: entry.updated.toISOString(),
+        text: formatDelta(entry.created, entry.updated),
         cls: 'frontmatter-date-manager-inversion-delta',
       });
     }
