@@ -24,6 +24,18 @@ export abstract class BaseBulkModal extends Modal {
     return false;
   }
 
+  protected async narrowFiles(files: TFile[]): Promise<TFile[]> {
+    return files;
+  }
+
+  protected renderExtraSection(_parent: HTMLElement, _files: TFile[]): void {
+    // default: no-op
+  }
+
+  protected canRun(files: TFile[]): boolean {
+    return files.length > 0;
+  }
+
   protected getConfirmationPrompt(): {
     text: string;
     match: string;
@@ -122,6 +134,7 @@ export abstract class BaseBulkModal extends Modal {
     this.cachedFiles = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: this.skipHashCheck(),
     });
+    this.cachedFiles = await this.narrowFiles(this.cachedFiles);
 
     header.setText(this.getTitle(this.cachedFiles.length));
 
@@ -142,16 +155,20 @@ export abstract class BaseBulkModal extends Modal {
       div.createEl('br');
     }
 
+    this.renderExtraSection(div, this.cachedFiles);
+
     const confirmation = this.getConfirmationPrompt();
 
     let setRunDisabled = (_disabled: boolean) => {};
 
     this.settingsSection = new Setting(contentEl)
       .addButton((btn) => {
+        const canStart = this.canRun(this.cachedFiles ?? []);
         if (confirmation) {
           btn.setWarning().setDisabled(true);
         } else {
           btn.setCta();
+          btn.setDisabled(!canStart);
         }
         btn.setButtonText('Run').onClick(() => {
           void this.onRun();
@@ -172,7 +189,9 @@ export abstract class BaseBulkModal extends Modal {
         .addText((text) => {
           text.setPlaceholder(confirmation.match);
           text.onChange((value) => {
-            setRunDisabled(value.trim() !== confirmation.match);
+            const matched = value.trim() === confirmation.match;
+            const canStart = this.canRun(this.cachedFiles ?? []);
+            setRunDisabled(!matched || !canStart);
           });
         });
       confirmSetting.settingEl.addClass(
