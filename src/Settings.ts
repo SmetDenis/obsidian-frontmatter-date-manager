@@ -9,6 +9,7 @@ import { UpdateAllCacheData } from './UpdateAllCacheData';
 import { BulkPopulateTimestampsModal } from './BulkPopulateTimestampsModal';
 import { RenameKeyModal } from './RenameKeyModal';
 import { ReformatDateModal } from './ReformatDateModal';
+import { FindInversionsModal } from './FindInversionsModal';
 import { parseFilterRules, isFileExcluded } from './filterRules';
 import { InversionFixStrategy } from './inversionDetection';
 
@@ -132,6 +133,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     this.addFilterRulesSetting();
     this.addContentHashToggle();
 
+    // --- Section: Timestamp inversion ---
+    new Setting(containerEl).setHeading().setName('Timestamp inversion');
+    this.addInversionStrategy();
+    this.addInversionTolerance();
+
     // Advanced (collapsible)
     const advancedDetails = containerEl.createEl('details', {
       cls: 'frontmatter-date-manager-advanced-section',
@@ -166,6 +172,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     this.addRenameKeyButton();
     this.addReformatDateButton();
+    this.addFindInversionsButton();
 
     if (this.plugin.settings.enableContentHashCheck ?? true) {
       new Setting(this.containerEl)
@@ -839,6 +846,62 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         dropdown.onChange(async (value) => {
           this.plugin.settings.postUpdateCommand = value;
           await this.saveSettings();
+        });
+      });
+  }
+
+  // --- Inversion handling ---
+
+  private addInversionStrategy(): void {
+    new Setting(this.containerEl)
+      .setName('Auto-fix strategy')
+      .setDesc(
+        'How to resolve files where updated is earlier than created. ' +
+          'Applies to automatic edits and is the default for the bulk tool.',
+      )
+      .addDropdown((dd) => {
+        dd.addOption('disabled', 'Disabled (detect only)');
+        dd.addOption('created-to-updated', 'Set created = updated');
+        dd.addOption('updated-to-created', 'Set updated = created');
+        dd.addOption('max-all', 'Set both = max of all known dates');
+        dd.setValue(this.plugin.settings.inversionFixStrategy ?? 'disabled');
+        dd.onChange(async (value) => {
+          this.plugin.settings.inversionFixStrategy =
+            value as InversionFixStrategy;
+          await this.saveSettings();
+        });
+      });
+  }
+
+  private addInversionTolerance(): void {
+    new Setting(this.containerEl)
+      .setName('Tolerance (seconds)')
+      .setDesc(
+        'Ignore inversions smaller than this. Use a non-zero value to suppress sub-second clock skew.',
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder('0')
+          .setValue(String(this.plugin.settings.inversionToleranceSec ?? 0))
+          .onChange(async (value) => {
+            const parsed = parseInt(value, 10);
+            this.plugin.settings.inversionToleranceSec = Number.isFinite(parsed)
+              ? Math.max(0, parsed)
+              : 0;
+            await this.saveSettings();
+          }),
+      );
+  }
+
+  private addFindInversionsButton(): void {
+    new Setting(this.containerEl)
+      .setName('Find inverted timestamps')
+      .setDesc(
+        'Scan eligible files and list ones where updated is earlier than created. Optionally apply the configured fix strategy.',
+      )
+      .addButton((cb) => {
+        cb.setButtonText('Find inversions').onClick(() => {
+          new FindInversionsModal(this.app, this.plugin).open();
         });
       });
   }
