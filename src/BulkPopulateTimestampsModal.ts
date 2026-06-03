@@ -339,7 +339,7 @@ export class BulkPopulateTimestampsModal extends Modal {
         progressCounter.setText(`${i + 1}/${allFiles.length}`);
         // Yield to browser event loop between batches to prevent UI freeze
         // on large vaults (10k+ files).
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 

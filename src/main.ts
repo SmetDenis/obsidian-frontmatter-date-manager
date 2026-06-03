@@ -157,7 +157,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         }
       }
       if (i + BATCH_SIZE < uncached.length) {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 
@@ -242,8 +242,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           `Auto-update paused for ${PAUSE_MINUTES} minutes. Will resume automatically.`,
         );
 
-        if (this._pauseResumeTimer) clearTimeout(this._pauseResumeTimer);
-        if (this._pauseCountdownTimer) clearInterval(this._pauseCountdownTimer);
+        if (this._pauseResumeTimer) window.clearTimeout(this._pauseResumeTimer);
+        if (this._pauseCountdownTimer)
+          window.clearInterval(this._pauseCountdownTimer);
 
         this._pauseCountdownTimer = this.registerInterval(
           window.setInterval(() => {
@@ -256,7 +257,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             this._pauseResumeTimer = null;
             this._pausedUntil = 0;
             if (this._pauseCountdownTimer) {
-              clearInterval(this._pauseCountdownTimer);
+              window.clearInterval(this._pauseCountdownTimer);
               this._pauseCountdownTimer = null;
             }
             this.updateStatusBar();
@@ -738,9 +739,7 @@ ${e.message}`;
 
     // Rate-limiting via shouldUpdateValue
     const cached: Record<string, unknown> | undefined =
-      this.app.metadataCache.getFileCache(file)?.frontmatter as
-        | Record<string, unknown>
-        | undefined;
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
     const existingViewed = cached?.[viewedKey] as string | number | undefined;
     if (existingViewed) {
       const existingDate = this.parseDate(existingViewed);
@@ -816,7 +815,7 @@ ${e.message}`;
         // Debounce per file to prevent race conditions during rapid typing.
         // Multiple concurrent processFrontMatter() calls can corrupt YAML.
         const existing = this.modifyTimers.get(file.path);
-        if (existing) clearTimeout(existing);
+        if (existing) window.clearTimeout(existing);
 
         const timer = window.setTimeout(() => {
           this.modifyTimers.delete(file.path);
@@ -831,7 +830,7 @@ ${e.message}`;
         // Clear pending debounce for the old path
         const oldTimer = this.modifyTimers.get(oldPath);
         if (oldTimer) {
-          clearTimeout(oldTimer);
+          window.clearTimeout(oldTimer);
           this.modifyTimers.delete(oldPath);
         }
         this.lastPluginWriteMtime.delete(oldPath);
@@ -852,7 +851,7 @@ ${e.message}`;
         // Clear pending debounce for the deleted file
         const timer = this.modifyTimers.get(file.path);
         if (timer) {
-          clearTimeout(timer);
+          window.clearTimeout(timer);
           this.modifyTimers.delete(file.path);
         }
         this.lastPluginWriteMtime.delete(file.path);
@@ -869,21 +868,21 @@ ${e.message}`;
 
   onunload() {
     for (const timer of this.modifyTimers.values()) {
-      clearTimeout(timer);
+      window.clearTimeout(timer);
     }
     this.modifyTimers.clear();
     this.processingFiles.clear();
     this.lastPluginWriteMtime.clear();
     if (this._pauseResumeTimer) {
-      clearTimeout(this._pauseResumeTimer);
+      window.clearTimeout(this._pauseResumeTimer);
       this._pauseResumeTimer = null;
     }
     if (this._pauseCountdownTimer) {
-      clearInterval(this._pauseCountdownTimer);
+      window.clearInterval(this._pauseCountdownTimer);
       this._pauseCountdownTimer = null;
     }
     if (this._hashCacheSaveTimer) {
-      clearTimeout(this._hashCacheSaveTimer);
+      window.clearTimeout(this._hashCacheSaveTimer);
       this._hashCacheSaveTimer = null;
     }
     void this.flushHashCache();
@@ -1001,7 +1000,7 @@ ${e.message}`;
     this._hashCacheFirstDirtyAt ??= Date.now();
 
     if (this._hashCacheSaveTimer) {
-      clearTimeout(this._hashCacheSaveTimer);
+      window.clearTimeout(this._hashCacheSaveTimer);
       this._hashCacheSaveTimer = null;
     }
 

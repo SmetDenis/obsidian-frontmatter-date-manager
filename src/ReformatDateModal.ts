@@ -358,7 +358,7 @@ export class ReformatDateModal extends Modal {
         progressBar.setAttr('value', i + 1);
         progressCounter.setText(`${i + 1}/${allFiles.length}`);
         // Yield to event loop between batches (see BulkPopulateTimestampsModal).
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
     }
 

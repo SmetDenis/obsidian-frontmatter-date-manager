@@ -48,6 +48,10 @@ export default tseslint.config(
     rules: {
       // builtin-modules and dotenv are dev-only build tools, not bundled with the plugin
       'depend/ban-dependencies': 'off',
+      // In recommended 0.3.0 this type-aware rule leaks into the global rule set, so it
+      // also runs on package.json (parsed by the JSON language, not @typescript-eslint/
+      // parser) and crashes in getParserServices(). It only makes sense on TS files.
+      'obsidianmd/no-plugin-as-component': 'off',
     },
   },
   globalIgnores([

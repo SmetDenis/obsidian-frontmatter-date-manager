@@ -452,7 +452,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   }
 
   addFilterRulesSetting(): void {
-    const descr = document.createDocumentFragment();
+    const descr = activeDocument.createDocumentFragment();
     descr.append(
       'Exclude files or folders from automatic timestamp updates. ',
       'Each line is a pattern. Lines starting with ',
@@ -915,7 +915,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     setValue,
   }: DateFormatArgs) {
     const createDoc = () => {
-      const descr = document.createDocumentFragment();
+      const descr = activeDocument.createDocumentFragment();
       const tzOptions = this.plugin.settings.timezone
         ? { in: tz(this.plugin.settings.timezone) }
         : {};

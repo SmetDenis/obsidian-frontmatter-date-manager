@@ -76,9 +76,7 @@ export class FindInversionsModal extends BaseBulkModal {
 
     const result: InvertedFileEntry[] = [];
     for (const file of files) {
-      const fm = this.app.metadataCache.getFileCache(file)?.frontmatter as
-        | Record<string, unknown>
-        | undefined;
+      const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
       if (!fm) continue;
       const rawCreated = fm[createdKey] as string | number | undefined;
       const rawUpdated = fm[updatedKey] as string | number | undefined;
