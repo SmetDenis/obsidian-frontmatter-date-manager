@@ -1,7 +1,5 @@
 .DEFAULT_GOAL := help
 
--include .env
-
 PLUGIN_ID  := frontmatter-date-manager
 PLUGIN_DIR := $(OBSIDIAN_VAULT)/.obsidian/plugins/$(PLUGIN_ID)
 
@@ -44,10 +42,7 @@ local-test: build ## Build and copy plugin to local Obsidian vault
 	@if [ -z "$(OBSIDIAN_VAULT)" ]; then \
 		echo "Error: OBSIDIAN_VAULT is not set."; \
 		echo ""; \
-		echo "Set it in .env file:"; \
-		echo "  echo 'OBSIDIAN_VAULT=/path/to/vault' > .env"; \
-		echo ""; \
-		echo "Or pass as argument:"; \
+		echo "Set OBSIDIAN_VAULT in your shell, or pass it as an argument:"; \
 		echo "  make local-test OBSIDIAN_VAULT=/path/to/vault"; \
 		exit 1; \
 	fi
