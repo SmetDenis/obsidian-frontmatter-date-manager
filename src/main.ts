@@ -415,9 +415,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   }
 
   isExcalidrawFile(file: TFile): boolean {
-    // ExcalidrawAutomate is injected into the global scope by the Excalidraw plugin
-    const global = globalThis as Record<string, unknown>;
-    const ea = global['ExcalidrawAutomate'];
+    // ExcalidrawAutomate is injected into the main window by the Excalidraw plugin.
+    // Use `window` (not `activeWindow`): the global lives on the main window, so a
+    // popout's `activeWindow` would not see it. Plugin code runs in the main context.
+    const mainWindow = window as unknown as Record<string, unknown>;
+    const ea = mainWindow['ExcalidrawAutomate'];
     if (
       ea != null &&
       typeof ea === 'object' &&
