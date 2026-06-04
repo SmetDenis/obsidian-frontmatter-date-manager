@@ -10,7 +10,7 @@ Obsidian plugin that automatically maintains frontmatter date properties — `cr
 
 ## Obsidian API — IMPORTANT
 
-Claude's training knowledge about the Obsidian plugin API is outdated. **Always** use context7 MCP and official Obsidian developer documentation to verify API signatures, available methods, and current patterns before writing or modifying plugin code. Do not rely on memory — check the docs.
+Claude's training knowledge about the Obsidian plugin API is outdated. **Always** use context7 MCP and official Obsidian developer documentation to verify API signatures, available methods, and current patterns before writing or modifying plugin code. Do not rely on memory — check the docs. Likewise, before bumping or trusting a pinned version, verify the **currently published** versions of the `obsidian` types and `eslint-plugin-obsidianmd` (the community review linter) against npm — the review bot always runs the latest linter, so a stale local pin can let new rule violations slip through.
 
 Key Obsidian API used in this plugin:
 - `Plugin` lifecycle: `onload()`, `onunload()`
@@ -48,7 +48,7 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 
 ## Architecture
 
-- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`) plus the workspace `file-open` event via `handleFileOpen()`, which stamps the `viewed`/last-viewed key when that feature is enabled. Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and format migration. Pause/resume with countdown timer and status bar indicator. Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file. `log()` and `logError()` are public methods gated behind `__DEV_MODE__` — used by modals and other files for dev-only logging.
+- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`) plus the workspace `file-open` event via `handleFileOpen()`, which stamps the `viewed`/last-viewed key when that feature is enabled. Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and pruning of invalid/old-format cache entries on load. Pause/resume with countdown timer and status bar indicator (clicking the status bar toggles auto-update). `onExternalSettingsChange()` reloads settings when `data.json` is changed externally (e.g. by sync). Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file. `log()` and `logError()` are public methods gated behind `__DEV_MODE__` — used by modals and other files for dev-only logging.
 - **`src/filterRules.ts`** — Gitignore-style filter rule engine. Pure functions, no Obsidian dependency. `parseFilterRules(text)` parses multiline text into `FilterRule[]` with validation errors. `isFileExcluded(filePath, rules)` applies rules top-to-bottom (last match wins).
 - **`src/Settings.ts`** — `FrontmatterDateManagerSettings` interface + `FrontmatterDateManagerSettingsTab` (settings UI). `HashTrackingMode` type (`'body'` | `'frontmatter'` | `'both'`). The UI is organized into sections (in `display()` order): **Timestamp fields** (enable toggle + key name for `created`, `updated`, and `viewed`/last-viewed), **Date formatting** (date format, timezone, number-property toggle), **Behavior** (auto-update toggle, min time between saves, gitignore-style filter rules with live preview, content hash check toggle + hash tracking mode dropdown + frontmatter key exclusion list), **Timestamp inversion** (fix strategy + tolerance), an **Advanced** collapsible (delay for new files, hash cache auto-populate + max size, post-update command), and **Bulk operations** (buttons that open the bulk modals). Uses the imperative `display()` render method (required by the public 1.12.x API; `display()` is only deprecated in early-access 1.13+).
 - **`src/BaseBulkModal.ts`** — Abstract base class for bulk file operations. Provides progress bar, error counting, Run/Cancel UI. Three optional hooks for richer modals: `narrowFiles(files)` (filter the scanned set after `getAllFilesPossiblyAffected`), `renderExtraSection(parent, files)` (inject custom UI between warning and Run/Cancel), `canRun(files)` (gate the Run button — default: non-empty list). Extended by `UpdateAllModal`, `UpdateAllCacheData`, and `FindInversionsModal`.
@@ -66,7 +66,7 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 ### Key Patterns
 
 **File modification pipeline** (spans `main.ts`):
-vault `modify` event → per-file debounce (2s) → `processFileWithLock()` → ignore checks (gitignore-style filter rules via `isFileExcluded()`) → read file → `getContentForHashing()` (body/frontmatter/both per `hashTrackingMode`) → SHA-256 hash → compare with cache → if changed: `computeFrontmatterUpdates()` → `processFrontMatter()` → re-hash updated file → mark cache dirty → debounced cache flush to disk.
+vault `modify` event → per-file debounce (2s) → `processFileWithLock()` → ignore checks (gitignore-style filter rules via `isFileExcluded()`) → read file → `getContentForHashing()` (body/frontmatter/both per `hashTrackingMode`) → SHA-256 hash → compare with cache → if changed: `computeFrontmatterUpdates()` → `processFrontMatter()` → re-hash updated file → mark cache dirty → debounced cache flush to disk. When `minSecondsBetweenSaves` blocks an otherwise-needed update, `computeFrontmatterUpdates()` returns `retryAfterMs`, the hash is deliberately NOT cached, and a retry is scheduled so the still-pending change is re-detected.
 
 **Self-triggered modify event detection** (`main.ts`):
 Never pass `{ ctime, mtime }` to `processFrontMatter()` to preserve timestamps — it prevents Obsidian's editor from reflecting changes (the editor doesn't re-render if mtime is unchanged). Instead, call `processFrontMatter()` without the options argument and use `lastPluginWriteMtime` Map to detect and skip self-triggered modify events: store `file.stat.mtime` immediately after the write, then check it in `handleFileChange` before processing. This pattern applies to ALL automated `processFrontMatter` calls (`handleFileChange`, `handleFileOpen`). The `lastPluginWriteMtime` map is also written by bulk modals (`FindInversionsModal.processFile`) so their writes don't loop back through the modify handler.
@@ -114,11 +114,11 @@ Release tags must be exact version numbers **without** `v` prefix (e.g. `1.0.0`,
 This plugin targets the Obsidian community plugin store. All code changes must comply with the review process:
 
 ### Two-phase review
-1. **Automated bot**: Validates `manifest.json`, runs `eslint-plugin-obsidianmd` (30+ rules). Rescans within 6 hours of each push. Locally replicated via `npm run lint`.
-2. **Human reviewer**: Checks CSS scoping, code patterns, security, UX. Takes 2-12 weeks. PR goes stale after 30 days, auto-closes after 45.
+1. **Automated bot**: Validates `manifest.json` and runs `eslint-plugin-obsidianmd` (recommended ruleset). It re-runs when you push a new release, but the cadence is not guaranteed (rescans can lag by days). Replicate locally with `make lint`, and keep the linter at its latest published version (the bot always runs latest — see the API section).
+2. **Human reviewer**: Checks CSS scoping, code patterns, security, UX. Review can take weeks to months (the queue is heavily backlogged); a stale bot may close long-inactive PRs. Exact thresholds change — consult the submission requirements doc rather than relying on fixed numbers here.
 
 ### Key ESLint rules (enforced by bot)
-`eslint-plugin-obsidianmd` recommended (30+ rules) plus the overrides in `eslint.config.mts`; replicate the bot locally with `make lint`. The ones most likely to bite: `no-console` (route logging through `plugin.log()` / `plugin.logError()`), `no-explicit-any` (tests/mocks exempt), `no-floating-promises`, `settings-tab/no-manual-html-headings`, `ui/sentence-case`, `no-namespace` (use typed casts, not `declare namespace`).
+`eslint-plugin-obsidianmd` recommended config plus the overrides in `eslint.config.mts`; replicate the bot locally with `make lint`. The ones most likely to bite: `no-console` (route logging through `plugin.log()` / `plugin.logError()`), `no-explicit-any` (tests/mocks exempt), `no-floating-promises`, `settings-tab/no-manual-html-headings`, `ui/sentence-case`, `no-namespace` (use typed casts, not `declare namespace`).
 
 ### Reference links
 - Official plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
@@ -148,7 +148,7 @@ After all checks pass, update documentation if the task changed user-facing beha
 - `README.md` — settings table, feature descriptions, examples
 - `CLAUDE.md` — architecture section, key patterns, settings description
 
-Keep updates concise and proportional to the change. Do not pad with filler text.
+Update only the sections the change actually touches — don't refresh unrelated docs or restate what the code and tests already cover. Keep edits concise and proportional; do not pad with filler. When unsure whether a doc edit is warranted, ask the user before editing `CLAUDE.md` or `README.md`.
 
 ## Formatting
 
