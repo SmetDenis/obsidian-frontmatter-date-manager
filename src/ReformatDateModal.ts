@@ -546,11 +546,6 @@ export class ReformatDateModal extends Modal {
 
   private async renderExecutePhase() {
     const { contentEl } = this;
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    const viewedKey = (
-      this.plugin.settings.headerLastViewed ?? 'viewed'
-    ).trim();
 
     contentEl.empty();
 
@@ -594,24 +589,7 @@ export class ReformatDateModal extends Modal {
             continue;
           }
 
-          await this.app.fileManager.processFrontMatter(
-            currentFile,
-            (frontmatter: Record<string, unknown>) => {
-              if (entry.createdNewValue !== null && createdKey) {
-                frontmatter[createdKey] = entry.createdNewValue;
-              }
-              if (entry.updatedNewValue !== null && updatedKey) {
-                frontmatter[updatedKey] = entry.updatedNewValue;
-              }
-              if (entry.viewedNewValue !== null && viewedKey) {
-                frontmatter[viewedKey] = entry.viewedNewValue;
-              }
-            },
-            {
-              ctime: currentFile.stat.ctime,
-              mtime: currentFile.stat.mtime,
-            },
-          );
+          await this.applyReformat(currentFile, entry);
           processedCount++;
         } catch (e: unknown) {
           errorCount++;
@@ -639,5 +617,42 @@ export class ReformatDateModal extends Modal {
         this.close();
       }),
     );
+  }
+
+  protected async applyReformat(
+    currentFile: TFile,
+    entry: ReformatPreviewEntry,
+  ): Promise<void> {
+    const createdKey = this.plugin.settings.headerCreated.trim();
+    const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const viewedKey = (
+      this.plugin.settings.headerLastViewed ?? 'viewed'
+    ).trim();
+
+    await this.app.fileManager.processFrontMatter(
+      currentFile,
+      (frontmatter: Record<string, unknown>) => {
+        if (entry.createdNewValue !== null && createdKey) {
+          frontmatter[createdKey] = entry.createdNewValue;
+        }
+        if (entry.updatedNewValue !== null && updatedKey) {
+          frontmatter[updatedKey] = entry.updatedNewValue;
+        }
+        if (entry.viewedNewValue !== null && viewedKey) {
+          frontmatter[viewedKey] = entry.viewedNewValue;
+        }
+      },
+    );
+    // Do not preserve mtime: Obsidian must detect the change so an open editor
+    // re-renders. Suppress the resulting self-triggered modify event via
+    // lastPluginWriteMtime and refresh the hash cache so the stale cache cannot
+    // make handleFileChange spuriously re-stamp `updated`.
+    this.plugin.lastPluginWriteMtime.set(
+      currentFile.path,
+      currentFile.stat.mtime,
+    );
+    if (this.plugin.settings.enableContentHashCheck ?? true) {
+      await this.plugin.populateCacheForFile(currentFile);
+    }
   }
 }

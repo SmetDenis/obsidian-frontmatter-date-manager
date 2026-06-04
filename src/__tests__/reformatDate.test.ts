@@ -27,6 +27,13 @@ class TestableReformatDate extends ReformatDateModal {
   public setScope(scope: ReformatScope) {
     (this as any).reformatScope = scope;
   }
+
+  public testApplyReformat(
+    file: TFile,
+    entry: ReturnType<typeof this.testComputePreviewEntry>,
+  ) {
+    return this.applyReformat(file, entry);
+  }
 }
 
 function createModal(
@@ -347,5 +354,47 @@ describe('ReformatDateModal - computePreviewEntry', () => {
     expect(entry.willChange).toBe(true);
     expect(entry.createdNewValue).toBe('2024-01-15T10:30:00');
     expect(entry.updatedNewValue).toBe('2024-06-20T14:00:00');
+  });
+});
+
+describe('ReformatDateModal - applyReformat write contract', () => {
+  it('writes without preserving mtime and records the self-trigger guard + cache', async () => {
+    const plugin = createPlugin({ dateFormat: 'dd.MM.yyyy' });
+    const cacheCalls: string[] = [];
+    (plugin as any).populateCacheForFile = async (f: TFile) => {
+      cacheCalls.push(f.path);
+    };
+
+    const file = createMockFile('test.md');
+    let captured: { argCount: number; options: unknown } | null = null;
+    const app = {
+      metadataCache: {
+        getFileCache: () => ({
+          frontmatter: {
+            created: '2024-01-15T10:30:00',
+            updated: '2024-06-20T14:00:00',
+          },
+        }),
+      },
+      vault: { getAbstractFileByPath: () => file },
+      fileManager: {
+        processFrontMatter: async (...args: unknown[]) => {
+          captured = { argCount: args.length, options: args[2] };
+          (args[1] as (fm: Record<string, unknown>) => void)({});
+        },
+      },
+    } as any;
+
+    const modal = new TestableReformatDate(app, plugin);
+    modal.setScope('both');
+    const entry = modal.testComputePreviewEntry(file);
+    await modal.testApplyReformat(file, entry);
+
+    // Contract: no { ctime, mtime } options argument is passed.
+    expect(captured!.options).toBeUndefined();
+    // Contract: self-triggered modify event is suppressed via lastPluginWriteMtime.
+    expect(plugin.lastPluginWriteMtime.get('test.md')).toBe(file.stat.mtime);
+    // Contract: hash cache is refreshed so the stale-cache spurious update cannot fire.
+    expect(cacheCalls).toContain('test.md');
   });
 });

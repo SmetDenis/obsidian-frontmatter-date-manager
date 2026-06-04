@@ -330,8 +330,6 @@ export class RenameKeyModal extends Modal {
 
   private async renderExecutePhase() {
     const { contentEl } = this;
-    const oldKey = this.oldKeyName.trim();
-    const newKey = this.newKeyName.trim();
 
     contentEl.empty();
 
@@ -371,18 +369,7 @@ export class RenameKeyModal extends Modal {
             continue;
           }
 
-          await this.app.fileManager.processFrontMatter(
-            currentFile,
-            (frontmatter: Record<string, unknown>) => {
-              if (frontmatter[oldKey] != null) {
-                frontmatter[newKey] = frontmatter[oldKey];
-                if (this.deleteOldKey) {
-                  delete frontmatter[oldKey];
-                }
-              }
-            },
-            { ctime: currentFile.stat.ctime, mtime: currentFile.stat.mtime },
-          );
+          await this.applyRename(currentFile);
           processedCount++;
         } catch (e: unknown) {
           errorCount++;
@@ -406,5 +393,33 @@ export class RenameKeyModal extends Modal {
         this.close();
       }),
     );
+  }
+
+  protected async applyRename(currentFile: TFile): Promise<void> {
+    const oldKey = this.oldKeyName.trim();
+    const newKey = this.newKeyName.trim();
+
+    await this.app.fileManager.processFrontMatter(
+      currentFile,
+      (frontmatter: Record<string, unknown>) => {
+        if (frontmatter[oldKey] != null) {
+          frontmatter[newKey] = frontmatter[oldKey];
+          if (this.deleteOldKey) {
+            delete frontmatter[oldKey];
+          }
+        }
+      },
+    );
+    // Do not preserve mtime: Obsidian must detect the change so an open editor
+    // re-renders. Suppress the resulting self-triggered modify event via
+    // lastPluginWriteMtime and refresh the hash cache so the stale cache cannot
+    // make handleFileChange spuriously re-stamp `updated`.
+    this.plugin.lastPluginWriteMtime.set(
+      currentFile.path,
+      currentFile.stat.mtime,
+    );
+    if (this.plugin.settings.enableContentHashCheck ?? true) {
+      await this.plugin.populateCacheForFile(currentFile);
+    }
   }
 }

@@ -29,6 +29,12 @@ class TestableBulkPopulate extends BulkPopulateTimestampsModal {
     (this as any).populateMode = populate;
     (this as any).overrideMode = override;
   }
+
+  public testApplyTimestamps(
+    entry: ReturnType<typeof this.testComputePreviewEntry>,
+  ) {
+    return this.applyTimestamps(entry);
+  }
 }
 
 function createModal(
@@ -365,5 +371,52 @@ describe('BulkPopulateTimestampsModal - computePreviewEntry', () => {
       expect(entry.proposedCreated).toBeNull();
       expect(entry.proposedUpdated).not.toBeNull();
     });
+  });
+});
+
+describe('BulkPopulateTimestampsModal - applyTimestamps write contract', () => {
+  it('writes without preserving mtime and records the self-trigger guard + cache', async () => {
+    const ts2023 = new Date(2023, 5, 20, 14, 0).getTime();
+    const ts2024 = new Date(2024, 0, 15, 10, 30).getTime();
+    const plugin = createPlugin();
+    const cacheCalls: string[] = [];
+    (plugin as any).populateCacheForFile = async (f: TFile) => {
+      cacheCalls.push(f.path);
+    };
+
+    // applyTimestamps re-fetches via getAbstractFileByPath and gates on
+    // `instanceof TFile`, so this test needs a real TFile instance.
+    const file = Object.assign(new TFile(), {
+      path: 'notes/test.md',
+      stat: { ctime: ts2023, mtime: ts2024, size: 100 },
+      basename: 'test',
+      extension: 'md',
+      name: 'test.md',
+    });
+    let captured: { argCount: number; options: unknown } | null = null;
+    const app = {
+      metadataCache: { getFileCache: () => ({}) },
+      vault: { getAbstractFileByPath: () => file },
+      fileManager: {
+        processFrontMatter: async (...args: unknown[]) => {
+          captured = { argCount: args.length, options: args[2] };
+          (args[1] as (fm: Record<string, unknown>) => void)({});
+        },
+      },
+    } as any;
+
+    const modal = new TestableBulkPopulate(app, plugin);
+    modal.setModes('both', 'overwrite-all');
+    const entry = modal.testComputePreviewEntry(file);
+    await modal.testApplyTimestamps(entry);
+
+    // Contract: no { ctime, mtime } options argument is passed.
+    expect(captured!.options).toBeUndefined();
+    // Contract: self-triggered modify event is suppressed via lastPluginWriteMtime.
+    expect(plugin.lastPluginWriteMtime.get('notes/test.md')).toBe(
+      file.stat.mtime,
+    );
+    // Contract: hash cache is refreshed so the stale-cache spurious update cannot fire.
+    expect(cacheCalls).toContain('notes/test.md');
   });
 });

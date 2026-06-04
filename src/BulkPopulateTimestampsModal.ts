@@ -552,7 +552,7 @@ export class BulkPopulateTimestampsModal extends Modal {
     );
   }
 
-  private async applyTimestamps(entry: FilePreviewEntry): Promise<void> {
+  protected async applyTimestamps(entry: FilePreviewEntry): Promise<void> {
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
 
@@ -572,7 +572,17 @@ export class BulkPopulateTimestampsModal extends Modal {
           frontmatter[updatedKey] = entry.proposedUpdated;
         }
       },
-      { ctime: currentFile.stat.ctime, mtime: currentFile.stat.mtime },
     );
+    // Do not preserve mtime: Obsidian must detect the change so an open editor
+    // re-renders. Suppress the resulting self-triggered modify event via
+    // lastPluginWriteMtime and refresh the hash cache so the stale cache cannot
+    // make handleFileChange spuriously re-stamp `updated`.
+    this.plugin.lastPluginWriteMtime.set(
+      currentFile.path,
+      currentFile.stat.mtime,
+    );
+    if (this.plugin.settings.enableContentHashCheck ?? true) {
+      await this.plugin.populateCacheForFile(currentFile);
+    }
   }
 }

@@ -24,6 +24,10 @@ class TestableRenameKey extends RenameKeyModal {
     (this as any).oldKeyName = oldKey;
     (this as any).newKeyName = newKey;
   }
+
+  public testApplyRename(file: TFile) {
+    return this.applyRename(file);
+  }
 }
 
 function createModal(
@@ -112,5 +116,45 @@ describe('RenameKeyModal - computePreviewEntry', () => {
     const entry = modal.testComputePreviewEntry(file);
 
     expect(entry).toBeNull();
+  });
+});
+
+describe('RenameKeyModal - applyRename write contract', () => {
+  it('writes without preserving mtime and records the self-trigger guard + cache', async () => {
+    const plugin = createPlugin();
+    const cacheCalls: string[] = [];
+    (plugin as any).populateCacheForFile = async (f: TFile) => {
+      cacheCalls.push(f.path);
+    };
+
+    const file = createMockFile('test.md');
+    let captured: { argCount: number; options: unknown } | null = null;
+    const app = {
+      metadataCache: {
+        getFileCache: () => ({
+          frontmatter: { created: '2024-01-15T10:00:00' },
+        }),
+      },
+      vault: { getAbstractFileByPath: () => file },
+      fileManager: {
+        processFrontMatter: async (...args: unknown[]) => {
+          captured = { argCount: args.length, options: args[2] };
+          (args[1] as (fm: Record<string, unknown>) => void)({
+            created: '2024-01-15T10:00:00',
+          });
+        },
+      },
+    } as any;
+
+    const modal = new TestableRenameKey(app, plugin);
+    modal.setKeys('created', 'date_created');
+    await modal.testApplyRename(file);
+
+    // Contract: no { ctime, mtime } options argument is passed.
+    expect(captured!.options).toBeUndefined();
+    // Contract: self-triggered modify event is suppressed via lastPluginWriteMtime.
+    expect(plugin.lastPluginWriteMtime.get('test.md')).toBe(file.stat.mtime);
+    // Contract: hash cache is refreshed so the stale-cache spurious update cannot fire.
+    expect(cacheCalls).toContain('test.md');
   });
 });
