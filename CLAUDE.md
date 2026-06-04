@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Obsidian plugin that automatically updates frontmatter `created` and `updated` timestamps when files are edited.
+Obsidian plugin that automatically maintains frontmatter date properties — `created` (on file creation), `updated` (on edit), and `viewed` (last-viewed, stamped on file open; opt-in, disabled by default) — and provides bulk tools to populate timestamps from filesystem dates, rename keys, reformat date strings, and detect/fix `updated < created` inversions across a vault.
 
 **Target: Obsidian v1.4.11+** (`minAppVersion` in manifest.json). The public stable Obsidian release is the 1.12.x line; 1.13.0 is early-access (insider-only). Do NOT adopt 1.13+ APIs (e.g. `getSettingDefinitions()`, `ButtonComponent.setDestructive()`) or bump `obsidian` types past `~1.12.3` until 1.13 ships publicly — doing so makes the plugin unusable on every public install and breaks the settings tab. The `obsidian` dev dependency is pinned to `~1.12.3` (tilde, not caret) to prevent `npm` from pulling the early-access 1.13 types.
 
@@ -48,9 +48,9 @@ esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest
 
 ## Architecture
 
-- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`). Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and format migration. Pause/resume with countdown timer and status bar indicator. Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file. `log()` and `logError()` are public methods gated behind `__DEV_MODE__` — used by modals and other files for dev-only logging.
+- **`src/main.ts`** — `FrontmatterDateManagerPlugin` (extends `Plugin`). Entry point. Handles vault events (`modify`, `create`, `rename`, `delete`) plus the workspace `file-open` event via `handleFileOpen()`, which stamps the `viewed`/last-viewed key when that feature is enabled. Per-file debouncing (2s). SHA-256 content hashing to detect real changes. Hash cache persisted to `hash-cache.json` with LRU eviction, debounced flushing, GC on startup, auto-population, and format migration. Pause/resume with countdown timer and status bar indicator. Three commands: `update-timestamps-current-file`, `toggle-auto-update`, `pause-auto-update`. Uses `processingFiles` Set to prevent concurrent modifications of the same file. `log()` and `logError()` are public methods gated behind `__DEV_MODE__` — used by modals and other files for dev-only logging.
 - **`src/filterRules.ts`** — Gitignore-style filter rule engine. Pure functions, no Obsidian dependency. `parseFilterRules(text)` parses multiline text into `FilterRule[]` with validation errors. `isFileExcluded(filePath, rules)` applies rules top-to-bottom (last match wins).
-- **`src/Settings.ts`** — `FrontmatterDateManagerSettings` interface + `FrontmatterDateManagerSettingsTab` (settings UI). `HashTrackingMode` type (`'body'` | `'frontmatter'` | `'both'`). Manages date format, timezone, frontmatter key names, gitignore-style filter rules (textarea with preview), min time between saves, delay for new files, number property toggle, content hash check toggle, hash tracking mode dropdown, frontmatter key exclusion list, hash cache settings, post-update command. Uses the imperative `display()` render method (required by the public 1.12.x API; `display()` is only deprecated in early-access 1.13+).
+- **`src/Settings.ts`** — `FrontmatterDateManagerSettings` interface + `FrontmatterDateManagerSettingsTab` (settings UI). `HashTrackingMode` type (`'body'` | `'frontmatter'` | `'both'`). The UI is organized into sections (in `display()` order): **Timestamp fields** (enable toggle + key name for `created`, `updated`, and `viewed`/last-viewed), **Date formatting** (date format, timezone, number-property toggle), **Behavior** (auto-update toggle, min time between saves, gitignore-style filter rules with live preview, content hash check toggle + hash tracking mode dropdown + frontmatter key exclusion list), **Timestamp inversion** (fix strategy + tolerance), an **Advanced** collapsible (delay for new files, hash cache auto-populate + max size, post-update command), and **Bulk operations** (buttons that open the bulk modals). Uses the imperative `display()` render method (required by the public 1.12.x API; `display()` is only deprecated in early-access 1.13+).
 - **`src/BaseBulkModal.ts`** — Abstract base class for bulk file operations. Provides progress bar, error counting, Run/Cancel UI. Three optional hooks for richer modals: `narrowFiles(files)` (filter the scanned set after `getAllFilesPossiblyAffected`), `renderExtraSection(parent, files)` (inject custom UI between warning and Run/Cancel), `canRun(files)` (gate the Run button — default: non-empty list). Extended by `UpdateAllModal`, `UpdateAllCacheData`, and `FindInversionsModal`.
 - **`src/UpdateAllModal.ts`** — Modal for bulk-updating all vault files' timestamps.
 - **`src/UpdateAllCacheData.ts`** — Modal for populating/rebuilding SHA-256 hash cache for all files.
@@ -92,27 +92,18 @@ When accessing Obsidian APIs without public typings (e.g. `app.commands.executeC
 **`processFrontMatter` callback typing**:
 The `frontmatter` parameter from `processFrontMatter()` is typed as `any` in Obsidian's API. Always annotate the callback parameter explicitly: `(frontmatter: Record<string, unknown>) => { ... }`. Similarly, `getFileCache()?.frontmatter` (typed as `FrontMatterCache` extending `Record<string, any>`) should be cast to `Record<string, unknown>` before accessing keys.
 
-### UI & CSS Conventions
+### UI & CSS conventions
 
-These conventions follow Obsidian community plugin review requirements and are enforced by `eslint-plugin-obsidianmd`:
+Most of these are enforced automatically by `eslint-plugin-obsidianmd` plus the project rules in `eslint.config.mts` and `tsconfig.json` — run `make lint` and let it catch violations instead of memorizing the full list. Keep the non-obvious, project-specific points in mind:
 
-- **CSS class prefix**: All classes use `frontmatter-date-manager-` prefix (e.g. `frontmatter-date-manager-filter-setting`). Never use unprefixed or short-prefix classes — even when nested inside a prefixed parent.
-- **Section headings in settings tab**: Use `new Setting(containerEl).setHeading().setName('...')` — not `createEl('h1')`..`createEl('h6')`. Heading elements in modals (`Modal` subclasses) are acceptable.
-- **DOM elements**: Use Obsidian's `createEl()` / `createDiv()` / `createSpan()` helpers — not `document.createElement()`.
-- **Styling**: Use CSS classes and `toggleClass()` — never assign `element.style.*` in JavaScript.
-- **Colors**: Use Obsidian CSS variables (`var(--text-error)`, `var(--text-muted)`, etc.) — never hardcode hex colors.
-- **Sentence case**: All UI text (`setName()`, `setDesc()`, `setText()`, `setPlaceholder()`, `setButtonText()`) must use sentence case. No Title Case, no ALL CAPS words. Proper nouns should be avoided where possible; if unavoidable, keep them lowercase (e.g. "daily notes" not "Daily Notes").
-- **Console output**: Only `console.debug` and `console.error` are allowed (`console.log`/`console.info` are banned by ESLint). All console calls must go through `plugin.log()` / `plugin.logError()` which are gated behind `__DEV_MODE__`.
-- **No `any` types**: The `@typescript-eslint/no-explicit-any` rule is enforced. Use `unknown` with type narrowing instead.
-- **Floating promises**: All promises in fire-and-forget positions (setTimeout callbacks, onClick handlers, etc.) must be prefixed with `void`. The `@typescript-eslint/no-floating-promises` rule is enforced.
-- **Window timers**: Always use `window.setTimeout` / `window.clearTimeout` / `window.setInterval` / `window.clearInterval` (never bare globals, never `activeWindow.*`). The `obsidianmd/prefer-window-timers` rule enforces `window.` for timers — `activeWindow.*` is explicitly rejected because timer IDs are window-scoped and `registerInterval()` cleans up on the main window. Bare `setTimeout(resolve, 0)` inside `new Promise(...)` must also be `window.setTimeout`.
-- **Strict indexed access**: `noUncheckedIndexedAccess` is enabled — `arr[i]` returns `T | undefined`. Use `!` for bounds-checked loops, proper guards elsewhere.
-- **No unnecessary optional chaining**: `headerCreated` and `headerUpdated` are `string` (not optional) — use `.trim()`, not `?.trim()`. Same for `app.metadataCache` (always defined).
-- **Strict equality**: `eqeqeq` rule enforced — use `===`/`!==` (exception: `== null` / `!= null` allowed).
-- **Prefer const**: `prefer-const` at error level — always use `const` unless reassignment is needed.
-- **Prefer nullish coalescing**: Use `??` / `??=` instead of `||` for null/undefined checks.
-- **Async lifecycle methods**: `onunload()` must NOT be async (returns void per Plugin interface). Use `void this.method()` for async cleanup.
-- **No plugin name in settings heading**: The settings tab must not display the plugin name as a top-level heading.
+- **CSS class prefix**: every class uses the `frontmatter-date-manager-` prefix, even when nested inside an already-prefixed parent.
+- **Styling & colors**: use CSS classes + `toggleClass()` and Obsidian CSS variables (`var(--text-error)`, etc.) — never assign `element.style.*` or hardcode hex. Use `createEl()` / `createDiv()` / `createSpan()`, not `document.createElement()`.
+- **Headings**: in the settings tab use `new Setting(el).setHeading()`, never `createEl('h1'..'h6')` (heading elements inside `Modal` subclasses are fine); never show the plugin name as a top-level settings heading.
+- **Window timers**: always `window.setTimeout` / `clearTimeout` / `setInterval` / `clearInterval` — never bare globals, never `activeWindow.*`. Timer IDs are window-scoped and `registerInterval()` cleans up on the main window, so the `obsidianmd/prefer-window-timers` rule rejects `activeWindow.*`. The bare `setTimeout(resolve, 0)` inside `new Promise(...)` must also be `window.setTimeout`.
+- **Console**: the project routes ALL logging through `plugin.log()` / `plugin.logError()` (gated behind `__DEV_MODE__`); no raw `console.*` in production paths. ESLint's `no-console` would still permit `warn`/`error`/`debug`, but the project convention is stricter.
+- **Sentence case**: all UI text (`setName`/`setDesc`/`setText`/`setPlaceholder`/`setButtonText`) in sentence case; avoid proper nouns (keep lowercase if unavoidable, e.g. "daily notes").
+
+Enforced by the linter/compiler — just satisfy `make lint`: no `any` (use `unknown` + narrowing), no floating promises (prefix `void`), `prefer-const`, `eqeqeq`, `??`/`??=` over `||`, `prefer-optional-chain` (no redundant `?.` on non-optional fields like `headerCreated` / `app.metadataCache`), `noUncheckedIndexedAccess` (`arr[i]` is `T | undefined`), and non-async `onunload()` (use `void this.method()` for async cleanup).
 
 ### Release
 
@@ -127,12 +118,7 @@ This plugin targets the Obsidian community plugin store. All code changes must c
 2. **Human reviewer**: Checks CSS scoping, code patterns, security, UX. Takes 2-12 weeks. PR goes stale after 30 days, auto-closes after 45.
 
 ### Key ESLint rules (enforced by bot)
-- `no-console`: Only `console.warn`, `console.error`, `console.debug` allowed.
-- `no-explicit-any`: No `any` types in production code. Tests/mocks exempt.
-- `no-floating-promises`: All promises must be awaited, caught, or voided.
-- `settings-tab/no-manual-html-headings`: No `createEl('h1')`..`createEl('h6')` in `PluginSettingTab`.
-- `ui/sentence-case`: All UI text in sentence case.
-- `no-namespace`: Use typed casts instead of `declare namespace`.
+`eslint-plugin-obsidianmd` recommended (30+ rules) plus the overrides in `eslint.config.mts`; replicate the bot locally with `make lint`. The ones most likely to bite: `no-console` (route logging through `plugin.log()` / `plugin.logError()`), `no-explicit-any` (tests/mocks exempt), `no-floating-promises`, `settings-tab/no-manual-html-headings`, `ui/sentence-case`, `no-namespace` (use typed casts, not `declare namespace`).
 
 ### Reference links
 - Official plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
