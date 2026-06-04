@@ -92,4 +92,35 @@ describe('parseDate', () => {
     const result = plugin.parseDate(-Infinity);
     expect(result).toBeUndefined();
   });
+
+  it('parses 10-digit Unix seconds as seconds, not milliseconds', () => {
+    const plugin = createPlugin({ timezone: 'UTC' });
+    // 1712916000 = 2024-04-12T10:00:00Z expressed in Unix SECONDS (format `t`)
+    const result = plugin.parseDate(1712916000);
+    expect(result).toBeInstanceOf(Date);
+    expect(result!.getUTCFullYear()).toBe(2024);
+    expect(result!.getUTCMonth()).toBe(3); // April
+    expect(result!.getUTCDate()).toBe(12);
+  });
+
+  it('round-trips numeric t-format output (formatDate -> parseDate)', () => {
+    const plugin = createPlugin({
+      dateFormat: 't',
+      enableNumberProperties: true,
+      timezone: 'UTC',
+    });
+    const original = new Date(Date.UTC(2024, 3, 12, 10, 0, 0));
+    const formatted = plugin.formatDate(original);
+    expect(typeof formatted).toBe('number');
+    const parsed = plugin.parseDate(formatted as number);
+    expect(parsed!.getTime()).toBe(original.getTime());
+  });
+
+  it('still parses 13-digit millisecond timestamps as milliseconds', () => {
+    const plugin = createPlugin({ timezone: 'UTC' });
+    const ms = Date.UTC(2024, 3, 12, 10, 0, 0); // ~1.71e12
+    const result = plugin.parseDate(ms);
+    expect(result!.getTime()).toBe(ms);
+    expect(result!.getUTCFullYear()).toBe(2024);
+  });
 });

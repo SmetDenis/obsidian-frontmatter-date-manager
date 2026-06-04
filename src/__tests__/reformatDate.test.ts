@@ -140,6 +140,24 @@ describe('ReformatDateModal - tryParseDate', () => {
     expect(date!.getMonth()).toBe(0);
     expect(date!.getDate()).toBe(15);
   });
+
+  it('parses 10-digit Unix seconds number as seconds (2024), not 1970', () => {
+    const modal = createModal('both', { timezone: 'UTC' });
+    const date = modal.testTryParseDate(1712916000);
+
+    expect(date).toBeDefined();
+    expect(date!.getUTCFullYear()).toBe(2024);
+    expect(date!.getUTCMonth()).toBe(3); // April
+    expect(date!.getUTCDate()).toBe(12);
+  });
+
+  it('parses Unix seconds numeric string as seconds (2024), not 1970', () => {
+    const modal = createModal('both', { timezone: 'UTC' });
+    const date = modal.testTryParseDate('1712916000');
+
+    expect(date).toBeDefined();
+    expect(date!.getUTCFullYear()).toBe(2024);
+  });
 });
 
 describe('ReformatDateModal - computePreviewEntry', () => {
@@ -293,6 +311,23 @@ describe('ReformatDateModal - computePreviewEntry', () => {
 
     expect(entry.willChange).toBe(true);
     expect(entry.createdNewValue).toBe('15.01.2024');
+  });
+
+  it('does not collapse Unix-seconds values when reformatting to t', () => {
+    // Regression: a value already stored as Unix seconds must round-trip
+    // unchanged, not get re-interpreted as ms (~1970) and rewritten as 1712916.
+    const modal = createModal(
+      'created',
+      { dateFormat: 't', enableNumberProperties: true, timezone: 'UTC' },
+      {
+        'test.md': { created: 1712916000 },
+      },
+    );
+    const file = createMockFile('test.md');
+    const entry = modal.testComputePreviewEntry(file);
+
+    expect(entry.createdNewValue).toBeNull();
+    expect(entry.willChange).toBe(false);
   });
 
   it('converts European dot format to ISO', () => {

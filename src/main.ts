@@ -6,7 +6,7 @@ import {
   FrontmatterDateManagerSettings,
   FrontmatterDateManagerSettingsTab,
 } from './Settings';
-import { isTFile } from './utils';
+import { epochNumberToDate, isTFile } from './utils';
 import { sha256 } from 'js-sha256';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
 import {
@@ -90,7 +90,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         return undefined;
       }
     }
-    const date = new Date(input);
+    const date = epochNumberToDate(input);
     if (isNaN(date.getTime())) {
       this.log('NAN DATE from numeric input', input);
       return undefined;

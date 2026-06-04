@@ -16,6 +16,27 @@ export function isGlobPattern(pattern: string): boolean {
   return /[*?[{]/.test(pattern);
 }
 
+/**
+ * Numbers reach our date code in two different units. Filesystem timestamps
+ * (`file.stat.ctime`/`mtime`) and `T`-format frontmatter are milliseconds,
+ * while `t`-format frontmatter is Unix seconds. `new Date(n)` always assumes
+ * milliseconds, so a seconds value (~1.7e9) would resolve to ~1970. Values
+ * below this threshold are too small to be a plausible modern millisecond
+ * timestamp, so they are treated as seconds. 1e11 ms = 1973; 1e11 s = year
+ * 5138 — the only misread values are millisecond timestamps before 1973.
+ */
+export const EPOCH_SECONDS_THRESHOLD = 1e11;
+
+/**
+ * Convert a numeric epoch value to a Date, auto-detecting seconds vs.
+ * milliseconds by magnitude. Returns an invalid Date for NaN/Infinity inputs
+ * (callers check `isNaN(date.getTime())`).
+ */
+export function epochNumberToDate(input: number): Date {
+  const ms = input < EPOCH_SECONDS_THRESHOLD ? input * 1000 : input;
+  return new Date(ms);
+}
+
 export function matchesPathPattern(filePath: string, pattern: string): boolean {
   const trimmed = pattern.trim();
   if (trimmed.length === 0) return false;

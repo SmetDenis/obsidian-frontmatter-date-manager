@@ -2,6 +2,7 @@ import { App, Modal, Notice, Setting, TFile } from 'obsidian';
 import { format, parse, parseISO } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import FrontmatterDateManagerPlugin from './main';
+import { epochNumberToDate } from './utils';
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
 
@@ -84,7 +85,7 @@ export class ReformatDateModal extends Modal {
    */
   tryParseDate(value: string | number): Date | undefined {
     if (typeof value === 'number') {
-      const date = new Date(value);
+      const date = epochNumberToDate(value);
       return isNaN(date.getTime()) ? undefined : date;
     }
 
@@ -93,7 +94,7 @@ export class ReformatDateModal extends Modal {
 
     // Numeric string → epoch timestamp (but not 8-digit yyyyMMdd-style strings)
     if (/^\d+$/.test(str) && str.length !== 8) {
-      const date = new Date(parseInt(str));
+      const date = epochNumberToDate(parseInt(str));
       return isNaN(date.getTime()) ? undefined : date;
     }
 
