@@ -33,6 +33,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   hashCache: Record<string, HashCacheEntry> = {};
   statusBarEl!: HTMLElement;
   private recentlyCreated = new Set<string>();
+  // New files whose modify events were suppressed during the delay window.
+  // After the window expires these are processed once, so template-populated
+  // files still get stamped (see setupOnEditHandler).
+  private newFileModified = new Set<string>();
+  // Per-path delay timers for newly created files. Tracked so they can be
+  // cleared on delete/unload before the deferred processing fires.
+  private newFileTimers = new Map<string, number>();
   // Timers are managed manually (not via registerInterval) because they need
   // individual clearing/re-setting. All are cleaned up in onunload().
   private modifyTimers = new Map<string, number>();
@@ -795,11 +802,26 @@ ${e.message}`;
     this.registerEvent(
       this.app.vault.on('create', (file) => {
         if (isTFile(file) && this.settings.delayForNewFiles > 0) {
-          this.recentlyCreated.add(file.path);
-          window.setTimeout(
-            () => this.recentlyCreated.delete(file.path),
-            this.settings.delayForNewFiles,
-          );
+          const path = file.path;
+          this.recentlyCreated.add(path);
+          const existing = this.newFileTimers.get(path);
+          if (existing) window.clearTimeout(existing);
+          const timer = window.setTimeout(() => {
+            this.newFileTimers.delete(path);
+            this.recentlyCreated.delete(path);
+            // The delay only suppresses processing — it must not cancel it.
+            // If a template/editor populated the file during the window, a
+            // modify event was deferred; process the settled state now so the
+            // file gets stamped. Files with no deferred modify are left
+            // untouched, matching the delayForNewFiles === 0 behavior.
+            if (this.newFileModified.delete(path)) {
+              const current = this.app.vault.getAbstractFileByPath(path);
+              if (current !== null && isTFile(current)) {
+                void this.processFileWithLock(current);
+              }
+            }
+          }, this.settings.delayForNewFiles);
+          this.newFileTimers.set(path, timer);
         }
       }),
     );
@@ -810,7 +832,13 @@ ${e.message}`;
         if (this.bulkRunning) return;
         if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
         if (!isTFile(file)) return;
-        if (this.recentlyCreated.has(file.path)) return;
+        if (this.recentlyCreated.has(file.path)) {
+          // Within the new-file delay window. Remember that the file changed
+          // so its settled state is processed when the window expires, instead
+          // of dropping the event and leaving the file unstamped.
+          this.newFileModified.add(file.path);
+          return;
+        }
 
         // Debounce per file to prevent race conditions during rapid typing.
         // Multiple concurrent processFrontMatter() calls can corrupt YAML.
@@ -854,6 +882,14 @@ ${e.message}`;
           window.clearTimeout(timer);
           this.modifyTimers.delete(file.path);
         }
+        // Cancel any pending new-file delay so it doesn't process a dead path
+        const newFileTimer = this.newFileTimers.get(file.path);
+        if (newFileTimer) {
+          window.clearTimeout(newFileTimer);
+          this.newFileTimers.delete(file.path);
+        }
+        this.recentlyCreated.delete(file.path);
+        this.newFileModified.delete(file.path);
         this.lastPluginWriteMtime.delete(file.path);
 
         const entry = this.hashCache[file.path];
@@ -871,6 +907,12 @@ ${e.message}`;
       window.clearTimeout(timer);
     }
     this.modifyTimers.clear();
+    for (const timer of this.newFileTimers.values()) {
+      window.clearTimeout(timer);
+    }
+    this.newFileTimers.clear();
+    this.newFileModified.clear();
+    this.recentlyCreated.clear();
     this.processingFiles.clear();
     this.lastPluginWriteMtime.clear();
     if (this._pauseResumeTimer) {
