@@ -8,6 +8,16 @@ Obsidian plugin that automatically maintains frontmatter date properties — `cr
 
 **Target: Obsidian v1.4.11+** (`minAppVersion` in manifest.json). The public stable Obsidian release is the 1.12.x line; 1.13.0 is early-access (insider-only). Do NOT adopt 1.13+ APIs (e.g. `getSettingDefinitions()`, `ButtonComponent.setDestructive()`) or bump `obsidian` types past `~1.12.3` until 1.13 ships publicly — doing so makes the plugin unusable on every public install and breaks the settings tab. The `obsidian` dev dependency is pinned to `~1.12.3` (tilde, not caret) to prevent `npm` from pulling the early-access 1.13 types.
 
+## Safety first (core principle)
+
+The user's notes are irreplaceable — never corrupt, lose, or reorder note data. Every change to a vault file must be the smallest, safest mutation that achieves the goal; when a write is uncertain or unnecessary, do nothing. This invariant outranks any feature. Concretely:
+
+- **Mutate frontmatter only through `app.fileManager.processFrontMatter()`** — never hand-write note files (no whole-file `vault.modify`, no string-replacing YAML). This preserves the body, key order, comments, and unrelated keys.
+- **Touch only the configured keys.** Leave all other frontmatter and the entire note body untouched.
+- **Write only on a real, detected change** — never an unconditional or no-op write. Respect the hash-gated pipeline (see Key Patterns); needless writes churn `mtime` and fight sync.
+- **Never guess-and-overwrite a value you can't safely parse.** Disambiguate ambiguous input (e.g. epoch seconds-vs-ms via `epochNumberToDate`); if a date can't be parsed safely, leave it unchanged rather than corrupt it.
+- **New mutation / bulk / "fix" paths are opt-in and safe-by-default:** default new fix strategies to disabled, default bulk operations to fill-missing (not overwrite), and require dry-run preview + typed confirmation for anything destructive (see Destructive operation UX).
+
 ## Obsidian API — IMPORTANT
 
 Claude's training knowledge about the Obsidian plugin API is outdated. **Always** use context7 MCP and official Obsidian developer documentation to verify API signatures, available methods, and current patterns before writing or modifying plugin code. Do not rely on memory — check the docs. Likewise, before bumping or trusting a pinned version, verify the **currently published** versions of the `obsidian` types and `eslint-plugin-obsidianmd` (the community review linter) against npm — the review bot always runs the latest linter, so a stale local pin can let new rule violations slip through.
