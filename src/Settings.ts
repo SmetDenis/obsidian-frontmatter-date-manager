@@ -4,7 +4,6 @@ import { TimezoneSuggest } from './suggesters/TimezoneSuggest';
 import { getMomentFormatHint, onlyUniqueArray } from './utils';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
-import { UpdateAllModal } from './UpdateAllModal';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
 import { BulkPopulateTimestampsModal } from './BulkPopulateTimestampsModal';
 import { RenameKeyModal } from './RenameKeyModal';
@@ -184,22 +183,6 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           cb.setButtonText('Rebuild cache').onClick(() => {
             new UpdateAllCacheData(this.app, this.plugin).open();
           });
-        });
-    }
-
-    if (this.plugin.settings.enableModifiedTime ?? true) {
-      new Setting(this.containerEl)
-        .setName('Overwrite all timestamps')
-        .setDesc(
-          'Replaces the "updated" timestamp on ALL eligible files with the current date/time. ' +
-            'Original timestamps will be lost. Irreversible without a backup.',
-        )
-        .addButton((cb) => {
-          cb.setButtonText('Overwrite all timestamps')
-            .setWarning()
-            .onClick(() => {
-              new UpdateAllModal(this.app, this.plugin).open();
-            });
         });
     }
   }

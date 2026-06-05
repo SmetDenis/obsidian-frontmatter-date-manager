@@ -203,7 +203,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (file) {
           if (!checking) {
-            this.handleFileChange(file, 'modify')
+            this.handleFileChange(file)
               .then((result) => {
                 if (result.status === 'ok') {
                   new Notice('Timestamps updated.');
@@ -576,7 +576,6 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
   async handleFileChange(
     file: TAbstractFile,
-    triggerSource: 'modify' | 'bulk',
   ): Promise<
     | { status: 'ok' }
     | { status: 'error'; error: unknown }
@@ -589,19 +588,15 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // Detect self-triggered modify events: after processFrontMatter writes,
     // the file's mtime is updated. We stored that mtime right after the write
     // and compare here. Skip early to avoid unnecessary file reads and loops.
-    if (triggerSource === 'modify') {
-      const lastMtime = this.lastPluginWriteMtime.get(file.path);
-      if (lastMtime !== undefined) {
-        this.lastPluginWriteMtime.delete(file.path);
-        if (lastMtime === file.stat.mtime) {
-          return { status: 'ok' };
-        }
+    const lastMtime = this.lastPluginWriteMtime.get(file.path);
+    if (lastMtime !== undefined) {
+      this.lastPluginWriteMtime.delete(file.path);
+      if (lastMtime === file.stat.mtime) {
+        return { status: 'ok' };
       }
     }
 
-    const checkResult = await this.shouldFileBeIgnored(file, {
-      skipHashCheck: triggerSource === 'bulk',
-    });
+    const checkResult = await this.shouldFileBeIgnored(file);
     if (checkResult.ignored) {
       return { status: 'ignored' };
     }
@@ -711,7 +706,7 @@ ${e.message}`;
     this.processingFiles.add(file.path);
     try {
       this.log('TRIGGER FROM MODIFY (debounced)');
-      await this.handleFileChange(file, 'modify');
+      await this.handleFileChange(file);
     } finally {
       this.processingFiles.delete(file.path);
     }

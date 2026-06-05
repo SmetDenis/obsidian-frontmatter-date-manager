@@ -33,7 +33,6 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Hash tracking mode: body only, frontmatter only, or both
 - Frontmatter key exclusion from change detection
 - Run a command after timestamps are updated
-- Bulk-update all vault files at once
 - Bulk-populate timestamps from filesystem dates (ctime/mtime) with dry-run preview
 - Rename frontmatter keys across all files (migrate old key names with preview)
 - Reformat existing dates from one format to another (parse old, write new, with preview)
