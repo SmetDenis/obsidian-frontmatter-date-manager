@@ -344,6 +344,13 @@
     font-weight: var(--font-semibold);
 }
 
+.frontmatter-date-manager-reformat-warning {
+    color: var(--text-error);
+    font-size: var(--font-smaller);
+    margin: 0.5rem 0;
+    font-weight: var(--font-semibold);
+}
+
 .frontmatter-date-manager-reformat-note {
     color: var(--text-muted);
     font-size: var(--font-smaller);

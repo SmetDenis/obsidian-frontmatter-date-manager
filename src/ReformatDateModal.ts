@@ -505,12 +505,20 @@ export class ReformatDateModal extends Modal {
       }
     }
 
+    // Reformatting always replaces existing date strings in place (it only
+    // writes fields that already have a value), so it is unconditionally
+    // destructive — red Run + irreversibility note, no safe mode to gate on.
+    contentEl.createDiv({
+      cls: 'frontmatter-date-manager-reformat-warning',
+      text: 'This rewrites existing date values in place. It cannot be undone. Make a backup first.',
+    });
+
     // Buttons
     new Setting(contentEl)
       .addButton((btn) =>
         btn
           .setButtonText('Run')
-          .setCta()
+          .setWarning()
           .onClick(() => {
             void this.renderExecutePhase();
           }),
