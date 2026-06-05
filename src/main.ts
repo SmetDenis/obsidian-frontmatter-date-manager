@@ -734,12 +734,14 @@ ${e.message}`;
     const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
     if (!viewedKey) return;
 
-    // Respect filter rules (same checks as shouldFileBeIgnored)
-    if (file.extension !== 'md') return;
-    if (this.isExcalidrawFile(file)) return;
+    // Single source of truth for ignore checks (extension, Canvas.md,
+    // Excalidraw, filter rules, empty files) — never re-implement a subset here,
+    // it drifts out of sync with shouldFileBeIgnored. skipHashCheck is required:
+    // opening a file does not change its content, so the hash would always match
+    // the cache and the file would be wrongly ignored. The viewed stamp is
+    // rate-limited via shouldUpdateValue below instead.
     if (
-      this._compiledRules.length > 0 &&
-      isFileExcluded(file.path, this._compiledRules)
+      (await this.shouldFileBeIgnored(file, { skipHashCheck: true })).ignored
     ) {
       return;
     }
