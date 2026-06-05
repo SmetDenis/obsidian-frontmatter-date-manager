@@ -152,6 +152,7 @@ export class FindInversionsModal extends BaseBulkModal {
         dd.onChange((value: string) => {
           this.selectedStrategy = value as InversionFixStrategy;
           this.refreshRunButton();
+          this.refreshWarning();
         });
         this.selectedStrategy =
           this.plugin.settings.inversionFixStrategy ?? 'disabled';

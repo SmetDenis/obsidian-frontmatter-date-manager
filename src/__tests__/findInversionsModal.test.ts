@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { TFile } from 'obsidian';
-import { createPlugin } from './helpers';
+import { createPlugin, fakeWarnEl } from './helpers';
 import { FindInversionsModal } from '../FindInversionsModal';
+import { InversionFixStrategy } from '../inversionDetection';
 
 function createMockFile(path: string, ctime = 0, mtime = 0): TFile {
   return {
@@ -21,6 +22,14 @@ class TestableFindInversions extends FindInversionsModal {
   }
   public testIsRunDestructive() {
     return this.isRunDestructive();
+  }
+  public setStrategy(strategy: InversionFixStrategy) {
+    (this as any).selectedStrategy = strategy;
+  }
+  public refreshWarningInto(el: unknown, files: TFile[]) {
+    (this as any).warningEl = el;
+    (this as any).cachedFiles = files;
+    (this as any).refreshWarning();
   }
 }
 
@@ -126,5 +135,36 @@ describe('FindInversionsModal - destructive Run', () => {
   it('marks Run as destructive (red button)', () => {
     const modal = createModal();
     expect(modal.testIsRunDestructive()).toBe(true);
+  });
+});
+
+describe('FindInversionsModal - irreversibility warning', () => {
+  it('shows no warning while the strategy is disabled (review only)', () => {
+    const modal = createModal();
+    modal.setStrategy('disabled');
+    const el = fakeWarnEl();
+
+    modal.refreshWarningInto(el, [
+      createMockFile('a.md'),
+      createMockFile('b.md'),
+    ]);
+
+    expect(el.children).toHaveLength(0);
+  });
+
+  it('shows the irreversibility warning once a fix strategy is selected', () => {
+    const modal = createModal();
+    modal.setStrategy('updated-to-created');
+    const el = fakeWarnEl();
+
+    modal.refreshWarningInto(el, [
+      createMockFile('a.md'),
+      createMockFile('b.md'),
+      createMockFile('c.md'),
+    ]);
+
+    const warned = el.children.find((c) => /Irreversible/.test(c.text ?? ''));
+    expect(warned).toBeDefined();
+    expect(warned!.text).toContain('3');
   });
 });

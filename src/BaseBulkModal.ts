@@ -4,6 +4,7 @@ import FrontmatterDateManagerPlugin from './main';
 export abstract class BaseBulkModal extends Modal {
   protected plugin: FrontmatterDateManagerPlugin;
   private divContainer?: HTMLDivElement;
+  private warningEl?: HTMLElement;
   private settingsSection?: Setting;
   private isOpened = false;
   private cachedFiles: TFile[] | null = null;
@@ -149,17 +150,15 @@ export abstract class BaseBulkModal extends Modal {
     div.createEl('br');
     div.createEl('br');
 
-    const warning = this.getWarning(this.cachedFiles.length);
-    if (warning) {
-      div.createSpan({
-        text: warning,
-        cls: 'frontmatter-date-manager-settings-warn',
-      });
-      div.createEl('br');
-      div.createEl('br');
-    }
+    // Warning placeholder kept above the extra section but populated *after*
+    // it, so getWarning() can reflect state that renderExtraSection sets up
+    // (e.g. a strategy chosen from settings). Subclasses re-run
+    // refreshWarning() from interactive handlers when that state changes.
+    this.warningEl = div.createDiv();
 
     this.renderExtraSection(div, this.cachedFiles);
+
+    this.refreshWarning();
 
     this.settingsSection = new Setting(contentEl)
       .addButton((btn) => {
@@ -186,10 +185,29 @@ export abstract class BaseBulkModal extends Modal {
     this.runButtonRef.setDisabled(!this.canRun(this.cachedFiles ?? []));
   }
 
+  /**
+   * Re-render the warning text from the current getWarning() result. Mirrors
+   * refreshRunButton(): subclasses whose warning depends on interactive state
+   * call this from their change handlers so the message stays in sync.
+   */
+  protected refreshWarning(): void {
+    if (!this.warningEl) return;
+    this.warningEl.empty();
+    const warning = this.getWarning(this.cachedFiles?.length ?? 0);
+    if (!warning) return;
+    this.warningEl.createSpan({
+      text: warning,
+      cls: 'frontmatter-date-manager-settings-warn',
+    });
+    this.warningEl.createEl('br');
+    this.warningEl.createEl('br');
+  }
+
   onClose() {
     this.contentEl.empty();
     this.isOpened = false;
     this.cachedFiles = null;
     this.runButtonRef = null;
+    this.warningEl = undefined;
   }
 }
