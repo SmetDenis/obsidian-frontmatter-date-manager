@@ -143,10 +143,6 @@
     font-style: italic;
 }
 
-.frontmatter-date-manager-bulk-confirm input[type="text"] {
-    font-family: var(--font-monospace);
-}
-
 .frontmatter-date-manager-bulk-modal {
     .frontmatter-date-manager-progress-section {
         display: flex;

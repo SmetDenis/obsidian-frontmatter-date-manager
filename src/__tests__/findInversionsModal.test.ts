@@ -19,6 +19,9 @@ class TestableFindInversions extends FindInversionsModal {
   public testComputeInvertedFiles(files: TFile[]) {
     return this.computeInvertedFiles(files);
   }
+  public testIsRunDestructive() {
+    return this.isRunDestructive();
+  }
 }
 
 function createModal(
@@ -116,5 +119,12 @@ describe('FindInversionsModal - computeInvertedFiles', () => {
     });
     const result = modal.testComputeInvertedFiles([createMockFile('a.md')]);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('FindInversionsModal - destructive Run', () => {
+  it('marks Run as destructive (red button)', () => {
+    const modal = createModal();
+    expect(modal.testIsRunDestructive()).toBe(true);
   });
 });

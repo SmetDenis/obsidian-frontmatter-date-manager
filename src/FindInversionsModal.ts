@@ -63,6 +63,13 @@ export class FindInversionsModal extends BaseBulkModal {
     return files.length > 0 && this.selectedStrategy !== 'disabled';
   }
 
+  // Running this modal always rewrites created/updated on the inverted files;
+  // it is only ever enabled once a non-disabled strategy is chosen (see
+  // canRun), so Run is always destructive when clickable.
+  protected isRunDestructive(): boolean {
+    return true;
+  }
+
   protected async narrowFiles(files: TFile[]): Promise<TFile[]> {
     this.invertedEntries = this.computeInvertedFiles(files);
     return this.invertedEntries.map((e) => e.file);

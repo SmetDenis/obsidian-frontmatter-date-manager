@@ -304,16 +304,29 @@ export class RenameKeyModal extends Modal {
       }
     }
 
+    // Deleting the old key (default) or overwriting an existing new-key value
+    // destroys data; a pure copy (delete off, no conflicts) is reversible.
+    const isDestructive = this.deleteOldKey || conflictEntries.length > 0;
+    if (this.deleteOldKey) {
+      contentEl.createDiv({
+        cls: 'frontmatter-date-manager-rename-key-conflict-warning',
+        text: 'The old key will be deleted after copying. This cannot be undone. Make a backup first.',
+      });
+    }
+
     // Buttons
     new Setting(contentEl)
-      .addButton((btn) =>
-        btn
-          .setButtonText('Run')
-          .setCta()
-          .onClick(() => {
-            void this.renderExecutePhase();
-          }),
-      )
+      .addButton((btn) => {
+        btn.setButtonText('Run');
+        if (isDestructive) {
+          btn.setWarning();
+        } else {
+          btn.setCta();
+        }
+        btn.onClick(() => {
+          void this.renderExecutePhase();
+        });
+      })
       .addButton((btn) =>
         btn.setButtonText('Back').onClick(() => {
           this.renderConfigurePhase();

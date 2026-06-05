@@ -451,16 +451,29 @@ export class BulkPopulateTimestampsModal extends Modal {
       }
     }
 
+    // Restate the irreversibility at the point of action: the configure-phase
+    // overwrite warning is no longer visible on this screen.
+    const isOverwrite = this.overrideMode === 'overwrite-all';
+    if (isOverwrite) {
+      contentEl.createDiv({
+        cls: 'frontmatter-date-manager-populate-overwrite-warning',
+        text: 'Overwrite mode: existing dates will be replaced. This cannot be undone. Make a backup first.',
+      });
+    }
+
     // Buttons
     new Setting(contentEl)
-      .addButton((btn) =>
-        btn
-          .setButtonText('Run')
-          .setCta()
-          .onClick(() => {
-            void this.renderExecutePhase();
-          }),
-      )
+      .addButton((btn) => {
+        btn.setButtonText('Run');
+        if (isOverwrite) {
+          btn.setWarning();
+        } else {
+          btn.setCta();
+        }
+        btn.onClick(() => {
+          void this.renderExecutePhase();
+        });
+      })
       .addButton((btn) =>
         btn.setButtonText('Back').onClick(() => {
           this.renderConfigurePhase();

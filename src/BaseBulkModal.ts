@@ -9,7 +9,6 @@ export abstract class BaseBulkModal extends Modal {
   private cachedFiles: TFile[] | null = null;
   private runButtonRef: { setDisabled: (disabled: boolean) => void } | null =
     null;
-  private confirmMatched = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -39,11 +38,13 @@ export abstract class BaseBulkModal extends Modal {
     return files.length > 0;
   }
 
-  protected getConfirmationPrompt(): {
-    text: string;
-    match: string;
-  } | null {
-    return null;
+  /**
+   * Whether the Run button represents a destructive, irreversible write.
+   * Destructive modals override this to true so the button renders red
+   * (`setWarning()`); non-destructive ones keep the default accent (`setCta()`).
+   */
+  protected isRunDestructive(): boolean {
+    return false;
   }
 
   private async onRun() {
@@ -160,17 +161,14 @@ export abstract class BaseBulkModal extends Modal {
 
     this.renderExtraSection(div, this.cachedFiles);
 
-    const confirmation = this.getConfirmationPrompt();
-
     this.settingsSection = new Setting(contentEl)
       .addButton((btn) => {
-        const canStart = this.canRun(this.cachedFiles ?? []);
-        if (confirmation) {
-          btn.setWarning().setDisabled(true);
+        if (this.isRunDestructive()) {
+          btn.setWarning();
         } else {
           btn.setCta();
-          btn.setDisabled(!canStart);
         }
+        btn.setDisabled(!this.canRun(this.cachedFiles ?? []));
         btn.setButtonText('Run').onClick(() => {
           void this.onRun();
         });
@@ -181,35 +179,11 @@ export abstract class BaseBulkModal extends Modal {
           this.close();
         });
       });
-
-    if (confirmation) {
-      const confirmSetting = new Setting(contentEl)
-        .setName(confirmation.text)
-        .addText((text) => {
-          text.setPlaceholder(confirmation.match);
-          text.onChange((value) => {
-            this.confirmMatched = value.trim() === confirmation.match;
-            this.refreshRunButton();
-          });
-        });
-      confirmSetting.settingEl.addClass(
-        'frontmatter-date-manager-bulk-confirm',
-      );
-      contentEl.insertBefore(
-        confirmSetting.settingEl,
-        this.settingsSection.settingEl,
-      );
-    }
   }
 
   protected refreshRunButton(): void {
     if (!this.runButtonRef) return;
-    const canStart = this.canRun(this.cachedFiles ?? []);
-    const confirmation = this.getConfirmationPrompt();
-    const disabled = confirmation
-      ? !canStart || !this.confirmMatched
-      : !canStart;
-    this.runButtonRef.setDisabled(disabled);
+    this.runButtonRef.setDisabled(!this.canRun(this.cachedFiles ?? []));
   }
 
   onClose() {
@@ -217,6 +191,5 @@ export abstract class BaseBulkModal extends Modal {
     this.isOpened = false;
     this.cachedFiles = null;
     this.runButtonRef = null;
-    this.confirmMatched = false;
   }
 }

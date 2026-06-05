@@ -71,24 +71,23 @@ describe('BaseBulkModal.refreshRunButton', () => {
     expect(setDisabled).toHaveBeenCalledWith(false);
   });
 
-  it('respects confirmation gate when prompt is set', () => {
-    class ConfirmModal extends NoOpModal {
-      protected getConfirmationPrompt() {
-        return { text: 'type X', match: 'X' };
-      }
-    }
-    const modal = new ConfirmModal({} as any, createPlugin());
+  it('refresh only gates on canRun (no confirmation step)', () => {
+    const modal = new NoOpModal({} as any, createPlugin());
     const setDisabled = vi.fn();
     (modal as any).runButtonRef = { setDisabled };
     (modal as any).cachedFiles = [{ path: 'a.md' } as unknown as TFile];
-    // canRun true, but confirmation not matched yet
-    (modal as any).confirmMatched = false;
-    (modal as any).refreshRunButton();
-    expect(setDisabled).toHaveBeenLastCalledWith(true);
-
-    // canRun true AND confirmation matched
-    (modal as any).confirmMatched = true;
     (modal as any).refreshRunButton();
     expect(setDisabled).toHaveBeenLastCalledWith(false);
+
+    (modal as any).cachedFiles = [];
+    (modal as any).refreshRunButton();
+    expect(setDisabled).toHaveBeenLastCalledWith(true);
+  });
+});
+
+describe('BaseBulkModal.isRunDestructive', () => {
+  it('defaults to false (non-destructive Run)', () => {
+    const modal = new NoOpModal({} as any, createPlugin());
+    expect((modal as any).isRunDestructive()).toBe(false);
   });
 });
