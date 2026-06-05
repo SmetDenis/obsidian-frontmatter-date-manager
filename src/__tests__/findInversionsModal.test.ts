@@ -20,15 +20,16 @@ class TestableFindInversions extends FindInversionsModal {
   public testComputeInvertedFiles(files: TFile[]) {
     return this.computeInvertedFiles(files);
   }
-  public testIsRunDestructive() {
-    return this.isRunDestructive();
-  }
   public setStrategy(strategy: InversionFixStrategy) {
     (this as any).selectedStrategy = strategy;
   }
   public refreshWarningInto(el: unknown, files: TFile[]) {
     (this as any).warningEl = el;
-    (this as any).cachedFiles = files;
+    (this as any).invertedEntries = files.map((file) => ({
+      file,
+      created: new Date(2),
+      updated: new Date(1),
+    }));
     (this as any).refreshWarning();
   }
 }
@@ -128,13 +129,6 @@ describe('FindInversionsModal - computeInvertedFiles', () => {
     });
     const result = modal.testComputeInvertedFiles([createMockFile('a.md')]);
     expect(result).toHaveLength(0);
-  });
-});
-
-describe('FindInversionsModal - destructive Run', () => {
-  it('marks Run as destructive (red button)', () => {
-    const modal = createModal();
-    expect(modal.testIsRunDestructive()).toBe(true);
   });
 });
 

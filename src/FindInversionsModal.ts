@@ -1,5 +1,16 @@
-import { TFile, Setting, Notice } from 'obsidian';
-import { BaseBulkModal } from './BaseBulkModal';
+import { App, Notice, Setting, TFile } from 'obsidian';
+import FrontmatterDateManagerPlugin from './main';
+import { PhaseModal } from './bulk/PhaseModal';
+import { applyFrontmatterWrite } from './bulk/write';
+import { runBatchedScan } from './bulk/scan';
+import { runExecutePhase } from './bulk/executePhase';
+import {
+  renderHeader,
+  renderButtonBar,
+  renderSummary,
+  renderProgress,
+  ButtonBarHandle,
+} from './bulk/chrome';
 import {
   InversionFixStrategy,
   applyInversionFix,
@@ -11,6 +22,8 @@ export interface InvertedFileEntry {
   created: Date;
   updated: Date;
 }
+
+const PREVIEW_MAX_ROWS = 50;
 
 function formatDelta(created: Date, updated: Date): string {
   const ms = created.getTime() - updated.getTime();
@@ -28,119 +41,144 @@ function formatDelta(created: Date, updated: Date): string {
   return parts.join(' ');
 }
 
-const PREVIEW_MAX_ROWS = 50;
-
-export class FindInversionsModal extends BaseBulkModal {
+export class FindInversionsModal extends PhaseModal {
+  private plugin: FrontmatterDateManagerPlugin;
   private invertedEntries: InvertedFileEntry[] = [];
   private selectedStrategy: InversionFixStrategy = 'disabled';
+  private warningEl: HTMLElement | null = null;
+  private bar: ButtonBarHandle | null = null;
 
-  protected getTitle(count: number): string {
-    return `Found ${count} inverted files`;
+  constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
+    super(app);
+    this.plugin = plugin;
   }
 
-  protected getDescription(): string {
-    return (
-      'These files have updated date earlier than created date. ' +
-      'Choose a fix strategy below or close to review manually.'
-    );
+  onOpen() {
+    super.onOpen();
+    this.contentEl.addClass('frontmatter-date-manager-bulk-modal');
+    this.selectedStrategy =
+      this.plugin.settings.inversionFixStrategy ?? 'disabled';
+    void this.goTo(() => this.renderPreviewPhase());
   }
 
-  protected getWarning(count: number): string | null {
-    if (count === 0) return null;
-    if (this.selectedStrategy === 'disabled') return null;
-    return `This will modify ${count} files. Irreversible without a backup.`;
+  onClose() {
+    super.onClose();
+    this.invertedEntries = [];
+    this.warningEl = null;
+    this.bar = null;
   }
 
-  protected getRunningMessage(): string {
-    return 'Fixing inversions...';
-  }
-
-  protected skipHashCheck(): boolean {
-    return true;
-  }
-
-  protected canRun(files: TFile[]): boolean {
-    return files.length > 0 && this.selectedStrategy !== 'disabled';
-  }
-
-  // Running this modal always rewrites created/updated on the inverted files;
-  // it is only ever enabled once a non-disabled strategy is chosen (see
-  // canRun), so Run is always destructive when clickable.
-  protected isRunDestructive(): boolean {
-    return true;
-  }
-
-  protected async narrowFiles(files: TFile[]): Promise<TFile[]> {
-    this.invertedEntries = this.computeInvertedFiles(files);
-    return this.invertedEntries.map((e) => e.file);
-  }
-
-  protected computeInvertedFiles(files: TFile[]): InvertedFileEntry[] {
+  // Per-file detection — runs inside the batched scan so large vaults don't
+  // freeze. Detection is independent of the chosen fix strategy.
+  private computeInvertedForFile(file: TFile): InvertedFileEntry | null {
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
-    if (!createdKey || !updatedKey) return [];
+    if (!createdKey || !updatedKey) return null;
+    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!fm) return null;
+    const rawCreated = fm[createdKey] as string | number | undefined;
+    const rawUpdated = fm[updatedKey] as string | number | undefined;
+    if (rawCreated == null || rawUpdated == null) return null;
+    const created = this.plugin.parseDate(rawCreated);
+    const updated = this.plugin.parseDate(rawUpdated);
+    if (!created || !updated) return null;
+    if (isInversion(created, updated, tolerance)) {
+      return { file, created, updated };
+    }
+    return null;
+  }
 
+  // Preserved batch API (covered by findInversionsModal.test.ts).
+  computeInvertedFiles(files: TFile[]): InvertedFileEntry[] {
     const result: InvertedFileEntry[] = [];
     for (const file of files) {
-      const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
-      if (!fm) continue;
-      const rawCreated = fm[createdKey] as string | number | undefined;
-      const rawUpdated = fm[updatedKey] as string | number | undefined;
-      if (rawCreated == null || rawUpdated == null) continue;
-      const created = this.plugin.parseDate(rawCreated);
-      const updated = this.plugin.parseDate(rawUpdated);
-      if (!created || !updated) continue;
-      if (isInversion(created, updated, tolerance)) {
-        result.push({ file, created, updated });
-      }
+      const entry = this.computeInvertedForFile(file);
+      if (entry) result.push(entry);
     }
     return result;
   }
 
-  protected async processFile(file: TFile): Promise<void> {
+  async processFile(file: TFile): Promise<void> {
     if (this.selectedStrategy === 'disabled') return;
     const entry = this.invertedEntries.find((e) => e.file.path === file.path);
     if (!entry) return;
-    const cTime = new Date(file.stat.ctime);
-    const mTime = new Date(file.stat.mtime);
     const fixed = applyInversionFix(this.selectedStrategy, {
       created: entry.created,
       updated: entry.updated,
-      mtime: mTime,
-      ctime: cTime,
+      mtime: new Date(file.stat.mtime),
+      ctime: new Date(file.stat.ctime),
     });
     const newCreated = this.plugin.formatDate(fixed.created);
     const newUpdated = this.plugin.formatDate(fixed.updated);
     if (newCreated === undefined || newUpdated === undefined) return;
 
-    await this.app.fileManager.processFrontMatter(
+    await applyFrontmatterWrite(
+      this.app,
+      this.plugin,
       file,
       (frontmatter: Record<string, unknown>) => {
         frontmatter[this.plugin.settings.headerCreated] = newCreated;
         frontmatter[this.plugin.settings.headerUpdated] = newUpdated;
       },
     );
-    this.plugin.lastPluginWriteMtime.set(file.path, file.stat.mtime);
-    if (this.plugin.settings.enableContentHashCheck ?? true) {
-      await this.plugin.populateCacheForFile(file);
-    }
   }
 
-  protected renderExtraSection(parent: HTMLElement, files: TFile[]): void {
-    if (files.length === 0) {
-      parent.createEl('div', {
+  private refreshWarning(): void {
+    if (!this.warningEl) return;
+    this.warningEl.empty();
+    if (this.selectedStrategy === 'disabled') return;
+    if (this.invertedEntries.length === 0) return;
+    this.warningEl.createSpan({
+      text: `This will modify ${this.invertedEntries.length} files. Irreversible without a backup.`,
+      cls: 'frontmatter-date-manager-bulk-warning',
+    });
+  }
+
+  private async renderPreviewPhase() {
+    const { contentEl } = this;
+    renderHeader(contentEl, 'Finding inverted files…');
+
+    const allFiles = await this.plugin.getAllFilesPossiblyAffected({
+      skipHashCheck: true,
+    });
+    const progress = renderProgress(contentEl, allFiles.length);
+
+    const scanned = await runBatchedScan({
+      files: allFiles,
+      isOpen: () => this.isOpenState(),
+      onProgress: (done) => void progress.update(done),
+      compute: (file) => this.computeInvertedForFile(file),
+    });
+    if (!this.isOpenState()) return;
+    this.invertedEntries = scanned.filter(
+      (e): e is InvertedFileEntry => e !== null,
+    );
+
+    contentEl.empty();
+    renderHeader(
+      contentEl,
+      `Found ${this.invertedEntries.length} inverted files`,
+      'These files have updated date earlier than created date. Choose a fix strategy below or close to review manually.',
+    );
+
+    if (this.invertedEntries.length === 0) {
+      contentEl.createDiv({
+        cls: 'frontmatter-date-manager-bulk-summary',
         text: 'No inverted files found in the eligible set.',
-        cls: 'frontmatter-date-manager-inversion-empty',
+      });
+      renderButtonBar(contentEl, {
+        footer: { kind: 'close', onClick: () => void this.close() },
       });
       return;
     }
 
-    const strategySection = parent.createDiv({
-      cls: 'frontmatter-date-manager-inversion-strategy-section',
+    renderSummary(contentEl, {
+      changed: this.invertedEntries.length,
+      skipped: 0,
     });
 
-    new Setting(strategySection)
+    new Setting(contentEl)
       .setName('Fix strategy')
       .setDesc('How to resolve the inversion.')
       .addDropdown((dd) => {
@@ -148,37 +186,34 @@ export class FindInversionsModal extends BaseBulkModal {
         dd.addOption('created-to-updated', 'Set created = updated');
         dd.addOption('updated-to-created', 'Set updated = created');
         dd.addOption('max-all', 'Set both = max of all known dates');
-        dd.setValue(this.plugin.settings.inversionFixStrategy ?? 'disabled');
+        dd.setValue(this.selectedStrategy);
         dd.onChange((value: string) => {
           this.selectedStrategy = value as InversionFixStrategy;
-          this.refreshRunButton();
+          this.bar?.setPrimaryDisabled(this.selectedStrategy === 'disabled');
           this.refreshWarning();
         });
-        this.selectedStrategy =
-          this.plugin.settings.inversionFixStrategy ?? 'disabled';
       });
 
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
-    parent.createEl('div', {
+    contentEl.createDiv({
+      cls: 'frontmatter-date-manager-bulk-summary',
       text: `Tolerance: ${tolerance} seconds (configurable in plugin settings).`,
-      cls: 'frontmatter-date-manager-inversion-tolerance-hint',
     });
 
-    const table = parent.createEl('table', {
-      cls: 'frontmatter-date-manager-inversion-table',
+    const list = contentEl.createDiv({
+      cls: 'frontmatter-date-manager-bulk-preview-list',
     });
-    const header = table.createEl('tr');
-    header.createEl('th', { text: 'Path' });
-    header.createEl('th', { text: 'Created' });
-    header.createEl('th', { text: 'Updated' });
-    header.createEl('th', { text: 'Δ' });
-
+    const table = list.createEl('table', {
+      cls: 'frontmatter-date-manager-bulk-table',
+    });
+    const headerRow = table.createEl('tr');
+    for (const col of ['Path', 'Created', 'Updated', 'Δ']) {
+      headerRow.createEl('th', { text: col });
+    }
     const limit = Math.min(this.invertedEntries.length, PREVIEW_MAX_ROWS);
     for (let i = 0; i < limit; i++) {
       const entry = this.invertedEntries[i]!;
-      const row = table.createEl('tr', {
-        cls: 'frontmatter-date-manager-inversion-row',
-      });
+      const row = table.createEl('tr');
       row.createEl('td', { text: entry.file.path });
       row.createEl('td', { text: entry.created.toISOString() });
       row.createEl('td', { text: entry.updated.toISOString() });
@@ -187,15 +222,59 @@ export class FindInversionsModal extends BaseBulkModal {
         cls: 'frontmatter-date-manager-inversion-delta',
       });
     }
-
     if (this.invertedEntries.length > limit) {
-      parent.createEl('div', {
-        text: `...and ${this.invertedEntries.length - limit} more`,
+      contentEl.createDiv({
+        text: `…and ${this.invertedEntries.length - limit} more`,
+        cls: 'frontmatter-date-manager-bulk-summary',
       });
     }
+
+    this.warningEl = contentEl.createDiv();
+    this.refreshWarning();
+
+    this.bar = renderButtonBar(contentEl, {
+      primary: {
+        label: 'Run',
+        destructive: true,
+        disabled: this.selectedStrategy === 'disabled',
+        onClick: () => void this.renderExecutePhase(),
+      },
+      footer: { kind: 'cancel', onClick: () => void this.close() },
+    });
   }
 
-  protected async onComplete(): Promise<void> {
+  private async renderExecutePhase() {
+    const { contentEl } = this;
+    contentEl.empty();
+    renderHeader(contentEl, 'Fixing inversions…');
+
+    const items = this.invertedEntries.map((e) => e.file);
+    const progress = renderProgress(contentEl, items.length);
+
+    const { errors } = await runExecutePhase({
+      plugin: this.plugin,
+      items,
+      isOpen: () => this.isOpenState(),
+      processItem: (file) => this.processFile(file),
+      onProgress: (done) => void progress.update(done),
+      labelFor: (file) => file.path,
+    });
+    if (!this.isOpenState()) {
+      new Notice('Bulk operation stopped.', 2000);
+      return;
+    }
+
     new Notice(`Fixed ${this.invertedEntries.length} inversions.`, 4000);
+
+    contentEl.empty();
+    renderHeader(
+      contentEl,
+      errors > 0
+        ? `Done with ${errors} error(s). Check the console for details.`
+        : 'Done! You can safely close this modal.',
+    );
+    renderButtonBar(contentEl, {
+      footer: { kind: 'close', onClick: () => void this.close() },
+    });
   }
 }

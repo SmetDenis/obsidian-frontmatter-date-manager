@@ -1,7 +1,3 @@
-.frontmatter-date-manager-settings-warn {
-    color: var(--text-error)
-}
-
 .frontmatter-date-manager-hidden {
     display: none;
 }
@@ -143,77 +139,6 @@
     font-style: italic;
 }
 
-.frontmatter-date-manager-bulk-modal {
-    .frontmatter-date-manager-progress-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-
-        & progress {
-            flex: 1
-        }
-    }
-}
-
-/* Bulk Populate Timestamps Modal */
-.frontmatter-date-manager-bulk-populate-modal {
-
-    & .setting-item {
-        flex-wrap: wrap;
-    }
-
-    .frontmatter-date-manager-progress-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin: 0.75rem 0;
-
-        & progress {
-            flex: 1
-        }
-    }
-}
-
-.frontmatter-date-manager-populate-platform-warning {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.5;
-    margin: 0.75rem 0;
-
-    & ul {
-        margin: 0.25rem 0;
-        padding-left: 1.5rem;
-    }
-
-    & p {
-        margin: 0.5rem 0 0;
-    }
-}
-
-.frontmatter-date-manager-populate-platform-warning .frontmatter-date-manager-current-platform {
-    font-weight: var(--font-bold);
-    color: var(--text-accent);
-}
-
-.frontmatter-date-manager-populate-overwrite-warning {
-    color: var(--text-error);
-    font-weight: var(--font-bold);
-    margin: 0.5rem 0;
-}
-
-.frontmatter-date-manager-populate-auto-update-note {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.5;
-    margin: 0.75rem 0;
-}
-
-.frontmatter-date-manager-populate-summary {
-    color: var(--text-muted);
-    margin: 0.5rem 0;
-    font-size: var(--font-smaller);
-}
-
 /* Nested sub-settings (visually indented, tied to a parent toggle) */
 .frontmatter-date-manager-nested-setting {
     padding-left: 1.5rem;
@@ -236,7 +161,44 @@
     margin-bottom: 0.5rem;
 }
 
-.frontmatter-date-manager-populate-preview-list {
+/* ===== Bulk operation modals: shared chrome ===== */
+/* Every bulk modal adds .frontmatter-date-manager-bulk-modal to contentEl and
+   composes the helpers in src/bulk/chrome.ts, so these classes style all five
+   operations uniformly. */
+
+.frontmatter-date-manager-bulk-modal .setting-item {
+    flex-wrap: wrap;
+}
+
+.frontmatter-date-manager-bulk-progress-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.75rem 0;
+
+    & progress {
+        flex: 1;
+    }
+}
+
+.frontmatter-date-manager-bulk-summary {
+    color: var(--text-muted);
+    margin: 0.5rem 0;
+    font-size: var(--font-smaller);
+}
+
+.frontmatter-date-manager-bulk-warning {
+    color: var(--text-error);
+    font-size: var(--font-smaller);
+    margin: 0.5rem 0;
+    font-weight: var(--font-semibold);
+}
+
+.frontmatter-date-manager-bulk-conflict-row {
+    color: var(--text-warning);
+}
+
+.frontmatter-date-manager-bulk-preview-list {
     max-height: 400px;
     overflow-y: auto;
     border: 1px solid var(--background-modifier-border);
@@ -273,25 +235,42 @@
     }
 }
 
-/* Rename Key Modal */
-.frontmatter-date-manager-rename-key-modal {
+/* Populate: configure-phase platform / override notes */
+.frontmatter-date-manager-populate-platform-warning {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+    margin: 0.75rem 0;
 
-    & .setting-item {
-        flex-wrap: wrap;
+    & ul {
+        margin: 0.25rem 0;
+        padding-left: 1.5rem;
     }
 
-    .frontmatter-date-manager-progress-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin: 0.75rem 0;
-
-        & progress {
-            flex: 1
-        }
+    & p {
+        margin: 0.5rem 0 0;
     }
 }
 
+.frontmatter-date-manager-populate-platform-warning .frontmatter-date-manager-current-platform {
+    font-weight: var(--font-bold);
+    color: var(--text-accent);
+}
+
+.frontmatter-date-manager-populate-overwrite-warning {
+    color: var(--text-error);
+    font-weight: var(--font-bold);
+    margin: 0.5rem 0;
+}
+
+.frontmatter-date-manager-populate-auto-update-note {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    line-height: 1.5;
+    margin: 0.75rem 0;
+}
+
+/* Rename: configure-phase validation message */
 .frontmatter-date-manager-rename-key-validation {
     color: var(--text-error);
     font-size: var(--font-smaller);
@@ -299,58 +278,7 @@
     min-height: 1.2em;
 }
 
-.frontmatter-date-manager-rename-key-conflict-warning {
-    color: var(--text-warning);
-    font-size: var(--font-smaller);
-    margin: 0.5rem 0;
-    font-weight: var(--font-semibold);
-}
-
-.frontmatter-date-manager-rename-key-conflict-row {
-    color: var(--text-warning);
-}
-
-/* Reformat Date Modal */
-.frontmatter-date-manager-reformat-date-modal {
-
-    & .setting-item {
-        flex-wrap: wrap;
-    }
-
-    .frontmatter-date-manager-progress-section {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin: 0.75rem 0;
-
-        & progress {
-            flex: 1
-        }
-    }
-}
-
-.frontmatter-date-manager-reformat-format-preview {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    margin: 0.25rem 0;
-    font-family: var(--font-monospace);
-    min-height: 1.2em;
-}
-
-.frontmatter-date-manager-reformat-error {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin: 0.5rem 0;
-    font-weight: var(--font-semibold);
-}
-
-.frontmatter-date-manager-reformat-warning {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin: 0.5rem 0;
-    font-weight: var(--font-semibold);
-}
-
+/* Reformat: configure-phase auto-detect note */
 .frontmatter-date-manager-reformat-note {
     color: var(--text-muted);
     font-size: var(--font-smaller);
@@ -358,42 +286,7 @@
     margin: 0.75rem 0;
 }
 
-.frontmatter-date-manager-inversion-strategy-section {
-  margin-top: 12px;
-  margin-bottom: 12px;
-}
-
-.frontmatter-date-manager-inversion-empty {
-  color: var(--text-muted);
-  margin: 12px 0;
-}
-
-.frontmatter-date-manager-inversion-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
-}
-
-.frontmatter-date-manager-inversion-table th,
-.frontmatter-date-manager-inversion-table td {
-  padding: 4px 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  text-align: left;
-  font-family: var(--font-monospace);
-  font-size: var(--font-ui-small);
-}
-
-.frontmatter-date-manager-inversion-row td {
-  word-break: break-all;
-}
-
+/* Find inversions: delta cell accent in the preview table */
 .frontmatter-date-manager-inversion-delta {
-  color: var(--text-error);
-}
-
-.frontmatter-date-manager-inversion-tolerance-hint {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  margin-top: 4px;
-  margin-bottom: 12px;
+    color: var(--text-error);
 }

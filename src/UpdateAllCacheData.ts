@@ -1,39 +1,101 @@
-import { TFile } from 'obsidian';
-import { BaseBulkModal } from './BaseBulkModal';
+import { App, Notice, TFile } from 'obsidian';
+import FrontmatterDateManagerPlugin from './main';
+import { PhaseModal } from './bulk/PhaseModal';
+import { runExecutePhase } from './bulk/executePhase';
+import { renderHeader, renderButtonBar, renderProgress } from './bulk/chrome';
 
-export class UpdateAllCacheData extends BaseBulkModal {
-  protected getTitle(fileCount: number): string {
-    return `Populate hash cache for ${fileCount} files`;
+export class UpdateAllCacheData extends PhaseModal {
+  private plugin: FrontmatterDateManagerPlugin;
+  private files: TFile[] = [];
+
+  constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
+    super(app);
+    this.plugin = plugin;
   }
 
-  protected getDescription(): string {
-    return 'This will update all cache data on files affected by this plugin.';
+  onOpen() {
+    super.onOpen();
+    this.contentEl.addClass('frontmatter-date-manager-bulk-modal');
+    void this.goTo(() => this.renderConfirmPhase());
   }
 
-  protected getWarning(): string | null {
-    return null;
+  onClose() {
+    super.onClose();
+    this.files = [];
   }
 
-  protected getRunningMessage(): string {
-    return 'Updating cache...';
+  private async renderConfirmPhase() {
+    const { contentEl } = this;
+    renderHeader(contentEl, 'Loading files…');
+    this.files = await this.plugin.getAllFilesPossiblyAffected({
+      skipHashCheck: true,
+    });
+    if (!this.isOpenState()) return;
+
+    contentEl.empty();
+    renderHeader(
+      contentEl,
+      `Populate hash cache for ${this.files.length} files`,
+      'This will update all cache data on files affected by this plugin.',
+    );
+    renderButtonBar(contentEl, {
+      primary: {
+        label: 'Run',
+        destructive: false,
+        disabled: this.files.length === 0,
+        onClick: () => void this.renderExecutePhase(),
+      },
+      footer: { kind: 'cancel', onClick: () => void this.close() },
+    });
   }
 
-  // Rebuilding the cache is intentional bulk processing: it must re-hash every
-  // eligible file, not skip the ones whose cached hash already matches.
-  protected skipHashCheck(): boolean {
-    return true;
+  // Rebuild core — extracted so it is testable without the DOM. Rebuilding the
+  // cache is intentional bulk processing; populateCacheForFileDirect mutates the
+  // cache without marking it dirty (batched for performance), so onComplete must
+  // evict + mark dirty + flush, otherwise the rebuild is lost on reload.
+  protected async rebuildAll(
+    onProgress: (done: number, total: number) => void,
+  ): Promise<{ processed: number; errors: number }> {
+    return runExecutePhase({
+      plugin: this.plugin,
+      items: this.files,
+      isOpen: () => this.isOpenState(),
+      processItem: (file) =>
+        this.plugin.populateCacheForFileDirect(file).then(() => {}),
+      onProgress,
+      labelFor: (file) => file.path,
+      onComplete: async () => {
+        this.plugin.evictOldestCacheEntries();
+        this.plugin.markHashCacheDirty();
+        await this.plugin.flushHashCache();
+      },
+    });
   }
 
-  protected async processFile(file: TFile): Promise<void> {
-    await this.plugin.populateCacheForFileDirect(file);
-  }
+  private async renderExecutePhase() {
+    const { contentEl } = this;
+    contentEl.empty();
+    renderHeader(contentEl, 'Updating cache…');
 
-  protected async onComplete(): Promise<void> {
-    this.plugin.evictOldestCacheEntries();
-    // populateCacheForFileDirect() mutates the cache without marking it dirty
-    // (batched for performance), so we must mark dirty here — otherwise
-    // flushHashCache() short-circuits and the rebuild is lost on reload.
-    this.plugin.markHashCacheDirty();
-    await this.plugin.flushHashCache();
+    const progress = renderProgress(contentEl, this.files.length);
+
+    const { errors } = await this.rebuildAll(
+      (done) => void progress.update(done),
+    );
+    if (!this.isOpenState()) {
+      new Notice('Bulk operation stopped.', 2000);
+      return;
+    }
+
+    contentEl.empty();
+    renderHeader(
+      contentEl,
+      errors > 0
+        ? `Done with ${errors} error(s). Check the console for details.`
+        : 'Done! You can safely close this modal.',
+    );
+    renderButtonBar(contentEl, {
+      footer: { kind: 'close', onClick: () => void this.close() },
+    });
   }
 }

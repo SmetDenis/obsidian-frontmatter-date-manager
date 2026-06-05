@@ -1,8 +1,21 @@
-import { App, Modal, Notice, Setting, TFile } from 'obsidian';
+import { App, Notice, Setting, TFile } from 'obsidian';
 import { format, parse, parseISO } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import FrontmatterDateManagerPlugin from './main';
 import { epochNumberToDate } from './utils';
+import { PhaseModal } from './bulk/PhaseModal';
+import { applyFrontmatterWrite } from './bulk/write';
+import { runBatchedScan } from './bulk/scan';
+import { runExecutePhase } from './bulk/executePhase';
+import {
+  renderHeader,
+  renderButtonBar,
+  renderWarning,
+  renderSummary,
+  renderDiffTable,
+  renderProgress,
+  PREVIEW_MAX_ROWS,
+} from './bulk/chrome';
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
 
@@ -19,9 +32,6 @@ export interface ReformatPreviewEntry {
   viewedError: boolean;
   willChange: boolean;
 }
-
-const PREVIEW_MAX_ROWS = 100;
-const SCAN_BATCH_SIZE = 50;
 
 /**
  * Common date formats to try when auto-detecting.
@@ -51,11 +61,10 @@ const COMMON_DATE_FORMATS = [
   'yyyyMMdd',
 ];
 
-export class ReformatDateModal extends Modal {
+export class ReformatDateModal extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
   private reformatScope: ReformatScope = 'all';
   private previewEntries: ReformatPreviewEntry[] = [];
-  private isOpen = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -63,14 +72,15 @@ export class ReformatDateModal extends Modal {
   }
 
   onOpen() {
-    this.isOpen = true;
-    this.contentEl.addClass('frontmatter-date-manager-reformat-date-modal');
-    this.renderConfigurePhase();
+    super.onOpen();
+    this.contentEl.addClass('frontmatter-date-manager-bulk-modal');
+    void this.goTo(() => {
+      this.renderConfigurePhase();
+    });
   }
 
   onClose() {
-    this.contentEl.empty();
-    this.isOpen = false;
+    super.onClose();
     this.previewEntries = [];
   }
 
@@ -150,12 +160,10 @@ export class ReformatDateModal extends Modal {
 
   private renderConfigurePhase() {
     const { contentEl } = this;
-    contentEl.empty();
 
-    contentEl.createEl('h2', { text: 'Standardize date format' });
-
-    const subtitle = contentEl.createEl('p');
-    subtitle.appendText(
+    renderHeader(
+      contentEl,
+      'Standardize date format',
       'Parse existing date values and rewrite them using the current format from settings.',
     );
 
@@ -194,21 +202,23 @@ export class ReformatDateModal extends Modal {
       text: 'Dates are auto-detected from common formats (ISO 8601, European, US, numeric timestamps) and rewritten in your current format.',
     });
 
-    // Buttons
-    new Setting(contentEl)
-      .addButton((btn) => {
-        btn
-          .setButtonText('Scan & preview')
-          .setCta()
-          .onClick(() => {
+    renderButtonBar(contentEl, {
+      primary: {
+        label: 'Scan & preview',
+        destructive: false,
+        onClick: () => {
+          void this.goTo(() => {
             void this.renderPreviewPhase();
           });
-      })
-      .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => {
+        },
+      },
+      footer: {
+        kind: 'cancel',
+        onClick: () => {
           this.close();
-        }),
-      );
+        },
+      },
+    });
   }
 
   // --- Computation ---
@@ -335,204 +345,132 @@ export class ReformatDateModal extends Modal {
       return;
     }
 
-    contentEl.empty();
-
-    const header = contentEl.createEl('h2', { text: 'Scanning files...' });
-
-    const progressWrapper = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-progress-section',
-    });
-    const progressBar = progressWrapper.createEl('progress');
-    const progressCounter = progressWrapper.createEl('span');
-
+    renderHeader(contentEl, 'Scanning files…');
     const allFiles = this.app.vault.getMarkdownFiles();
-    progressBar.setAttr('max', allFiles.length);
+    const progress = renderProgress(contentEl, allFiles.length);
 
-    this.previewEntries = [];
-
-    for (let i = 0; i < allFiles.length; i++) {
-      if (!this.isOpen) return;
-
-      this.previewEntries.push(this.computePreviewEntry(allFiles[i]!));
-
-      if ((i + 1) % SCAN_BATCH_SIZE === 0 || i === allFiles.length - 1) {
-        progressBar.setAttr('value', i + 1);
-        progressCounter.setText(`${i + 1}/${allFiles.length}`);
-        // Yield to event loop between batches (see BulkPopulateTimestampsModal).
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
-      }
-    }
+    this.previewEntries = await runBatchedScan({
+      files: allFiles,
+      isOpen: () => this.isOpenState(),
+      onProgress: (done) => {
+        progress.update(done);
+      },
+      compute: (file) => this.computePreviewEntry(file),
+    });
+    if (!this.isOpenState()) return;
 
     contentEl.empty();
 
-    const willChangeEntries = this.previewEntries.filter((e) => e.willChange);
+    const willChange = this.previewEntries.filter((e) => e.willChange);
     const errorEntries = this.previewEntries.filter(
       (e) => e.createdError || e.updatedError || e.viewedError,
     );
-    const skippedEntries = this.previewEntries.filter(
+    const skipped = this.previewEntries.filter(
       (e) =>
         !e.willChange && !e.createdError && !e.updatedError && !e.viewedError,
     );
 
-    header.setText('Preview: standardize dates');
-    contentEl.append(header);
+    renderHeader(contentEl, 'Preview: standardize dates');
 
-    if (willChangeEntries.length === 0) {
+    if (willChange.length === 0) {
       contentEl.createEl('p', {
         text: 'No files need reformatting. All dates are already in the target format or could not be parsed.',
-        cls: 'frontmatter-date-manager-populate-summary',
+        cls: 'frontmatter-date-manager-bulk-summary',
       });
-
       if (errorEntries.length > 0) {
-        contentEl.createDiv({
-          cls: 'frontmatter-date-manager-reformat-error',
-          text: `${errorEntries.length} file(s) have dates that could not be parsed.`,
-        });
+        renderWarning(
+          contentEl,
+          `${errorEntries.length} file(s) have dates that could not be parsed.`,
+        );
       }
-
-      new Setting(contentEl).addButton((btn) =>
-        btn.setButtonText('Close').onClick(() => {
-          this.close();
-        }),
-      );
+      renderButtonBar(contentEl, {
+        footer: {
+          kind: 'close',
+          onClick: () => {
+            this.close();
+          },
+        },
+      });
       return;
     }
 
-    // Summary
-    contentEl.createEl('p', {
-      text: `${willChangeEntries.length} file(s) will be modified, ${skippedEntries.length} skipped.`,
-      cls: 'frontmatter-date-manager-populate-summary',
+    renderSummary(contentEl, {
+      changed: willChange.length,
+      skipped: skipped.length,
+      errors: errorEntries.length,
     });
-
-    // Error warning
     if (errorEntries.length > 0) {
-      contentEl.createDiv({
-        cls: 'frontmatter-date-manager-reformat-error',
-        text: `${errorEntries.length} file(s) have dates that could not be parsed. These will be skipped.`,
-      });
+      renderWarning(
+        contentEl,
+        `${errorEntries.length} file(s) have dates that could not be parsed. These will be skipped.`,
+      );
     }
 
-    // Preview table
-    const previewList = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-populate-preview-list',
-    });
-    const table = previewList.createEl('table');
+    const columns = ['File'];
+    if (includeCreated && createdKey) columns.push(`Created (${createdKey})`);
+    if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
+    if (includeViewed && viewedKey) columns.push(`Viewed (${viewedKey})`);
 
-    const thead = table.createEl('thead');
-    const headerRow = thead.createEl('tr');
-    headerRow.createEl('th', { text: 'File' });
-    if (includeCreated && createdKey) {
-      headerRow.createEl('th', { text: `Created (${createdKey})` });
-    }
-    if (includeUpdated && updatedKey) {
-      headerRow.createEl('th', { text: `Updated (${updatedKey})` });
-    }
-    if (includeViewed && viewedKey) {
-      headerRow.createEl('th', { text: `Viewed (${viewedKey})` });
-    }
-
-    const tbody = table.createEl('tbody');
-    const displayCount = Math.min(willChangeEntries.length, PREVIEW_MAX_ROWS);
-
-    for (let i = 0; i < displayCount; i++) {
-      const entry = willChangeEntries[i]!;
-      const row = tbody.createEl('tr');
-      row.createEl('td', { text: entry.file.path });
-
+    const rows = willChange.slice(0, PREVIEW_MAX_ROWS).map((entry) => {
+      const row = [entry.file.path];
       if (includeCreated && createdKey) {
-        row.createEl('td', {
-          text: this.formatPreviewCell(
+        row.push(
+          this.formatPreviewCell(
             entry.createdOldValue,
             entry.createdNewValue,
             entry.createdError,
           ),
-        });
+        );
       }
       if (includeUpdated && updatedKey) {
-        row.createEl('td', {
-          text: this.formatPreviewCell(
+        row.push(
+          this.formatPreviewCell(
             entry.updatedOldValue,
             entry.updatedNewValue,
             entry.updatedError,
           ),
-        });
+        );
       }
       if (includeViewed && viewedKey) {
-        row.createEl('td', {
-          text: this.formatPreviewCell(
+        row.push(
+          this.formatPreviewCell(
             entry.viewedOldValue,
             entry.viewedNewValue,
             entry.viewedError,
           ),
-        });
+        );
       }
-    }
-
-    if (willChangeEntries.length > PREVIEW_MAX_ROWS) {
-      const moreRow = tbody.createEl('tr');
-      const moreCell = moreRow.createEl('td');
-      moreCell.setAttr(
-        'colspan',
-        String(
-          1 +
-            (includeCreated && createdKey ? 1 : 0) +
-            (includeUpdated && updatedKey ? 1 : 0) +
-            (includeViewed && viewedKey ? 1 : 0),
-        ),
-      );
-      moreCell.setText(
-        `\u2026 and ${willChangeEntries.length - PREVIEW_MAX_ROWS} more file(s)`,
-      );
-      moreCell.addClass('frontmatter-date-manager-populate-summary');
-    }
-
-    // Skipped files
-    if (skippedEntries.length > 0) {
-      const details = contentEl.createEl('details');
-      details.createEl('summary', {
-        text: `${skippedEntries.length} file(s) skipped (already in target format or no date value)`,
-      });
-      const skippedList = details.createEl('ul');
-      const skippedDisplay = Math.min(skippedEntries.length, PREVIEW_MAX_ROWS);
-      for (let i = 0; i < skippedDisplay; i++) {
-        skippedList.createEl('li', { text: skippedEntries[i]!.file.path });
-      }
-      if (skippedEntries.length > PREVIEW_MAX_ROWS) {
-        skippedList.createEl('li', {
-          text: `\u2026 and ${skippedEntries.length - PREVIEW_MAX_ROWS} more`,
-          cls: 'frontmatter-date-manager-populate-summary',
-        });
-      }
-    }
-
-    // Reformatting always replaces existing date strings in place (it only
-    // writes fields that already have a value), so it is unconditionally
-    // destructive — red Run + irreversibility note, no safe mode to gate on.
-    contentEl.createDiv({
-      cls: 'frontmatter-date-manager-reformat-warning',
-      text: 'This rewrites existing date values in place. It cannot be undone. Make a backup first.',
+      return row;
     });
 
-    // Buttons
-    new Setting(contentEl)
-      .addButton((btn) =>
-        btn
-          .setButtonText('Run')
-          .setWarning()
-          .onClick(() => {
-            void this.renderExecutePhase();
-          }),
-      )
-      .addButton((btn) =>
-        btn.setButtonText('Back').onClick(() => {
-          this.renderConfigurePhase();
-        }),
-      )
-      .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => {
+    renderDiffTable(contentEl, {
+      columns,
+      rows,
+      maxRows: PREVIEW_MAX_ROWS,
+      moreCount: Math.max(0, willChange.length - PREVIEW_MAX_ROWS),
+    });
+
+    renderWarning(
+      contentEl,
+      'This rewrites existing date values in place. It cannot be undone. Make a backup first.',
+    );
+
+    renderButtonBar(contentEl, {
+      primary: {
+        label: 'Run',
+        destructive: true,
+        onClick: () => void this.renderExecutePhase(),
+      },
+      back: () => {
+        this.back();
+      },
+      footer: {
+        kind: 'cancel',
+        onClick: () => {
           this.close();
-        }),
-      );
+        },
+      },
+    });
   }
 
   private formatPreviewCell(
@@ -543,9 +481,9 @@ export class ReformatDateModal extends Modal {
     if (isError && oldValue !== null) {
       return `${String(oldValue)} (parse error)`;
     }
-    if (newValue === null) return '\u2014';
+    if (newValue === null) return '—';
     if (oldValue !== null) {
-      return `${String(oldValue)} \u2192 ${String(newValue)}`;
+      return `${String(oldValue)} → ${String(newValue)}`;
     }
     return String(newValue);
   }
@@ -554,77 +492,48 @@ export class ReformatDateModal extends Modal {
 
   private async renderExecutePhase() {
     const { contentEl } = this;
+    contentEl.empty();
+    renderHeader(contentEl, 'Reformatting dates…');
+
+    const items = this.previewEntries.filter((e) => e.willChange);
+    const progress = renderProgress(contentEl, items.length);
+
+    const { processed, errors } = await runExecutePhase({
+      plugin: this.plugin,
+      items,
+      isOpen: () => this.isOpenState(),
+      processItem: async (entry) => {
+        const currentFile = this.app.vault.getAbstractFileByPath(
+          entry.file.path,
+        );
+        if (!currentFile || !(currentFile instanceof TFile)) return;
+        await this.applyReformat(currentFile, entry);
+      },
+      onProgress: (done) => {
+        progress.update(done);
+      },
+      labelFor: (entry) => entry.file.path,
+    });
+    if (!this.isOpenState()) {
+      new Notice('Reformat stopped.', 2000);
+      return;
+    }
 
     contentEl.empty();
-
-    const header = contentEl.createEl('h2', {
-      text: 'Reformatting dates...',
-    });
-
-    const entriesToProcess = this.previewEntries.filter((e) => e.willChange);
-
-    const wrapperBar = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-progress-section',
-    });
-    const progress = wrapperBar.createEl('progress');
-    progress.setAttr('max', entriesToProcess.length);
-    const fileCounter = wrapperBar.createEl('span');
-
-    const updateCount = (count: number) => {
-      progress.setAttr('value', count);
-      fileCounter.setText(`${count}/${entriesToProcess.length}`);
-    };
-    updateCount(0);
-
-    let errorCount = 0;
-    let processedCount = 0;
-    this.plugin.bulkRunning = true;
-
-    try {
-      for (let i = 0; i < entriesToProcess.length; i++) {
-        if (!this.isOpen) {
-          new Notice('Reformat stopped.', 2000);
-          return;
-        }
-        updateCount(i + 1);
-
-        const entry = entriesToProcess[i]!;
-        try {
-          const currentFile = this.app.vault.getAbstractFileByPath(
-            entry.file.path,
-          );
-          if (!currentFile || !(currentFile instanceof TFile)) {
-            continue;
-          }
-
-          await this.applyReformat(currentFile, entry);
-          processedCount++;
-        } catch (e: unknown) {
-          errorCount++;
-          this.plugin.logError(
-            'Error reformatting dates for',
-            entry.file.path,
-            e,
-          );
-        }
-      }
-    } finally {
-      this.plugin.bulkRunning = false;
-    }
-
-    let doneText = `Done! ${processedCount} file(s) updated.`;
-    if (errorCount > 0) {
-      doneText = `Done with ${errorCount} error(s). Check the console for details.`;
-    }
-
-    header.setText(doneText);
-    wrapperBar.remove();
-
-    new Setting(contentEl).addButton((btn) =>
-      btn.setButtonText('Close').onClick(() => {
-        this.close();
-      }),
+    renderHeader(
+      contentEl,
+      errors > 0
+        ? `Done with ${errors} error(s). Check the console for details.`
+        : `Done! ${processed} file(s) updated.`,
     );
+    renderButtonBar(contentEl, {
+      footer: {
+        kind: 'close',
+        onClick: () => {
+          this.close();
+        },
+      },
+    });
   }
 
   protected async applyReformat(
@@ -636,8 +545,9 @@ export class ReformatDateModal extends Modal {
     const viewedKey = (
       this.plugin.settings.headerLastViewed ?? 'viewed'
     ).trim();
-
-    await this.app.fileManager.processFrontMatter(
+    await applyFrontmatterWrite(
+      this.app,
+      this.plugin,
       currentFile,
       (frontmatter: Record<string, unknown>) => {
         if (entry.createdNewValue !== null && createdKey) {
@@ -651,16 +561,5 @@ export class ReformatDateModal extends Modal {
         }
       },
     );
-    // Do not preserve mtime: Obsidian must detect the change so an open editor
-    // re-renders. Suppress the resulting self-triggered modify event via
-    // lastPluginWriteMtime and refresh the hash cache so the stale cache cannot
-    // make handleFileChange spuriously re-stamp `updated`.
-    this.plugin.lastPluginWriteMtime.set(
-      currentFile.path,
-      currentFile.stat.mtime,
-    );
-    if (this.plugin.settings.enableContentHashCheck ?? true) {
-      await this.plugin.populateCacheForFile(currentFile);
-    }
   }
 }

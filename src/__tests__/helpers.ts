@@ -17,7 +17,7 @@ export interface FakeChild {
 
 /**
  * Minimal recorder element implementing the tiny subset of the Obsidian DOM
- * helper API that `BaseBulkModal.refreshWarning()` uses (`empty`,
+ * helper API that `FindInversionsModal.refreshWarning()` uses (`empty`,
  * `createSpan`, `createEl`). Records appended children so tests can assert
  * what was rendered.
  */

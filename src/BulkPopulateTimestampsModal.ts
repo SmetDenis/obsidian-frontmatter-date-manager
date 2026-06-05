@@ -1,5 +1,18 @@
-import { App, Modal, Notice, Platform, Setting, TFile } from 'obsidian';
+import { App, Notice, Platform, Setting, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
+import { PhaseModal } from './bulk/PhaseModal';
+import { applyFrontmatterWrite } from './bulk/write';
+import { runBatchedScan } from './bulk/scan';
+import { runExecutePhase } from './bulk/executePhase';
+import {
+  renderHeader,
+  renderButtonBar,
+  renderWarning,
+  renderSummary,
+  renderDiffTable,
+  renderProgress,
+  PREVIEW_MAX_ROWS,
+} from './bulk/chrome';
 
 export type PopulateMode = 'created' | 'updated' | 'both';
 export type OverrideMode = 'fill-missing' | 'overwrite-all';
@@ -13,15 +26,11 @@ export interface FilePreviewEntry {
   willChange: boolean;
 }
 
-const PREVIEW_MAX_ROWS = 100;
-const SCAN_BATCH_SIZE = 50;
-
-export class BulkPopulateTimestampsModal extends Modal {
+export class BulkPopulateTimestampsModal extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
   private populateMode: PopulateMode = 'both';
   private overrideMode: OverrideMode = 'fill-missing';
   private previewEntries: FilePreviewEntry[] = [];
-  private isOpen = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -29,14 +38,15 @@ export class BulkPopulateTimestampsModal extends Modal {
   }
 
   onOpen() {
-    this.isOpen = true;
-    this.contentEl.addClass('frontmatter-date-manager-bulk-populate-modal');
-    this.renderConfigurePhase();
+    super.onOpen();
+    this.contentEl.addClass('frontmatter-date-manager-bulk-modal');
+    void this.goTo(() => {
+      this.renderConfigurePhase();
+    });
   }
 
   onClose() {
-    this.contentEl.empty();
-    this.isOpen = false;
+    super.onClose();
     this.previewEntries = [];
   }
 
@@ -108,26 +118,26 @@ export class BulkPopulateTimestampsModal extends Modal {
     autoUpdateNote.createEl('br');
     autoUpdateNote.appendText(
       'If auto-update has been active, filesystem dates (ctime/mtime) ' +
-        'may already reflect the plugin\u2019s modifications, not the original file dates. ' +
+        'may already reflect the plugin’s modifications, not the original file dates. ' +
         'For best results, use this feature before enabling auto-update ' +
         'or right after installing the plugin.',
     );
 
-    // Buttons
-    new Setting(contentEl)
-      .addButton((btn) =>
-        btn
-          .setButtonText('Scan & preview')
-          .setCta()
-          .onClick(() => {
-            void this.renderPreviewPhase();
-          }),
-      )
-      .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => {
+    renderButtonBar(contentEl, {
+      primary: {
+        label: 'Scan & preview',
+        destructive: false,
+        onClick: () => {
+          void this.goTo(() => this.renderPreviewPhase());
+        },
+      },
+      footer: {
+        kind: 'cancel',
+        onClick: () => {
           this.close();
-        }),
-      );
+        },
+      },
+    });
   }
 
   private updateWarnings(
@@ -293,7 +303,6 @@ export class BulkPopulateTimestampsModal extends Modal {
     const { contentEl } = this;
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
-
     const includeCreated =
       this.populateMode === 'created' || this.populateMode === 'both';
     const includeUpdated =
@@ -309,190 +318,111 @@ export class BulkPopulateTimestampsModal extends Modal {
       return;
     }
 
-    contentEl.empty();
-
-    const header = contentEl.createEl('h2', {
-      text: 'Scanning files...',
-    });
-
-    const progressWrapper = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-progress-section',
-    });
-    const progressBar = progressWrapper.createEl('progress');
-    const progressCounter = progressWrapper.createEl('span');
-
-    // Get eligible files
+    renderHeader(contentEl, 'Scanning files…');
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: true,
     });
-    progressBar.setAttr('max', allFiles.length);
+    const progress = renderProgress(contentEl, allFiles.length);
 
-    // Compute preview entries in batches
-    this.previewEntries = [];
-    for (let i = 0; i < allFiles.length; i++) {
-      if (!this.isOpen) return;
+    this.previewEntries = await runBatchedScan({
+      files: allFiles,
+      isOpen: () => this.isOpenState(),
+      onProgress: (done) => {
+        progress.update(done);
+      },
+      compute: (file) => this.computePreviewEntry(file),
+    });
+    if (!this.isOpenState()) return;
 
-      this.previewEntries.push(this.computePreviewEntry(allFiles[i]!));
-
-      if ((i + 1) % SCAN_BATCH_SIZE === 0 || i === allFiles.length - 1) {
-        progressBar.setAttr('value', i + 1);
-        progressCounter.setText(`${i + 1}/${allFiles.length}`);
-        // Yield to browser event loop between batches to prevent UI freeze
-        // on large vaults (10k+ files).
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
-      }
-    }
-
-    // Render results
     contentEl.empty();
 
-    const willChangeEntries = this.previewEntries.filter((e) => e.willChange);
-    const skippedEntries = this.previewEntries.filter((e) => !e.willChange);
+    const willChange = this.previewEntries.filter((e) => e.willChange);
+    const skipped = this.previewEntries.filter((e) => !e.willChange);
 
-    header.setText('Preview: populate timestamps');
-    contentEl.append(header);
+    renderHeader(contentEl, 'Preview: populate timestamps');
 
-    if (willChangeEntries.length === 0) {
+    if (willChange.length === 0) {
       contentEl.createEl('p', {
         text: 'No files need updating. All eligible files already have the requested timestamps.',
-        cls: 'frontmatter-date-manager-populate-summary',
+        cls: 'frontmatter-date-manager-bulk-summary',
       });
-
-      new Setting(contentEl).addButton((btn) =>
-        btn.setButtonText('Close').onClick(() => {
-          this.close();
-        }),
-      );
+      renderButtonBar(contentEl, {
+        footer: {
+          kind: 'close',
+          onClick: () => {
+            this.close();
+          },
+        },
+      });
       return;
     }
 
-    // Summary
-    contentEl.createEl('p', {
-      text: `${willChangeEntries.length} file(s) will be modified, ${skippedEntries.length} skipped (already have dates).`,
-      cls: 'frontmatter-date-manager-populate-summary',
+    renderSummary(contentEl, {
+      changed: willChange.length,
+      skipped: skipped.length,
     });
 
-    // Scrollable preview table
-    const previewList = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-populate-preview-list',
-    });
-    const table = previewList.createEl('table');
+    const columns = ['File'];
+    if (includeCreated && createdKey) columns.push(`Created (${createdKey})`);
+    if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
 
-    // Header
-    const thead = table.createEl('thead');
-    const headerRow = thead.createEl('tr');
-    headerRow.createEl('th', { text: 'File' });
-    if (includeCreated && createdKey) {
-      headerRow.createEl('th', { text: `Created (${createdKey})` });
-    }
-    if (includeUpdated && updatedKey) {
-      headerRow.createEl('th', { text: `Updated (${updatedKey})` });
-    }
-
-    // Body — files to change
-    const tbody = table.createEl('tbody');
-    const displayCount = Math.min(willChangeEntries.length, PREVIEW_MAX_ROWS);
-
-    for (let i = 0; i < displayCount; i++) {
-      const entry = willChangeEntries[i]!;
-      const row = tbody.createEl('tr');
-      row.createEl('td', { text: entry.file.path });
+    const rows = willChange.slice(0, PREVIEW_MAX_ROWS).map((entry) => {
+      const row = [entry.file.path];
       if (includeCreated && createdKey) {
-        row.createEl('td', {
-          text: this.formatPreviewValue(
-            entry.proposedCreated,
-            entry.existingCreated,
-          ),
-        });
+        row.push(
+          this.formatPreviewValue(entry.proposedCreated, entry.existingCreated),
+        );
       }
       if (includeUpdated && updatedKey) {
-        row.createEl('td', {
-          text: this.formatPreviewValue(
-            entry.proposedUpdated,
-            entry.existingUpdated,
-          ),
-        });
+        row.push(
+          this.formatPreviewValue(entry.proposedUpdated, entry.existingUpdated),
+        );
       }
-    }
+      return row;
+    });
 
-    if (willChangeEntries.length > PREVIEW_MAX_ROWS) {
-      const moreRow = tbody.createEl('tr');
-      const moreCell = moreRow.createEl('td');
-      moreCell.setAttr(
-        'colspan',
-        String(
-          1 +
-            (includeCreated && createdKey ? 1 : 0) +
-            (includeUpdated && updatedKey ? 1 : 0),
-        ),
-      );
-      moreCell.setText(
-        `\u2026 and ${willChangeEntries.length - PREVIEW_MAX_ROWS} more file(s)`,
-      );
-      moreCell.addClass('frontmatter-date-manager-populate-summary');
-    }
+    renderDiffTable(contentEl, {
+      columns,
+      rows,
+      maxRows: PREVIEW_MAX_ROWS,
+      moreCount: Math.max(0, willChange.length - PREVIEW_MAX_ROWS),
+    });
 
-    // Skipped files in collapsible details
-    if (skippedEntries.length > 0) {
-      const details = contentEl.createEl('details');
-      details.createEl('summary', {
-        text: `${skippedEntries.length} file(s) skipped (already have dates)`,
-      });
-      const skippedList = details.createEl('ul');
-      const skippedDisplay = Math.min(skippedEntries.length, PREVIEW_MAX_ROWS);
-      for (let i = 0; i < skippedDisplay; i++) {
-        skippedList.createEl('li', { text: skippedEntries[i]!.file.path });
-      }
-      if (skippedEntries.length > PREVIEW_MAX_ROWS) {
-        skippedList.createEl('li', {
-          text: `\u2026 and ${skippedEntries.length - PREVIEW_MAX_ROWS} more`,
-          cls: 'frontmatter-date-manager-populate-summary',
-        });
-      }
-    }
-
-    // Restate the irreversibility at the point of action: the configure-phase
-    // overwrite warning is no longer visible on this screen.
     const isOverwrite = this.overrideMode === 'overwrite-all';
     if (isOverwrite) {
-      contentEl.createDiv({
-        cls: 'frontmatter-date-manager-populate-overwrite-warning',
-        text: 'Overwrite mode: existing dates will be replaced. This cannot be undone. Make a backup first.',
-      });
+      renderWarning(
+        contentEl,
+        'Overwrite mode: existing dates will be replaced. This cannot be undone. Make a backup first.',
+      );
     }
 
-    // Buttons
-    new Setting(contentEl)
-      .addButton((btn) => {
-        btn.setButtonText('Run');
-        if (isOverwrite) {
-          btn.setWarning();
-        } else {
-          btn.setCta();
-        }
-        btn.onClick(() => {
+    renderButtonBar(contentEl, {
+      primary: {
+        label: 'Run',
+        destructive: isOverwrite,
+        onClick: () => {
           void this.renderExecutePhase();
-        });
-      })
-      .addButton((btn) =>
-        btn.setButtonText('Back').onClick(() => {
-          this.renderConfigurePhase();
-        }),
-      )
-      .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => {
+        },
+      },
+      back: () => {
+        this.back();
+      },
+      footer: {
+        kind: 'cancel',
+        onClick: () => {
           this.close();
-        }),
-      );
+        },
+      },
+    });
   }
 
   private formatPreviewValue(
     proposed: string | number | null,
     existing: string | number | null,
   ): string {
-    if (proposed === null) return '\u2014';
+    if (proposed === null) return '—';
     if (existing != null) {
-      return `${String(existing)} \u2192 ${String(proposed)}`;
+      return `${String(existing)} → ${String(proposed)}`;
     }
     return String(proposed);
   }
@@ -502,80 +432,53 @@ export class BulkPopulateTimestampsModal extends Modal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
+    renderHeader(contentEl, 'Populating timestamps…');
 
-    const header = contentEl.createEl('h2', {
-      text: 'Populating timestamps...',
+    const items = this.previewEntries.filter((e) => e.willChange);
+    const progress = renderProgress(contentEl, items.length);
+
+    const { processed, errors } = await runExecutePhase({
+      plugin: this.plugin,
+      items,
+      isOpen: () => this.isOpenState(),
+      processItem: (entry) => this.applyTimestamps(entry),
+      onProgress: (done) => {
+        progress.update(done);
+      },
+      labelFor: (entry) => entry.file.path,
     });
-
-    const entriesToProcess = this.previewEntries.filter((e) => e.willChange);
-
-    const wrapperBar = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-progress-section',
-    });
-    const progress = wrapperBar.createEl('progress');
-    progress.setAttr('max', entriesToProcess.length);
-
-    const fileCounter = wrapperBar.createEl('span');
-
-    const updateCount = (count: number) => {
-      progress.setAttr('value', count);
-      fileCounter.setText(`${count}/${entriesToProcess.length}`);
-    };
-    updateCount(0);
-
-    let errorCount = 0;
-    this.plugin.bulkRunning = true;
-    try {
-      for (let i = 0; i < entriesToProcess.length; i++) {
-        if (!this.isOpen) {
-          new Notice('Bulk populate stopped.', 2000);
-          return;
-        }
-        updateCount(i + 1);
-
-        const entry = entriesToProcess[i]!;
-        try {
-          await this.applyTimestamps(entry);
-        } catch (e: unknown) {
-          errorCount++;
-          this.plugin.logError(
-            'Error populating timestamps for',
-            entry.file.path,
-            e,
-          );
-        }
-      }
-    } finally {
-      this.plugin.bulkRunning = false;
+    if (!this.isOpenState()) {
+      new Notice('Bulk populate stopped.', 2000);
+      return;
     }
 
-    // Done
-    let doneText = `Done! ${entriesToProcess.length} file(s) updated.`;
-    if (errorCount > 0) {
-      doneText = `Done with ${errorCount} error(s). Check the console for details.`;
-    }
-
-    header.setText(doneText);
-    wrapperBar.remove();
-
-    new Setting(contentEl).addButton((btn) =>
-      btn.setButtonText('Close').onClick(() => {
-        this.close();
-      }),
+    contentEl.empty();
+    renderHeader(
+      contentEl,
+      errors > 0
+        ? `Done with ${errors} error(s). Check the console for details.`
+        : `Done! ${processed} file(s) updated.`,
     );
+    renderButtonBar(contentEl, {
+      footer: {
+        kind: 'close',
+        onClick: () => {
+          this.close();
+        },
+      },
+    });
   }
 
   protected async applyTimestamps(entry: FilePreviewEntry): Promise<void> {
     const createdKey = this.plugin.settings.headerCreated.trim();
     const updatedKey = this.plugin.settings.headerUpdated.trim();
 
-    // Verify file still exists
     const currentFile = this.app.vault.getAbstractFileByPath(entry.file.path);
-    if (!currentFile || !(currentFile instanceof TFile)) {
-      return;
-    }
+    if (!currentFile || !(currentFile instanceof TFile)) return;
 
-    await this.app.fileManager.processFrontMatter(
+    await applyFrontmatterWrite(
+      this.app,
+      this.plugin,
       currentFile,
       (frontmatter: Record<string, unknown>) => {
         if (entry.proposedCreated !== null && createdKey) {
@@ -586,16 +489,5 @@ export class BulkPopulateTimestampsModal extends Modal {
         }
       },
     );
-    // Do not preserve mtime: Obsidian must detect the change so an open editor
-    // re-renders. Suppress the resulting self-triggered modify event via
-    // lastPluginWriteMtime and refresh the hash cache so the stale cache cannot
-    // make handleFileChange spuriously re-stamp `updated`.
-    this.plugin.lastPluginWriteMtime.set(
-      currentFile.path,
-      currentFile.stat.mtime,
-    );
-    if (this.plugin.settings.enableContentHashCheck ?? true) {
-      await this.plugin.populateCacheForFile(currentFile);
-    }
   }
 }
