@@ -36,6 +36,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Bulk-populate timestamps from filesystem dates (ctime/mtime) with dry-run preview
 - Rename frontmatter keys across all files (migrate old key names with preview)
 - Reformat existing dates from one format to another (parse old, write new, with preview)
+- Every bulk preview is paginated (Prev/Next), shows all affected files (no row cap), and can copy the full diff to the clipboard
 - Toggle auto-update via command palette or status bar
 - Pause auto-update for 5 minutes with automatic resume
 - Works on desktop and mobile

@@ -4,14 +4,15 @@ import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
+import { copyPreviewToClipboard } from './bulk/export';
 import {
   renderHeader,
   renderButtonBar,
   renderWarning,
   renderSummary,
-  renderDiffTable,
+  renderPaginatedDiffTable,
+  renderCopyPreviewButton,
   renderProgress,
-  PREVIEW_MAX_ROWS,
 } from './bulk/chrome';
 
 export type PopulateMode = 'created' | 'updated' | 'both';
@@ -366,7 +367,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     if (includeCreated && createdKey) columns.push(`Created (${createdKey})`);
     if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
 
-    const rows = willChange.slice(0, PREVIEW_MAX_ROWS).map((entry) => {
+    const rows = willChange.map((entry) => {
       const row = [entry.file.path];
       if (includeCreated && createdKey) {
         row.push(
@@ -381,12 +382,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       return row;
     });
 
-    renderDiffTable(contentEl, {
-      columns,
-      rows,
-      maxRows: PREVIEW_MAX_ROWS,
-      moreCount: Math.max(0, willChange.length - PREVIEW_MAX_ROWS),
-    });
+    renderPaginatedDiffTable(contentEl, { columns, rows });
 
     const isOverwrite = this.overrideMode === 'overwrite-all';
     if (isOverwrite) {
@@ -395,6 +391,10 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
         'Overwrite mode: existing dates will be replaced. This cannot be undone. Make a backup first.',
       );
     }
+
+    renderCopyPreviewButton(contentEl, () => {
+      void copyPreviewToClipboard(this.plugin, columns, rows);
+    });
 
     renderButtonBar(contentEl, {
       primary: {

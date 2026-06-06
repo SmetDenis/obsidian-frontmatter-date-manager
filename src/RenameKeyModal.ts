@@ -4,14 +4,15 @@ import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
+import { copyPreviewToClipboard } from './bulk/export';
 import {
   renderHeader,
   renderButtonBar,
   renderWarning,
   renderSummary,
-  renderDiffTable,
+  renderPaginatedDiffTable,
+  renderCopyPreviewButton,
   renderProgress,
-  PREVIEW_MAX_ROWS,
 } from './bulk/chrome';
 
 export interface RenameKeyPreviewEntry {
@@ -238,19 +239,16 @@ export class RenameKeyModal extends PhaseModal {
       );
     }
 
-    const rows = this.previewEntries
-      .slice(0, PREVIEW_MAX_ROWS)
-      .map((e) => [
-        e.file.path,
-        String(e.existingValue),
-        String(e.existingValue),
-      ]);
+    const columns = ['File', oldKey, `→ ${newKey}`];
+    const rows = this.previewEntries.map((e) => [
+      e.file.path,
+      String(e.existingValue),
+      String(e.existingValue),
+    ]);
 
-    renderDiffTable(contentEl, {
-      columns: ['File', oldKey, `→ ${newKey}`],
+    renderPaginatedDiffTable(contentEl, {
+      columns,
       rows,
-      maxRows: PREVIEW_MAX_ROWS,
-      moreCount: Math.max(0, this.previewEntries.length - PREVIEW_MAX_ROWS),
       rowClass: (i) =>
         this.previewEntries[i]?.newKeyAlreadyExists
           ? 'frontmatter-date-manager-bulk-conflict-row'
@@ -264,6 +262,10 @@ export class RenameKeyModal extends PhaseModal {
         'The old key will be deleted after copying. This cannot be undone. Make a backup first.',
       );
     }
+
+    renderCopyPreviewButton(contentEl, () => {
+      void copyPreviewToClipboard(this.plugin, columns, rows);
+    });
 
     renderButtonBar(contentEl, {
       primary: {

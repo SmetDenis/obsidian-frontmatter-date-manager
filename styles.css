@@ -235,6 +235,27 @@
     }
 }
 
+/* Paginated preview: Prev / "Page X of Y" / Next pager (shared by all modals) */
+.frontmatter-date-manager-bulk-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0;
+}
+
+.frontmatter-date-manager-bulk-pagination-info {
+    color: var(--text-muted);
+    font-size: var(--font-smaller);
+    min-width: 8em;
+    text-align: center;
+}
+
+/* "Copy full preview" button row */
+.frontmatter-date-manager-bulk-copy {
+    margin: 0.5rem 0;
+}
+
 /* Populate: configure-phase platform / override notes */
 .frontmatter-date-manager-populate-platform-warning {
     color: var(--text-muted);

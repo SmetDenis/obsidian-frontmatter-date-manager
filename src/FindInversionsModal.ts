@@ -4,10 +4,13 @@ import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
+import { copyPreviewToClipboard } from './bulk/export';
 import {
   renderHeader,
   renderButtonBar,
   renderSummary,
+  renderPaginatedDiffTable,
+  renderCopyPreviewButton,
   renderProgress,
   ButtonBarHandle,
 } from './bulk/chrome';
@@ -22,8 +25,6 @@ export interface InvertedFileEntry {
   created: Date;
   updated: Date;
 }
-
-const PREVIEW_MAX_ROWS = 50;
 
 function formatDelta(created: Date, updated: Date): string {
   const ms = created.getTime() - updated.getTime();
@@ -200,37 +201,30 @@ export class FindInversionsModal extends PhaseModal {
       text: `Tolerance: ${tolerance} seconds (configurable in plugin settings).`,
     });
 
-    const list = contentEl.createDiv({
-      cls: 'frontmatter-date-manager-bulk-preview-list',
+    const columns = ['Path', 'Created', 'Updated', 'Δ'];
+    const rows = this.invertedEntries.map((entry) => [
+      entry.file.path,
+      entry.created.toISOString(),
+      entry.updated.toISOString(),
+      formatDelta(entry.created, entry.updated),
+    ]);
+    renderPaginatedDiffTable(contentEl, {
+      columns,
+      rows,
+      columnClasses: [
+        undefined,
+        undefined,
+        undefined,
+        'frontmatter-date-manager-inversion-delta',
+      ],
     });
-    const table = list.createEl('table', {
-      cls: 'frontmatter-date-manager-bulk-table',
-    });
-    const headerRow = table.createEl('tr');
-    for (const col of ['Path', 'Created', 'Updated', 'Δ']) {
-      headerRow.createEl('th', { text: col });
-    }
-    const limit = Math.min(this.invertedEntries.length, PREVIEW_MAX_ROWS);
-    for (let i = 0; i < limit; i++) {
-      const entry = this.invertedEntries[i]!;
-      const row = table.createEl('tr');
-      row.createEl('td', { text: entry.file.path });
-      row.createEl('td', { text: entry.created.toISOString() });
-      row.createEl('td', { text: entry.updated.toISOString() });
-      row.createEl('td', {
-        text: formatDelta(entry.created, entry.updated),
-        cls: 'frontmatter-date-manager-inversion-delta',
-      });
-    }
-    if (this.invertedEntries.length > limit) {
-      contentEl.createDiv({
-        text: `…and ${this.invertedEntries.length - limit} more`,
-        cls: 'frontmatter-date-manager-bulk-summary',
-      });
-    }
 
     this.warningEl = contentEl.createDiv();
     this.refreshWarning();
+
+    renderCopyPreviewButton(contentEl, () => {
+      void copyPreviewToClipboard(this.plugin, columns, rows);
+    });
 
     this.bar = renderButtonBar(contentEl, {
       primary: {

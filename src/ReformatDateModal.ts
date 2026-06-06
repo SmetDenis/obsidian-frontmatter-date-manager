@@ -7,14 +7,15 @@ import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
+import { copyPreviewToClipboard } from './bulk/export';
 import {
   renderHeader,
   renderButtonBar,
   renderWarning,
   renderSummary,
-  renderDiffTable,
+  renderPaginatedDiffTable,
+  renderCopyPreviewButton,
   renderProgress,
-  PREVIEW_MAX_ROWS,
 } from './bulk/chrome';
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
@@ -411,7 +412,7 @@ export class ReformatDateModal extends PhaseModal {
     if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
     if (includeViewed && viewedKey) columns.push(`Viewed (${viewedKey})`);
 
-    const rows = willChange.slice(0, PREVIEW_MAX_ROWS).map((entry) => {
+    const rows = willChange.map((entry) => {
       const row = [entry.file.path];
       if (includeCreated && createdKey) {
         row.push(
@@ -443,17 +444,16 @@ export class ReformatDateModal extends PhaseModal {
       return row;
     });
 
-    renderDiffTable(contentEl, {
-      columns,
-      rows,
-      maxRows: PREVIEW_MAX_ROWS,
-      moreCount: Math.max(0, willChange.length - PREVIEW_MAX_ROWS),
-    });
+    renderPaginatedDiffTable(contentEl, { columns, rows });
 
     renderWarning(
       contentEl,
       'This rewrites existing date values in place. It cannot be undone. Make a backup first.',
     );
+
+    renderCopyPreviewButton(contentEl, () => {
+      void copyPreviewToClipboard(this.plugin, columns, rows);
+    });
 
     renderButtonBar(contentEl, {
       primary: {

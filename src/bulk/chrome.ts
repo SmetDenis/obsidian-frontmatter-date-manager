@@ -1,4 +1,5 @@
 import { ButtonComponent, Setting } from 'obsidian';
+import { clampPage, getPageCount, getPageSlice } from './pagination';
 
 export const PREVIEW_MAX_ROWS = 100;
 
@@ -99,18 +100,37 @@ export function renderSummary(
   });
 }
 
-export interface DiffTableOptions {
+export interface PaginatedDiffTableOptions {
   columns: string[];
+  /** The FULL set of changed rows — never pre-sliced. Pagination shows them all. */
   rows: string[][];
-  maxRows: number;
-  moreCount?: number;
-  rowClass?: (rowIndex: number) => string | undefined;
+  /** Rows per page. Defaults to PREVIEW_MAX_ROWS. */
+  pageSize?: number;
+  /** Extra class for a row, keyed by its GLOBAL index (so highlights survive paging). */
+  rowClass?: (globalRowIndex: number) => string | undefined;
+  /** Per-column cell class, aligned to `columns` (e.g. the inversion delta accent). */
+  columnClasses?: Array<string | undefined>;
 }
 
-export function renderDiffTable(
+/**
+ * Render the diff preview as a paginated table so the user can inspect EVERY
+ * changed row (the project's "exact diff" safety contract) without rendering
+ * thousands of rows at once. Only one page (<= pageSize) lives in the DOM; the
+ * Prev/Next pager re-renders only the tbody + pager info, leaving the header
+ * and surrounding phase DOM untouched. The pager is hidden when there is a
+ * single page. Returns the page count for callers that want it.
+ *
+ * Not unit-tested (the obsidian mock no-ops DOM); the page math it relies on
+ * lives in ./pagination and is tested there.
+ */
+export function renderPaginatedDiffTable(
   parent: HTMLElement,
-  opts: DiffTableOptions,
-): void {
+  opts: PaginatedDiffTableOptions,
+): { pageCount: number } {
+  const pageSize = opts.pageSize ?? PREVIEW_MAX_ROWS;
+  const pageCount = getPageCount(opts.rows.length, pageSize);
+  let page = 0;
+
   const list = parent.createDiv({
     cls: 'frontmatter-date-manager-bulk-preview-list',
   });
@@ -120,24 +140,76 @@ export function renderDiffTable(
   const thead = table.createEl('thead');
   const headerRow = thead.createEl('tr');
   for (const col of opts.columns) headerRow.createEl('th', { text: col });
-
   const tbody = table.createEl('tbody');
-  const shown = Math.min(opts.rows.length, opts.maxRows);
-  for (let i = 0; i < shown; i++) {
-    const tr = tbody.createEl('tr');
-    const extraCls = opts.rowClass?.(i);
-    if (extraCls) tr.addClass(extraCls);
-    for (const cell of opts.rows[i]!) tr.createEl('td', { text: cell });
+
+  const renderTbody = () => {
+    tbody.empty();
+    const slice = getPageSlice(opts.rows, page, pageSize);
+    for (let i = 0; i < slice.length; i++) {
+      const tr = tbody.createEl('tr');
+      const extraCls = opts.rowClass?.(page * pageSize + i);
+      if (extraCls) tr.addClass(extraCls);
+      const cells = slice[i]!;
+      for (let c = 0; c < cells.length; c++) {
+        const td = tr.createEl('td', { text: cells[c]! });
+        const cellCls = opts.columnClasses?.[c];
+        if (cellCls) td.addClass(cellCls);
+      }
+    }
+  };
+
+  renderTbody();
+
+  if (pageCount > 1) {
+    const pager = parent.createDiv({
+      cls: 'frontmatter-date-manager-bulk-pagination',
+    });
+    const prevBtn = new ButtonComponent(pager).setButtonText('Prev');
+    const info = pager.createSpan({
+      cls: 'frontmatter-date-manager-bulk-pagination-info',
+    });
+    const nextBtn = new ButtonComponent(pager).setButtonText('Next');
+
+    const syncPager = () => {
+      info.setText(`Page ${page + 1} of ${pageCount}`);
+      prevBtn.setDisabled(page === 0);
+      nextBtn.setDisabled(page === pageCount - 1);
+    };
+
+    prevBtn.onClick(() => {
+      page = clampPage(page - 1, pageCount);
+      renderTbody();
+      syncPager();
+    });
+    nextBtn.onClick(() => {
+      page = clampPage(page + 1, pageCount);
+      renderTbody();
+      syncPager();
+    });
+
+    syncPager();
   }
 
-  const more = opts.moreCount ?? Math.max(0, opts.rows.length - opts.maxRows);
-  if (more > 0) {
-    const moreRow = tbody.createEl('tr');
-    const moreCell = moreRow.createEl('td');
-    moreCell.setAttr('colspan', String(opts.columns.length));
-    moreCell.setText(`… and ${more} more file(s)`);
-    moreCell.addClass('frontmatter-date-manager-bulk-summary');
-  }
+  return { pageCount };
+}
+
+/**
+ * Render a neutral "Copy full preview" button that exports the COMPLETE diff
+ * (every changed row, not just the visible page) via the provided callback.
+ * Placed between the table and the action bar.
+ */
+export function renderCopyPreviewButton(
+  parent: HTMLElement,
+  onClick: () => void,
+): void {
+  const wrapper = parent.createDiv({
+    cls: 'frontmatter-date-manager-bulk-copy',
+  });
+  new ButtonComponent(wrapper)
+    .setButtonText('Copy full preview')
+    .onClick(() => {
+      onClick();
+    });
 }
 
 export interface ProgressHandle {
