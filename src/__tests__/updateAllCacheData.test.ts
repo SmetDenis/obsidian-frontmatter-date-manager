@@ -45,7 +45,7 @@ describe('UpdateAllCacheData rebuild', () => {
     const res = await modal.run();
 
     expect(direct).toEqual(['a.md', 'b.md']);
-    expect(res).toEqual({ processed: 2, errors: 0 });
+    expect(res).toEqual({ processed: 2, errors: 0, failures: [] });
     expect(evicted).toBe(true);
     expect(markedDirty).toBe(true);
     expect(flushed).toBe(true);
@@ -66,7 +66,7 @@ describe('UpdateAllCacheData rebuild', () => {
     modal.setFiles([]);
     const res = await modal.run();
 
-    expect(res).toEqual({ processed: 0, errors: 0 });
+    expect(res).toEqual({ processed: 0, errors: 0, failures: [] });
     expect(flushed).toBe(true);
   });
 });

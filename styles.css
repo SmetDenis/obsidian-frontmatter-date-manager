@@ -166,6 +166,14 @@
    composes the helpers in src/bulk/chrome.ts, so these classes style all five
    operations uniformly. */
 
+/* Widen the host .modal so the paginated diff tables have room to breathe.
+   Targets the parent of our content class via :has() (supported in Obsidian's
+   Chromium); capped so it stays compact on large monitors. */
+.modal:has(.frontmatter-date-manager-bulk-modal) {
+    width: var(--modal-width);
+    max-width: min(85vw, 900px);
+}
+
 .frontmatter-date-manager-bulk-modal .setting-item {
     flex-wrap: wrap;
 }

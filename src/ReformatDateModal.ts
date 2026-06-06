@@ -16,6 +16,7 @@ import {
   renderPaginatedDiffTable,
   renderCopyPreviewButton,
   renderProgress,
+  renderFailureTable,
 } from './bulk/chrome';
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
@@ -498,7 +499,7 @@ export class ReformatDateModal extends PhaseModal {
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
 
-    const { processed, errors } = await runExecutePhase({
+    const { processed, errors, failures } = await runExecutePhase({
       plugin: this.plugin,
       items,
       isOpen: () => this.isOpenState(),
@@ -520,12 +521,16 @@ export class ReformatDateModal extends PhaseModal {
     }
 
     contentEl.empty();
-    renderHeader(
-      contentEl,
-      errors > 0
-        ? `Done with ${errors} error(s). Check the console for details.`
-        : `Done! ${processed} file(s) updated.`,
-    );
+    if (errors > 0) {
+      renderHeader(
+        contentEl,
+        `Done with ${errors} error(s).`,
+        `${processed} file(s) updated.`,
+      );
+      renderFailureTable(contentEl, this.plugin, failures);
+    } else {
+      renderHeader(contentEl, `Done! ${processed} file(s) updated.`);
+    }
     renderButtonBar(contentEl, {
       footer: {
         kind: 'close',

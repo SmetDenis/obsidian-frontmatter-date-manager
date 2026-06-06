@@ -6,7 +6,7 @@ import {
   FrontmatterDateManagerSettings,
   FrontmatterDateManagerSettingsTab,
 } from './Settings';
-import { epochNumberToDate, isTFile } from './utils';
+import { epochNumberToDate, errorToMessage, isTFile } from './utils';
 import { sha256 } from 'js-sha256';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
 import {
@@ -210,9 +210,18 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
                 } else if (result.status === 'ignored') {
                   new Notice('File is ignored by plugin settings.');
                 } else {
-                  new Notice(
-                    'Failed to update timestamps. Check console for details.',
-                  );
+                  // handleFileChange already shows a detailed Notice for
+                  // malformed YAML; for any other failure surface the real
+                  // reason instead of pointing at a console that is empty in
+                  // production (logError is a no-op there).
+                  const err = result.error;
+                  if (
+                    !(err instanceof Error && err.name === 'YAMLParseError')
+                  ) {
+                    new Notice(
+                      `Failed to update timestamps: ${errorToMessage(err)}`,
+                    );
+                  }
                 }
               })
               .catch(() => {

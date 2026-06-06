@@ -53,6 +53,16 @@ export function matchesPathPattern(filePath: string, pattern: string): boolean {
   return filePath.startsWith(normalized);
 }
 
+/**
+ * Extract a human-readable message from a caught value. Errors expose `.message`;
+ * anything else is stringified. Used wherever a failure reason is surfaced to the
+ * user (bulk execute failures, the single-file update command) instead of being
+ * lost to a dev-only `logError`.
+ */
+export function errorToMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 export function getMomentFormatHint(formatStr: string): string | undefined {
   const replacements: [RegExp, string][] = [
     [/YYYY/, 'Use "yyyy" instead of "YYYY" for year'],

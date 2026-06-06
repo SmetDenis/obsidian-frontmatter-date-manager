@@ -12,6 +12,7 @@ import {
   renderPaginatedDiffTable,
   renderCopyPreviewButton,
   renderProgress,
+  renderFailureTable,
   ButtonBarHandle,
 } from './bulk/chrome';
 import {
@@ -245,7 +246,7 @@ export class FindInversionsModal extends PhaseModal {
     const items = this.invertedEntries.map((e) => e.file);
     const progress = renderProgress(contentEl, items.length);
 
-    const { errors } = await runExecutePhase({
+    const { processed, errors, failures } = await runExecutePhase({
       plugin: this.plugin,
       items,
       isOpen: () => this.isOpenState(),
@@ -258,15 +259,19 @@ export class FindInversionsModal extends PhaseModal {
       return;
     }
 
-    new Notice(`Fixed ${this.invertedEntries.length} inversions.`, 4000);
+    new Notice(`Fixed ${processed} inversion(s).`, 4000);
 
     contentEl.empty();
-    renderHeader(
-      contentEl,
-      errors > 0
-        ? `Done with ${errors} error(s). Check the console for details.`
-        : 'Done! You can safely close this modal.',
-    );
+    if (errors > 0) {
+      renderHeader(
+        contentEl,
+        `Done with ${errors} error(s).`,
+        `${processed} inversion(s) fixed.`,
+      );
+      renderFailureTable(contentEl, this.plugin, failures);
+    } else {
+      renderHeader(contentEl, 'Done! You can safely close this modal.');
+    }
     renderButtonBar(contentEl, {
       footer: { kind: 'close', onClick: () => void this.close() },
     });

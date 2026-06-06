@@ -1,4 +1,5 @@
 import FrontmatterDateManagerPlugin from '../main';
+import { errorToMessage } from '../utils';
 
 export interface ExecutePhaseOptions<T> {
   plugin: FrontmatterDateManagerPlugin;
@@ -10,9 +11,21 @@ export interface ExecutePhaseOptions<T> {
   labelFor?: (item: T) => string;
 }
 
+/** A single item that threw during execution: its label (file path) + reason. */
+export interface ExecuteFailure {
+  label: string;
+  message: string;
+}
+
 export interface ExecutePhaseResult {
   processed: number;
   errors: number;
+  /**
+   * Per-item failures collected in order, so the modal can show the user exactly
+   * which files failed and why — `logError` is a no-op in production, so the
+   * console is not a viable channel for these details.
+   */
+  failures: ExecuteFailure[];
 }
 
 /**
@@ -26,6 +39,7 @@ export async function runExecutePhase<T>(
   const total = opts.items.length;
   let processed = 0;
   let errors = 0;
+  const failures: ExecuteFailure[] = [];
 
   opts.plugin.bulkRunning = true;
   try {
@@ -39,6 +53,7 @@ export async function runExecutePhase<T>(
       } catch (e) {
         errors++;
         const label = opts.labelFor ? opts.labelFor(item) : String(i);
+        failures.push({ label, message: errorToMessage(e) });
         opts.plugin.logError('Error processing', label, e);
       }
     }
@@ -48,5 +63,5 @@ export async function runExecutePhase<T>(
 
   if (opts.onComplete) await opts.onComplete();
 
-  return { processed, errors };
+  return { processed, errors, failures };
 }

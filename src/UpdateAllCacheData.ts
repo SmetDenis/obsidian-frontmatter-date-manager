@@ -1,8 +1,13 @@
 import { App, Notice, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
 import { PhaseModal } from './bulk/PhaseModal';
-import { runExecutePhase } from './bulk/executePhase';
-import { renderHeader, renderButtonBar, renderProgress } from './bulk/chrome';
+import { runExecutePhase, ExecutePhaseResult } from './bulk/executePhase';
+import {
+  renderHeader,
+  renderButtonBar,
+  renderProgress,
+  renderFailureTable,
+} from './bulk/chrome';
 
 export class UpdateAllCacheData extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
@@ -55,7 +60,7 @@ export class UpdateAllCacheData extends PhaseModal {
   // evict + mark dirty + flush, otherwise the rebuild is lost on reload.
   protected async rebuildAll(
     onProgress: (done: number, total: number) => void,
-  ): Promise<{ processed: number; errors: number }> {
+  ): Promise<ExecutePhaseResult> {
     return runExecutePhase({
       plugin: this.plugin,
       items: this.files,
@@ -79,7 +84,7 @@ export class UpdateAllCacheData extends PhaseModal {
 
     const progress = renderProgress(contentEl, this.files.length);
 
-    const { errors } = await this.rebuildAll(
+    const { processed, errors, failures } = await this.rebuildAll(
       (done) => void progress.update(done),
     );
     if (!this.isOpenState()) {
@@ -88,12 +93,16 @@ export class UpdateAllCacheData extends PhaseModal {
     }
 
     contentEl.empty();
-    renderHeader(
-      contentEl,
-      errors > 0
-        ? `Done with ${errors} error(s). Check the console for details.`
-        : 'Done! You can safely close this modal.',
-    );
+    if (errors > 0) {
+      renderHeader(
+        contentEl,
+        `Done with ${errors} error(s).`,
+        `${processed} file(s) processed.`,
+      );
+      renderFailureTable(contentEl, this.plugin, failures);
+    } else {
+      renderHeader(contentEl, 'Done! You can safely close this modal.');
+    }
     renderButtonBar(contentEl, {
       footer: { kind: 'close', onClick: () => void this.close() },
     });

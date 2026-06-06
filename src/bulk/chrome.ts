@@ -1,5 +1,8 @@
 import { ButtonComponent, Setting } from 'obsidian';
 import { clampPage, getPageCount, getPageSlice } from './pagination';
+import type { ExecuteFailure } from './executePhase';
+import { copyPreviewToClipboard } from './export';
+import type FrontmatterDateManagerPlugin from '../main';
 
 export const PREVIEW_MAX_ROWS = 100;
 
@@ -210,6 +213,25 @@ export function renderCopyPreviewButton(
     .onClick(() => {
       onClick();
     });
+}
+
+/**
+ * Render the list of items that failed during execution as a paginated
+ * `File | Error` table plus a "Copy full preview" button. This is the user-facing
+ * channel for execute-phase failures: `logError` is a no-op in production, so the
+ * console shows nothing — the failing paths and reasons must be presented here.
+ */
+export function renderFailureTable(
+  parent: HTMLElement,
+  plugin: FrontmatterDateManagerPlugin,
+  failures: ExecuteFailure[],
+): void {
+  const columns = ['File', 'Error'];
+  const rows = failures.map((f) => [f.label, f.message]);
+  renderPaginatedDiffTable(parent, { columns, rows });
+  renderCopyPreviewButton(parent, () => {
+    void copyPreviewToClipboard(plugin, columns, rows);
+  });
 }
 
 export interface ProgressHandle {
