@@ -206,7 +206,7 @@ make pre-commit   # Run all checks (format, lint, test, build)
 make local-test   # Build and copy plugin to local vault
 ```
 
-To use `make local-test`, set `OBSIDIAN_VAULT` in your shell environment, or pass it directly: `make local-test OBSIDIAN_VAULT=/path/to/vault`.
+To use `make local-test`, set `OBSIDIAN_VAULT_TEST` in your shell environment, or pass it directly: `make local-test OBSIDIAN_VAULT_TEST=/path/to/vault`.
 
 ## License
 

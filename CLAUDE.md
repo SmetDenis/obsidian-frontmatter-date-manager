@@ -50,7 +50,7 @@ Run a single test file: `npm test -- src/__tests__/formatDate.test.ts`
 
 ### Local vault testing
 
-Set the `OBSIDIAN_VAULT` env var in your shell to your vault path. `make local-test` builds the plugin and copies artifacts to `<vault>/.obsidian/plugins/frontmatter-date-manager/`. `make dev` uses the same variable for auto-copy on file changes.
+Set the `OBSIDIAN_VAULT_TEST` env var in your shell to your vault path. `make local-test` builds the plugin and copies artifacts to `<vault>/.obsidian/plugins/frontmatter-date-manager/`. `make dev` uses the same variable for auto-copy on file changes.
 
 ## Build Output
 

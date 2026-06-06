@@ -68,12 +68,12 @@ const context = await esbuild.context({
 const distDir = fs.path('.', 'dist');
 
 async function watchCopyToVault() {
-  if (!process.env.OBSIDIAN_VAULT) {
-    console.error('No OBSIDIAN_VAULT env provided, will not sync to vault.');
+  if (!process.env.OBSIDIAN_VAULT_TEST) {
+    console.error('No OBSIDIAN_VAULT_TEST env provided, will not sync to vault.');
     return;
   }
   const pluginDir = fs.path(
-    process.env.OBSIDIAN_VAULT,
+    process.env.OBSIDIAN_VAULT_TEST,
     '.obsidian',
     'plugins',
     'frontmatter-date-manager',

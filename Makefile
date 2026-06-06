@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
 PLUGIN_ID  := frontmatter-date-manager
-PLUGIN_DIR := $(OBSIDIAN_VAULT)/.obsidian/plugins/$(PLUGIN_ID)
+PLUGIN_DIR := $(OBSIDIAN_VAULT_TEST)/.obsidian/plugins/$(PLUGIN_ID)
 
 .PHONY: help install build dev lint format format-check test test-watch pre-commit local-test
 
@@ -39,11 +39,11 @@ pre-commit: ## Run all checks (format, lint, test, build)
 	@$(MAKE) build
 
 local-test: build ## Build and copy plugin to local Obsidian vault
-	@if [ -z "$(OBSIDIAN_VAULT)" ]; then \
-		echo "Error: OBSIDIAN_VAULT is not set."; \
+	@if [ -z "$(OBSIDIAN_VAULT_TEST)" ]; then \
+		echo "Error: OBSIDIAN_VAULT_TEST is not set."; \
 		echo ""; \
-		echo "Set OBSIDIAN_VAULT in your shell, or pass it as an argument:"; \
-		echo "  make local-test OBSIDIAN_VAULT=/path/to/vault"; \
+		echo "Set OBSIDIAN_VAULT_TEST in your shell, or pass it as an argument:"; \
+		echo "  make local-test OBSIDIAN_VAULT_TEST=/path/to/vault"; \
 		exit 1; \
 	fi
 	@mkdir -p "$(PLUGIN_DIR)"
