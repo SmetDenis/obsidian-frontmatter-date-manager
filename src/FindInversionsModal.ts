@@ -184,6 +184,7 @@ export class FindInversionsModal extends PhaseModal {
       .setName('Fix strategy')
       .setDesc('How to resolve the inversion.')
       .addDropdown((dd) => {
+        dd.selectEl.addClass('frontmatter-date-manager-inversions-strategy');
         dd.addOption('disabled', "Don't fix (review only)");
         dd.addOption('created-to-updated', 'Set created = updated');
         dd.addOption('updated-to-created', 'Set updated = created');

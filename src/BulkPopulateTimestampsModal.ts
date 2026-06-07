@@ -71,32 +71,32 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     new Setting(contentEl)
       .setName('What to populate')
       .setDesc('Choose which timestamp fields to set.')
-      .addDropdown((dd) =>
-        dd
-          .addOption('both', 'Both created and updated')
+      .addDropdown((dd) => {
+        dd.selectEl.addClass('frontmatter-date-manager-populate-mode');
+        dd.addOption('both', 'Both created and updated')
           .addOption('created', 'Created dates only (from ctime)')
           .addOption('updated', 'Updated dates only (from mtime)')
           .setValue(this.populateMode)
           .onChange((val) => {
             this.populateMode = val as PopulateMode;
             this.updateWarnings(warningContainer, overwriteWarning);
-          }),
-      );
+          });
+      });
 
     // Override mode dropdown
     new Setting(contentEl)
       .setName('Override behavior')
       .setDesc('How to handle files that already have dates.')
-      .addDropdown((dd) =>
-        dd
-          .addOption('fill-missing', 'Fill missing only (safe)')
+      .addDropdown((dd) => {
+        dd.selectEl.addClass('frontmatter-date-manager-populate-override');
+        dd.addOption('fill-missing', 'Fill missing only (safe)')
           .addOption('overwrite-all', 'Overwrite all (replaces existing)')
           .setValue(this.overrideMode)
           .onChange((val) => {
             this.overrideMode = val as OverrideMode;
             this.updateWarnings(warningContainer, overwriteWarning);
-          }),
-      );
+          });
+      });
 
     // Platform warning
     const warningContainer = contentEl.createDiv({

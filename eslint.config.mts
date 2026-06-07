@@ -65,5 +65,6 @@ export default tseslint.config(
     'src/__mocks__/**',
     'vitest.config.ts',
     'tmp/**',
+    'e2e/**',
   ]),
 );

@@ -42,7 +42,10 @@ make format-check     # Prettier check
 make format           # Prettier fix
 make test             # Run all tests (vitest)
 make test-watch       # Run tests in watch mode
-make pre-commit       # Run all checks: format, lint, test, build
+make typecheck-e2e    # Type-check e2e specs/PO (no Obsidian; in pre-commit)
+make test-e2e         # Run all e2e tests (real Obsidian; manual, not CI)
+make test-e2e-spec    # Run one e2e spec: SPEC=auto-stamp
+make pre-commit       # Run all checks: format, lint, typecheck-e2e, test, build
 make local-test       # Build and copy plugin to local Obsidian vault
 ```
 
@@ -55,6 +58,15 @@ Set the `OBSIDIAN_VAULT_TEST` env var in your shell to your vault path. `make lo
 ## Build Output
 
 esbuild bundles `src/main.ts` → `dist/main.js` (CJS, ES2018 target). `manifest.json` is copied to `dist/`. CSS from `styles.css` is processed with lightningcss → `dist/styles.css`. The `__DEV_MODE__` global is `true` in dev, `false` in production (controls console logging).
+
+## End-to-end tests (real Obsidian)
+
+`e2e/` drives the **built** plugin inside a real Obsidian (`latest`) via WebdriverIO + `wdio-obsidian-service`, covering only the seams the unit `obsidian` mock cannot reach: real `processFrontMatter` serialization (body / key order / comments / unrelated keys survive), `number`-vs-`string` on disk, self-trigger suppression on a real `mtime`, and the bulk-modal UI wiring (all five modals driven through real DOM clicks). Pure logic is already unit-tested — never duplicate it here. Full scenario list: `e2e/README.md`.
+
+- **Layout:** `specs/*.e2e.ts` (Group A auto/command path, Group B the five bulk modals), `helpers/` (per-test notes / frontmatter parsing / settings patch), `pageobjects/` (ALL DOM coupling — `settingsTab`, `bulkModal`), `vaults/simple` seed (each spec file gets its own copy; tests create their own notes via `createNote`).
+- **Stable-selector contract:** interactive bulk-UI controls carry `frontmatter-date-manager-*` classes (button bar + pager in `src/bulk/chrome.ts`; the mode/override/scope/strategy dropdowns; the rename inputs/toggle; the five Settings bulk buttons). Page Objects key off these classes — keep them when changing the UI (or update the PO), and add them via `addClass`/`cls:`, never `element.style`.
+- **Characterization:** specs assert existing behavior, so a fresh spec passes on its first run. A failure is a real bug/regression or an Obsidian serialization quirk — fix the root cause; never weaken the `created`/`updated`/body safety asserts.
+- **Run (manual, local, pre-release — NOT in CI):** `make test-e2e` (all) or `make test-e2e-spec SPEC=<name>` (one); `make typecheck-e2e` checks specs/PO without launching Obsidian and runs in `make pre-commit`. First run downloads Obsidian to `e2e/.obsidian-cache/` (gitignored); needs a display (`xvfb-run -a` on headless). Inspect the settings tab / modals visually with `browser.saveScreenshot()` or `browser.debug()`.
 
 ## Architecture
 
@@ -154,11 +166,12 @@ After finishing ANY task (feature, bugfix, refactor, test changes, etc.), **ALWA
 make pre-commit
 ```
 
-If `format-check` fails, fix with `make format` and re-run. Do not consider the task done until all four checks pass.
+If `format-check` fails, fix with `make format` and re-run. Do not consider the task done until all checks pass (format, lint, typecheck-e2e, test, build).
 
 After all checks pass, update documentation if the task changed user-facing behavior, settings, architecture, or key patterns:
 - `README.md` — settings table, feature descriptions, examples
 - `CLAUDE.md` — architecture section, key patterns, settings description
+- `e2e/README.md` — e2e scenario list, when you add or change e2e specs
 
 Update only the sections the change actually touches — don't refresh unrelated docs or restate what the code and tests already cover. Keep edits concise and proportional; do not pad with filler. When unsure whether a doc edit is warranted, ask the user before editing `CLAUDE.md` or `README.md`.
 

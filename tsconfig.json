@@ -20,6 +20,7 @@
     "src/__tests__/**",
     "src/__mocks__/**",
     "vitest.config.ts",
-    "tmp/**"
+    "tmp/**",
+    "e2e/**"
   ]
 }

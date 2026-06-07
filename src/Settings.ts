@@ -164,6 +164,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         'Set created/updated dates in frontmatter using filesystem timestamps (ctime/mtime). Useful for first-time setup.',
       )
       .addButton((cb) => {
+        cb.buttonEl.addClass('frontmatter-date-manager-open-populate');
         cb.setButtonText('Populate timestamps').onClick(() => {
           new BulkPopulateTimestampsModal(this.app, this.plugin).open();
         });
@@ -180,6 +181,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           'Recompute content hashes for all eligible files. Useful after changing tracking mode.',
         )
         .addButton((cb) => {
+          cb.buttonEl.addClass('frontmatter-date-manager-open-rebuild-cache');
           cb.setButtonText('Rebuild cache').onClick(() => {
             new UpdateAllCacheData(this.app, this.plugin).open();
           });
@@ -236,6 +238,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           'Useful after changing the created or updated key name above.',
       )
       .addButton((cb) => {
+        cb.buttonEl.addClass('frontmatter-date-manager-open-rename');
         cb.setButtonText('Rename key').onClick(() => {
           new RenameKeyModal(this.app, this.plugin).open();
         });
@@ -331,6 +334,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           'Useful after changing the date format above.',
       )
       .addButton((cb) => {
+        cb.buttonEl.addClass('frontmatter-date-manager-open-reformat');
         cb.setButtonText('Reformat dates').onClick(() => {
           new ReformatDateModal(this.app, this.plugin).open();
         });
@@ -883,6 +887,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         'Scan eligible files and list ones where updated is earlier than created. Optionally apply the configured fix strategy.',
       )
       .addButton((cb) => {
+        cb.buttonEl.addClass('frontmatter-date-manager-open-inversions');
         cb.setButtonText('Find inversions').onClick(() => {
           new FindInversionsModal(this.app, this.plugin).open();
         });

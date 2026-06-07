@@ -50,6 +50,7 @@ export function renderButtonBar(
     const p = spec.primary;
     setting.addButton((btn) => {
       primaryBtn = btn;
+      btn.buttonEl.addClass('frontmatter-date-manager-bulk-primary');
       btn.setButtonText(p.label);
       if (p.destructive) btn.setWarning();
       else btn.setCta();
@@ -60,15 +61,17 @@ export function renderButtonBar(
 
   if (spec.back) {
     const back = spec.back;
-    setting.addButton((btn) =>
-      btn.setButtonText('Back').onClick(() => void back()),
-    );
+    setting.addButton((btn) => {
+      btn.buttonEl.addClass('frontmatter-date-manager-bulk-back');
+      btn.setButtonText('Back').onClick(() => void back());
+    });
   }
 
   const footerLabel = spec.footer.kind === 'cancel' ? 'Cancel' : 'Close';
-  setting.addButton((btn) =>
-    btn.setButtonText(footerLabel).onClick(() => void spec.footer.onClick()),
-  );
+  setting.addButton((btn) => {
+    btn.buttonEl.addClass('frontmatter-date-manager-bulk-footer');
+    btn.setButtonText(footerLabel).onClick(() => void spec.footer.onClick());
+  });
 
   return {
     setPrimaryDisabled(disabled: boolean) {
@@ -168,10 +171,12 @@ export function renderPaginatedDiffTable(
       cls: 'frontmatter-date-manager-bulk-pagination',
     });
     const prevBtn = new ButtonComponent(pager).setButtonText('Prev');
+    prevBtn.buttonEl.addClass('frontmatter-date-manager-bulk-pager-prev');
     const info = pager.createSpan({
       cls: 'frontmatter-date-manager-bulk-pagination-info',
     });
     const nextBtn = new ButtonComponent(pager).setButtonText('Next');
+    nextBtn.buttonEl.addClass('frontmatter-date-manager-bulk-pager-next');
 
     const syncPager = () => {
       info.setText(`Page ${page + 1} of ${pageCount}`);

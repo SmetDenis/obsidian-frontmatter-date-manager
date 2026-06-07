@@ -97,39 +97,42 @@ export class RenameKeyModal extends PhaseModal {
     new Setting(contentEl)
       .setName('Old key name')
       .setDesc('The frontmatter key currently present in your files.')
-      .addText((text) =>
+      .addText((text) => {
+        text.inputEl.addClass('frontmatter-date-manager-rename-old');
         text
           .setPlaceholder('Date_created')
           .setValue(this.oldKeyName)
           .onChange((val) => {
             this.oldKeyName = val;
             updateValidation();
-          }),
-      );
+          });
+      });
 
     new Setting(contentEl)
       .setName('New key name')
       .setDesc('The new frontmatter key to rename to.')
-      .addText((text) =>
+      .addText((text) => {
+        text.inputEl.addClass('frontmatter-date-manager-rename-new');
         text
           .setPlaceholder('Created')
           .setValue(this.newKeyName)
           .onChange((val) => {
             this.newKeyName = val;
             updateValidation();
-          }),
-      );
+          });
+      });
 
     new Setting(contentEl)
       .setName('Delete old key after renaming')
       .setDesc(
         'Remove the old key from frontmatter after copying its value to the new key.',
       )
-      .addToggle((toggle) =>
+      .addToggle((toggle) => {
+        toggle.toggleEl.addClass('frontmatter-date-manager-rename-delete');
         toggle.setValue(this.deleteOldKey).onChange((val) => {
           this.deleteOldKey = val;
-        }),
-      );
+        });
+      });
 
     barRef.current = renderButtonBar(contentEl, {
       primary: {

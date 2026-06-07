@@ -187,6 +187,7 @@ export class ReformatDateModal extends PhaseModal {
       .setName('Which fields to reformat')
       .setDesc('Choose which timestamp fields to standardize.')
       .addDropdown((dd) => {
+        dd.selectEl.addClass('frontmatter-date-manager-reformat-scope');
         dd.addOption('all', 'All timestamp fields');
         dd.addOption('created', 'Created only');
         dd.addOption('updated', 'Updated only');
