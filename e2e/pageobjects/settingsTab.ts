@@ -1,6 +1,12 @@
-import { browser, $ } from '@wdio/globals';
+import { browser, $, $$ } from '@wdio/globals';
 
 const PLUGIN_ID = 'frontmatter-date-manager';
+
+const EXCLUDE_INPUT = '.frontmatter-date-manager-exclude-input';
+const EXCLUDE_ADD = '.frontmatter-date-manager-exclude-add';
+const CHIP = '.frontmatter-date-manager-property-chip';
+const CHIP_LABEL = '.frontmatter-date-manager-property-chip-label';
+const CHIP_REMOVE = '.frontmatter-date-manager-property-chip-remove';
 
 export const settingsTab = {
   /** Open the settings window directly on this plugin's tab. */
@@ -21,6 +27,36 @@ export const settingsTab = {
     const btn = await $(`.${buttonClass}`);
     await btn.waitForClickable({ timeout: 5_000 });
     await btn.click();
+  },
+
+  // --- "Ignore these properties" exclude list (comma input + chips) ---
+
+  /** Type into the exclude input and click "+" to commit. */
+  async addExcludeProperty(value: string): Promise<void> {
+    const input = await $(EXCLUDE_INPUT);
+    await input.waitForExist({ timeout: 5_000 });
+    await input.setValue(value);
+    await (await $(EXCLUDE_ADD)).click();
+  },
+
+  /** Labels of the currently rendered exclude chips, in order. */
+  async excludeChipLabels(): Promise<string[]> {
+    return $$(CHIP_LABEL).map((l) => l.getText());
+  },
+
+  async excludeChipCount(): Promise<number> {
+    return (await $$(CHIP)).length;
+  },
+
+  /** Click the remove control of the chip whose label matches. */
+  async removeExcludeChip(label: string): Promise<void> {
+    const chips = await $$(CHIP);
+    for (const chip of chips) {
+      if ((await chip.$(CHIP_LABEL).getText()) === label) {
+        await chip.$(CHIP_REMOVE).click();
+        return;
+      }
+    }
   },
 
   async close(): Promise<void> {

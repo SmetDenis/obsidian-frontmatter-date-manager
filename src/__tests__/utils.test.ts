@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { onlyUniqueArray, isTFile, errorToMessage } from '../utils';
+import {
+  onlyUniqueArray,
+  isTFile,
+  errorToMessage,
+  parsePropertyKeys,
+} from '../utils';
 
 describe('onlyUniqueArray', () => {
   it('removes duplicate strings', () => {
@@ -28,6 +33,47 @@ describe('onlyUniqueArray', () => {
 
   it('returns single element for all-duplicate array', () => {
     expect(['x', 'x', 'x'].filter(onlyUniqueArray)).toEqual(['x']);
+  });
+});
+
+describe('parsePropertyKeys', () => {
+  it('returns a single trimmed key', () => {
+    expect(parsePropertyKeys('  tags  ', [])).toEqual(['tags']);
+  });
+
+  it('splits a comma-separated list and trims each key', () => {
+    expect(parsePropertyKeys('tags, aliases ,cssclasses', [])).toEqual([
+      'tags',
+      'aliases',
+      'cssclasses',
+    ]);
+  });
+
+  it('drops empty segments from stray or trailing commas', () => {
+    expect(parsePropertyKeys('tags, , aliases,', [])).toEqual([
+      'tags',
+      'aliases',
+    ]);
+  });
+
+  it('dedupes repeated keys within the same input', () => {
+    expect(parsePropertyKeys('tags, tags, aliases', [])).toEqual([
+      'tags',
+      'aliases',
+    ]);
+  });
+
+  it('drops keys already present in the existing list', () => {
+    expect(parsePropertyKeys('tags, aliases', ['tags'])).toEqual(['aliases']);
+  });
+
+  it('returns an empty array for empty or whitespace-only input', () => {
+    expect(parsePropertyKeys('', ['tags'])).toEqual([]);
+    expect(parsePropertyKeys('   ,  , ', ['tags'])).toEqual([]);
+  });
+
+  it('is case-sensitive (matches exact-match dedup elsewhere)', () => {
+    expect(parsePropertyKeys('Tags', ['tags'])).toEqual(['Tags']);
   });
 });
 

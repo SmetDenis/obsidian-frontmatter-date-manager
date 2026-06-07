@@ -146,6 +146,53 @@
     margin-left: 0.25rem;
 }
 
+/* Ignored-properties list rendered as compact chips (indented under the
+   nested input row above it) */
+.frontmatter-date-manager-property-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0 0 0.75rem 1.75rem;
+}
+
+.frontmatter-date-manager-property-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.1rem 0.5rem;
+    font-size: var(--font-smaller);
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+}
+
+.frontmatter-date-manager-property-chip-label {
+    font-family: var(--font-monospace);
+}
+
+.frontmatter-date-manager-property-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: var(--radius-s);
+}
+
+.frontmatter-date-manager-property-chip-remove svg {
+    width: var(--icon-xs);
+    height: var(--icon-xs);
+}
+
+.frontmatter-date-manager-property-chip-remove:hover {
+    color: var(--text-error);
+}
+
+.frontmatter-date-manager-property-chip-remove:focus-visible {
+    color: var(--text-error);
+    outline: 1px solid var(--text-accent);
+    outline-offset: 1px;
+}
+
 /* Advanced collapsible section in settings */
 .frontmatter-date-manager-advanced-section {
     margin-top: 1rem;

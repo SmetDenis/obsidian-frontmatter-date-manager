@@ -8,6 +8,24 @@ export function onlyUniqueArray<T>(value: T, index: number, self: T[]) {
   return self.indexOf(value) === index;
 }
 
+/**
+ * Split a comma-separated property-name input into clean keys to add. Trims each
+ * segment, drops empty ones, and removes duplicates both within the input and
+ * against the already-present list. Returns only the NEW keys (exact-match
+ * dedup, matching how the exclusion list is compared elsewhere).
+ */
+export function parsePropertyKeys(input: string, existing: string[]): string[] {
+  const seen = new Set(existing);
+  const result: string[] = [];
+  for (const segment of input.split(',')) {
+    const key = segment.trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(key);
+  }
+  return result;
+}
+
 export function isTFile(value: TAbstractFile): value is TFile {
   return 'stat' in value;
 }

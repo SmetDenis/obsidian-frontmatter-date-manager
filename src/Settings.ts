@@ -1,7 +1,7 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
 import { TimezoneSuggest } from './suggesters/TimezoneSuggest';
-import { getMomentFormatHint, onlyUniqueArray } from './utils';
+import { getMomentFormatHint, parsePropertyKeys } from './utils';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
@@ -718,49 +718,89 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     const currentList = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
     let inputValue = '';
 
+    const addKeys = async () => {
+      const newKeys = parsePropertyKeys(inputValue, currentList);
+      if (newKeys.length === 0) return;
+      this.plugin.settings.frontmatterHashExcludeKeys = [
+        ...currentList,
+        ...newKeys,
+      ];
+      await this.saveSettings();
+      this.display();
+    };
+
     const setting = new Setting(this.containerEl)
       .setName('Ignore these properties')
       .setDesc(
         'Editing these properties will not update the date. ' +
+          'You can add several at once, separated by commas. ' +
           'The created, updated, and viewed properties are always ignored automatically.',
       )
       .addText((text) => {
+        text.inputEl.addClass('frontmatter-date-manager-exclude-input');
         text.setPlaceholder('Property name like tags');
         text.onChange((value) => {
           inputValue = value;
         });
+        text.inputEl.addEventListener('keydown', (evt) => {
+          if (evt.key === 'Enter') {
+            evt.preventDefault();
+            void addKeys();
+          }
+        });
       })
       .addButton((cb) => {
+        cb.buttonEl.addClass('frontmatter-date-manager-exclude-add');
         cb.setIcon('plus');
         cb.setTooltip('Add property');
-        cb.onClick(async () => {
-          const newKey = inputValue.trim();
-          if (!newKey) return;
-          this.plugin.settings.frontmatterHashExcludeKeys = [
-            ...currentList,
-            newKey,
-          ].filter(onlyUniqueArray);
-          await this.saveSettings();
-          this.display();
+        cb.onClick(() => {
+          void addKeys();
         });
       });
     setting.settingEl.addClass('frontmatter-date-manager-nested-setting');
 
-    currentList.forEach((entry) => {
-      const entrySetting = new Setting(this.containerEl)
-        .setName(entry)
-        .addButton((button) =>
-          button.setButtonText('Remove').onClick(async () => {
-            this.plugin.settings.frontmatterHashExcludeKeys =
-              currentList.filter((v) => v !== entry);
-            await this.saveSettings();
-            this.display();
-          }),
-        );
-      entrySetting.settingEl.addClass(
-        'frontmatter-date-manager-nested-setting',
-      );
-    });
+    if (currentList.length > 0) {
+      const chips = this.containerEl.createDiv({
+        cls: 'frontmatter-date-manager-property-chips',
+      });
+      currentList.forEach((entry) => {
+        const chip = chips.createSpan({
+          cls: 'frontmatter-date-manager-property-chip',
+        });
+        chip.createSpan({
+          cls: 'frontmatter-date-manager-property-chip-label',
+          text: entry,
+        });
+        const remove = chip.createSpan({
+          cls: 'frontmatter-date-manager-property-chip-remove',
+          attr: {
+            'role': 'button',
+            'tabindex': '0',
+            'aria-label': `Remove ${entry}`,
+          },
+        });
+        setIcon(remove, 'x');
+        const triggerRemove = () => {
+          void this.removeExcludeKey(entry);
+        };
+        remove.addEventListener('click', triggerRemove);
+        remove.addEventListener('keydown', (evt) => {
+          if (evt.key === 'Enter' || evt.key === ' ') {
+            evt.preventDefault();
+            triggerRemove();
+          }
+        });
+      });
+    }
+  }
+
+  private async removeExcludeKey(entry: string): Promise<void> {
+    const list = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
+    this.plugin.settings.frontmatterHashExcludeKeys = list.filter(
+      (v) => v !== entry,
+    );
+    await this.saveSettings();
+    this.display();
   }
 
   // --- Advanced (rendered into a custom container) ---

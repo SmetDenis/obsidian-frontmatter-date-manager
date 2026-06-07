@@ -43,6 +43,13 @@ here.
 - `specs/bulk-rebuild-cache.e2e.ts` — non-destructive confirm screen; notes are
   not mutated.
 
+**Group C — settings UI:**
+
+- `specs/settings-exclude-chips.e2e.ts` — "Ignore these properties": a
+  comma-separated entry splits into separate chips (S1), input dedupes against
+  existing keys and drops empty segments (S2), and a chip's remove control
+  deletes a single key (S3).
+
 ## Layout
 
 - `wdio.conf.mts` — WebdriverIO config (Obsidian capability, vault, plugin path).
@@ -51,8 +58,9 @@ here.
 - `helpers/` — `frontmatter.ts` (raw-text parsing for assertions), `vault.ts`
   (per-test note create/read/append + `waitForKey`), `settings.ts`
   (programmatic plugin-settings patch).
-- `pageobjects/` — `settingsTab.ts` (open settings + click a bulk button by its
-  stable class) and `bulkModal.ts` (drive the shared `PhaseModal` chrome:
+- `pageobjects/` — `settingsTab.ts` (open settings, click a bulk button by its
+  stable class, and drive the "Ignore these properties" exclude list — comma
+  input + chips) and `bulkModal.ts` (drive the shared `PhaseModal` chrome:
   dropdowns, primary/footer buttons, preview table, pager). All DOM coupling
   lives here, so a UI drift is fixed in one place.
 - `tsconfig.json` — types for the specs; type-checked by `npm run typecheck:e2e`.

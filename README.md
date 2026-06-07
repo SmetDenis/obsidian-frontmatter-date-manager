@@ -87,7 +87,7 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 | Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments              |
 | Change detection (content hashing) | `true`                  | Write the date only when content actually changes (SHA-256 hashing)             |
 | What counts as a change            | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                          |
-| Ignore these properties            | `[]`                    | Properties to ignore in change detection                                         |
+| Ignore these properties            | `[]`                    | Properties to ignore in change detection; add several at once, comma-separated   |
 | New file delay                     | `5000` ms               | Wait before processing newly created notes                                       |
 | Auto-populate cache on startup     | `true`                  | Build change-detection data for uncached notes when the plugin loads             |
 | Maximum cache entries              | `10000`                 | Oldest unused entries are removed when the cache exceeds this limit              |
