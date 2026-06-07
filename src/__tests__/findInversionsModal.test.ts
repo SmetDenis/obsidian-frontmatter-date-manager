@@ -157,7 +157,9 @@ describe('FindInversionsModal - irreversibility warning', () => {
       createMockFile('c.md'),
     ]);
 
-    const warned = el.children.find((c) => /Irreversible/.test(c.text ?? ''));
+    const warned = el.children.find((c) =>
+      /cannot be undone/.test(c.text ?? ''),
+    );
     expect(warned).toBeDefined();
     expect(warned!.text).toContain('3');
   });

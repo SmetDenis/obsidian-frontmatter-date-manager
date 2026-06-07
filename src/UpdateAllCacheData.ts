@@ -40,8 +40,8 @@ export class UpdateAllCacheData extends PhaseModal {
     contentEl.empty();
     renderHeader(
       contentEl,
-      `Populate hash cache for ${this.files.length} files`,
-      'This will update all cache data on files affected by this plugin.',
+      `Rebuild change-detection data for ${this.files.length} files`,
+      'This recomputes the content fingerprints (content hashes) used to detect real edits. It does not change your notes.',
     );
     renderButtonBar(contentEl, {
       primary: {
@@ -80,7 +80,7 @@ export class UpdateAllCacheData extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Updating cache…');
+    renderHeader(contentEl, 'Rebuilding…');
 
     const progress = renderProgress(contentEl, this.files.length);
 

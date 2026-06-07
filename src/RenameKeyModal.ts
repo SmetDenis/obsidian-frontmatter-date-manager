@@ -56,8 +56,8 @@ export class RenameKeyModal extends PhaseModal {
 
     renderHeader(
       contentEl,
-      'Rename frontmatter key',
-      'Move values from one frontmatter key to another across all markdown files.',
+      'Rename a property',
+      'Move values from one property name to another across all notes.',
     );
 
     const validationEl = contentEl.createDiv({
@@ -75,17 +75,17 @@ export class RenameKeyModal extends PhaseModal {
       const newTrimmed = this.newKeyName.trim();
 
       if (!oldTrimmed) {
-        validationEl.setText('Enter the old key name to proceed.');
+        validationEl.setText('Enter the old property name to proceed.');
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
       if (!newTrimmed) {
-        validationEl.setText('Enter the new key name to proceed.');
+        validationEl.setText('Enter the new property name to proceed.');
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
       if (oldTrimmed === newTrimmed) {
-        validationEl.setText('Old and new key names must be different.');
+        validationEl.setText('Old and new property names must be different.');
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
@@ -95,8 +95,8 @@ export class RenameKeyModal extends PhaseModal {
     };
 
     new Setting(contentEl)
-      .setName('Old key name')
-      .setDesc('The frontmatter key currently present in your files.')
+      .setName('Old property name')
+      .setDesc('The property name currently used in your notes.')
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-rename-old');
         text
@@ -109,8 +109,8 @@ export class RenameKeyModal extends PhaseModal {
       });
 
     new Setting(contentEl)
-      .setName('New key name')
-      .setDesc('The new frontmatter key to rename to.')
+      .setName('New property name')
+      .setDesc('The new property name to use.')
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-rename-new');
         text
@@ -123,9 +123,9 @@ export class RenameKeyModal extends PhaseModal {
       });
 
     new Setting(contentEl)
-      .setName('Delete old key after renaming')
+      .setName('Delete the old property after renaming')
       .setDesc(
-        'Remove the old key from frontmatter after copying its value to the new key.',
+        'Remove the old property after copying its value to the new one.',
       )
       .addToggle((toggle) => {
         toggle.toggleEl.addClass('frontmatter-date-manager-rename-delete');
@@ -188,7 +188,7 @@ export class RenameKeyModal extends PhaseModal {
     const oldKey = this.oldKeyName.trim();
     const newKey = this.newKeyName.trim();
     if (!oldKey || !newKey) {
-      new Notice('Key names cannot be empty.');
+      new Notice('Property names cannot be empty.');
       return;
     }
 
@@ -212,11 +212,11 @@ export class RenameKeyModal extends PhaseModal {
     const skippedCount = computed.length - this.previewEntries.length;
 
     contentEl.empty();
-    renderHeader(contentEl, 'Preview: rename key');
+    renderHeader(contentEl, 'Preview: rename property');
 
     if (this.previewEntries.length === 0) {
       contentEl.createEl('p', {
-        text: `No files found with the key "${oldKey}".`,
+        text: `No notes use the property "${oldKey}".`,
         cls: 'frontmatter-date-manager-bulk-summary',
       });
       renderButtonBar(contentEl, {
@@ -239,7 +239,7 @@ export class RenameKeyModal extends PhaseModal {
     if (conflicts.length > 0) {
       renderWarning(
         contentEl,
-        `${conflicts.length} file(s) already have the key "${newKey}". The existing value will be overwritten.`,
+        `${conflicts.length} note(s) already have the property "${newKey}". The existing value will be overwritten.`,
       );
     }
 
@@ -263,7 +263,7 @@ export class RenameKeyModal extends PhaseModal {
     if (this.deleteOldKey) {
       renderWarning(
         contentEl,
-        'The old key will be deleted after copying. This cannot be undone. Make a backup first.',
+        'The old property will be deleted after copying. This cannot be undone. Make a backup first.',
       );
     }
 
@@ -296,7 +296,7 @@ export class RenameKeyModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Renaming keys…');
+    renderHeader(contentEl, 'Renaming property…');
 
     const progress = renderProgress(contentEl, this.previewEntries.length);
 

@@ -68,7 +68,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     if (this._sessionInversionNoticeShown) return;
     this._sessionInversionNoticeShown = true;
     this._noticeFactory(
-      'Frontmatter Date Manager: inversion detected and auto-fixed. Use "Find inverted timestamps" in settings to review.',
+      'Frontmatter Date Manager: out-of-order dates were detected and fixed. Use "Find out-of-order dates" in settings to review.',
       8000,
     );
   }

@@ -185,10 +185,10 @@ export class ReformatDateModal extends PhaseModal {
 
     new Setting(contentEl)
       .setName('Which fields to reformat')
-      .setDesc('Choose which timestamp fields to standardize.')
+      .setDesc('Choose which dates to standardize.')
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-reformat-scope');
-        dd.addOption('all', 'All timestamp fields');
+        dd.addOption('all', 'All dates');
         dd.addOption('created', 'Created only');
         dd.addOption('updated', 'Updated only');
         if (this.plugin.settings.enableLastViewed ?? false) {
@@ -202,7 +202,7 @@ export class ReformatDateModal extends PhaseModal {
 
     contentEl.createDiv({
       cls: 'frontmatter-date-manager-reformat-note',
-      text: 'Dates are auto-detected from common formats (ISO 8601, European, US, numeric timestamps) and rewritten in your current format.',
+      text: 'Dates are auto-detected from common formats (ISO 8601, European, US, numeric dates) and rewritten in your current format.',
     });
 
     renderButtonBar(contentEl, {
@@ -343,7 +343,7 @@ export class ReformatDateModal extends PhaseModal {
     if (includeViewed && !viewedKey) missing.push('viewed');
     if (missing.length > 0) {
       new Notice(
-        `No frontmatter key configured for: ${missing.join(', ')}. Check plugin settings.`,
+        `No property name configured for: ${missing.join(', ')}. Check plugin settings.`,
       );
       return;
     }
@@ -481,7 +481,7 @@ export class ReformatDateModal extends PhaseModal {
     isError: boolean,
   ): string {
     if (isError && oldValue !== null) {
-      return `${String(oldValue)} (parse error)`;
+      return `${String(oldValue)} (could not read date)`;
     }
     if (newValue === null) return '—';
     if (oldValue !== null) {

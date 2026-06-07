@@ -132,14 +132,14 @@ export class FindInversionsModal extends PhaseModal {
     if (this.selectedStrategy === 'disabled') return;
     if (this.invertedEntries.length === 0) return;
     this.warningEl.createSpan({
-      text: `This will modify ${this.invertedEntries.length} files. Irreversible without a backup.`,
+      text: `This will modify ${this.invertedEntries.length} notes. This cannot be undone. Make a backup first.`,
       cls: 'frontmatter-date-manager-bulk-warning',
     });
   }
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
-    renderHeader(contentEl, 'Finding inverted files…');
+    renderHeader(contentEl, 'Finding out-of-order dates…');
 
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: true,
@@ -160,14 +160,14 @@ export class FindInversionsModal extends PhaseModal {
     contentEl.empty();
     renderHeader(
       contentEl,
-      `Found ${this.invertedEntries.length} inverted files`,
-      'These files have updated date earlier than created date. Choose a fix strategy below or close to review manually.',
+      `Found ${this.invertedEntries.length} notes with out-of-order dates`,
+      'These notes have a last-edited date earlier than the creation date. Choose how to fix them below, or close to review manually.',
     );
 
     if (this.invertedEntries.length === 0) {
       contentEl.createDiv({
         cls: 'frontmatter-date-manager-bulk-summary',
-        text: 'No inverted files found in the eligible set.',
+        text: 'No out-of-order dates found.',
       });
       renderButtonBar(contentEl, {
         footer: { kind: 'close', onClick: () => void this.close() },
@@ -181,14 +181,20 @@ export class FindInversionsModal extends PhaseModal {
     });
 
     new Setting(contentEl)
-      .setName('Fix strategy')
-      .setDesc('How to resolve the inversion.')
+      .setName('How to fix')
+      .setDesc('Choose how to correct the dates.')
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-inversions-strategy');
         dd.addOption('disabled', "Don't fix (review only)");
-        dd.addOption('created-to-updated', 'Set created = updated');
-        dd.addOption('updated-to-created', 'Set updated = created');
-        dd.addOption('max-all', 'Set both = max of all known dates');
+        dd.addOption(
+          'created-to-updated',
+          'Set creation date to the last-edited date',
+        );
+        dd.addOption(
+          'updated-to-created',
+          'Set last-edited date to the creation date',
+        );
+        dd.addOption('max-all', 'Set both to the most recent date');
         dd.setValue(this.selectedStrategy);
         dd.onChange((value: string) => {
           this.selectedStrategy = value as InversionFixStrategy;
@@ -200,10 +206,10 @@ export class FindInversionsModal extends PhaseModal {
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
     contentEl.createDiv({
       cls: 'frontmatter-date-manager-bulk-summary',
-      text: `Tolerance: ${tolerance} seconds (configurable in plugin settings).`,
+      text: `Ignoring differences under ${tolerance} seconds (set in settings).`,
     });
 
-    const columns = ['Path', 'Created', 'Updated', 'Δ'];
+    const columns = ['File', 'Created', 'Updated', 'Δ'];
     const rows = this.invertedEntries.map((entry) => [
       entry.file.path,
       entry.created.toISOString(),
@@ -242,7 +248,7 @@ export class FindInversionsModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Fixing inversions…');
+    renderHeader(contentEl, 'Fixing dates…');
 
     const items = this.invertedEntries.map((e) => e.file);
     const progress = renderProgress(contentEl, items.length);
@@ -260,14 +266,14 @@ export class FindInversionsModal extends PhaseModal {
       return;
     }
 
-    new Notice(`Fixed ${processed} inversion(s).`, 4000);
+    new Notice(`Fixed ${processed} note(s).`, 4000);
 
     contentEl.empty();
     if (errors > 0) {
       renderHeader(
         contentEl,
         `Done with ${errors} error(s).`,
-        `${processed} inversion(s) fixed.`,
+        `${processed} note(s) fixed.`,
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {

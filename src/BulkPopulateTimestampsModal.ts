@@ -59,23 +59,25 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     contentEl.empty();
 
     contentEl.createEl('h2', {
-      text: 'Populate timestamps from filesystem',
+      text: "Set dates from the file's own dates",
     });
 
     const subtitle = contentEl.createEl('p');
-    subtitle.appendText('Set created and/or updated dates in frontmatter');
+    subtitle.appendText('Fill in the created and last-edited dates');
     subtitle.createEl('br');
-    subtitle.appendText('using filesystem timestamps (ctime/mtime).');
+    subtitle.appendText(
+      "from each file's own creation and modification dates on disk.",
+    );
 
     // Mode dropdown
     new Setting(contentEl)
-      .setName('What to populate')
-      .setDesc('Choose which timestamp fields to set.')
+      .setName('Which dates to set')
+      .setDesc('Choose which dates to fill in.')
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-populate-mode');
         dd.addOption('both', 'Both created and updated')
-          .addOption('created', 'Created dates only (from ctime)')
-          .addOption('updated', 'Updated dates only (from mtime)')
+          .addOption('created', 'Created dates only')
+          .addOption('updated', 'Updated dates only')
           .setValue(this.populateMode)
           .onChange((val) => {
             this.populateMode = val as PopulateMode;
@@ -85,8 +87,10 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     // Override mode dropdown
     new Setting(contentEl)
-      .setName('Override behavior')
-      .setDesc('How to handle files that already have dates.')
+      .setName('Files that already have dates')
+      .setDesc(
+        'Fill in only the missing dates, or overwrite the existing ones.',
+      )
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-populate-override');
         dd.addOption('fill-missing', 'Fill missing only (safe)')
@@ -119,8 +123,8 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     });
     autoUpdateNote.createEl('br');
     autoUpdateNote.appendText(
-      'If auto-update has been active, filesystem dates (ctime/mtime) ' +
-        'may already reflect the plugin’s modifications, not the original file dates. ' +
+      "If auto-update has been active, the file's own dates on disk " +
+        "may already reflect the plugin's own edits, not the original dates. " +
         'For best results, use this feature before enabling auto-update ' +
         'or right after installing the plugin.',
     );
@@ -155,7 +159,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const warningTitle = warningContainer.createEl('strong');
     warningTitle.setText(
       includesCreated
-        ? 'Warning: File creation time (ctime) is unreliable on some platforms'
+        ? "The file's creation date is unreliable on some platforms"
         : 'Platform note',
     );
     warningContainer.createEl('br');
@@ -164,26 +168,26 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       {
         name: 'macOS / Windows',
         reliable: true,
-        note: 'ctime is actual file creation time',
+        note: 'real file creation date',
         isCurrent: Platform.isMacOS || Platform.isWin,
       },
       {
         name: 'Linux',
         reliable: false,
-        note: 'ctime is inode change time, NOT creation time',
+        note: 'system reports a later date, not the real creation date',
         isCurrent:
           Platform.isLinux && !Platform.isAndroidApp && !Platform.isMobileApp,
       },
       {
         name: 'Android',
         reliable: false,
-        note: 'depends on filesystem, often unreliable',
+        note: 'depends on the device, often unreliable',
         isCurrent: Platform.isAndroidApp,
       },
       {
         name: 'iOS',
         reliable: true,
-        note: 'generally reliable (APFS)',
+        note: 'generally reliable',
         isCurrent: Platform.isIosApp,
       },
     ];
@@ -202,12 +206,14 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     const syncNote = warningContainer.createEl('p');
     syncNote.appendText(
-      'Synced vaults: timestamps may be reset by sync services',
+      'Synced vaults: file dates may be reset by sync services',
     );
     syncNote.createEl('br');
     syncNote.appendText('(Obsidian Sync, iCloud, Dropbox, Git).');
     syncNote.createEl('br');
-    syncNote.appendText('mtime is generally more reliable than ctime.');
+    syncNote.appendText(
+      'The last-edited date is usually more reliable than the creation date.',
+    );
 
     if (includesCreated) {
       const recommendation = warningContainer.createEl('p');
@@ -220,7 +226,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     overwriteWarning.empty();
     if (this.overrideMode === 'overwrite-all') {
       overwriteWarning.setText(
-        'This will replace existing frontmatter dates. This operation cannot be undone. Make a backup first.',
+        'This will replace existing dates in your notes. This cannot be undone. Make a backup first.',
       );
     }
   }
@@ -315,7 +321,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       if (includeCreated && !createdKey) missing.push('created');
       if (includeUpdated && !updatedKey) missing.push('updated');
       new Notice(
-        `No frontmatter key configured for: ${missing.join(', ')}. Check plugin settings.`,
+        `No property name configured for: ${missing.join(', ')}. Check plugin settings.`,
       );
       return;
     }
@@ -341,11 +347,11 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const willChange = this.previewEntries.filter((e) => e.willChange);
     const skipped = this.previewEntries.filter((e) => !e.willChange);
 
-    renderHeader(contentEl, 'Preview: populate timestamps');
+    renderHeader(contentEl, 'Preview: set dates');
 
     if (willChange.length === 0) {
       contentEl.createEl('p', {
-        text: 'No files need updating. All eligible files already have the requested timestamps.',
+        text: 'No files need updating. All eligible files already have the requested dates.',
         cls: 'frontmatter-date-manager-bulk-summary',
       });
       renderButtonBar(contentEl, {
@@ -433,7 +439,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Populating timestamps…');
+    renderHeader(contentEl, 'Setting dates…');
 
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
@@ -449,7 +455,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       labelFor: (entry) => entry.file.path,
     });
     if (!this.isOpenState()) {
-      new Notice('Bulk populate stopped.', 2000);
+      new Notice('Stopped.', 2000);
       return;
     }
 
