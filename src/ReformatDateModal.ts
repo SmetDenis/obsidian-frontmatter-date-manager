@@ -1,8 +1,12 @@
 import { App, Notice, Setting, TFile } from 'obsidian';
-import { format, parse, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import FrontmatterDateManagerPlugin from './main';
-import { epochNumberToDate } from './utils';
+import {
+  parseDateValueWithZone,
+  detectSlashDateReadings,
+  detectSlashOrderFromLocale,
+} from './utils';
 import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
@@ -21,52 +25,45 @@ import {
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
 
+/**
+ * How to read a date that could be day-first or month-first (e.g. `01/05/2024`).
+ * `skip` leaves such values untouched (the safe default); `dmy`/`mdy` resolve
+ * them explicitly. Only the genuinely ambiguous values are affected - a value
+ * with one valid reading (e.g. `25/12`) always converts regardless.
+ */
+export type SlashDateOrder = 'skip' | 'dmy' | 'mdy';
+
 export interface ReformatPreviewEntry {
   file: TFile;
   createdOldValue: string | number | null;
   createdNewValue: string | number | null;
   createdError: boolean;
+  createdAmbiguous: boolean;
   updatedOldValue: string | number | null;
   updatedNewValue: string | number | null;
   updatedError: boolean;
+  updatedAmbiguous: boolean;
   viewedOldValue: string | number | null;
   viewedNewValue: string | number | null;
   viewedError: boolean;
+  viewedAmbiguous: boolean;
   willChange: boolean;
 }
-
-/**
- * Common date formats to try when auto-detecting.
- * Order matters - more specific formats first to avoid ambiguous matches.
- * ISO 8601 is handled separately via parseISO before these are tried.
- */
-const COMMON_DATE_FORMATS = [
-  "yyyy-MM-dd'T'HH:mm:ss.SSSxxx",
-  "yyyy-MM-dd'T'HH:mm:ssxxx",
-  "yyyy-MM-dd'T'HH:mm:ss",
-  "yyyy-MM-dd'T'HH:mm",
-  'yyyy-MM-dd HH:mm:ss',
-  'yyyy-MM-dd HH:mm',
-  'yyyy-MM-dd',
-  'yyyy/MM/dd HH:mm:ss',
-  'yyyy/MM/dd HH:mm',
-  'yyyy/MM/dd',
-  'dd.MM.yyyy HH:mm:ss',
-  'dd.MM.yyyy HH:mm',
-  'dd.MM.yyyy',
-  'dd/MM/yyyy HH:mm:ss',
-  'dd/MM/yyyy HH:mm',
-  'dd/MM/yyyy',
-  'MM/dd/yyyy HH:mm:ss',
-  'MM/dd/yyyy HH:mm',
-  'MM/dd/yyyy',
-  'yyyyMMdd',
-];
 
 export class ReformatDateModal extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
   private reformatScope: ReformatScope = 'all';
   private previewEntries: ReformatPreviewEntry[] = [];
+  /** Files scanned this run, retained so an order change re-renders without a re-scan. */
+  private scannedFiles: TFile[] = [];
+  /** How ambiguous day/month dates are read this run. Default: leave unchanged. */
+  private slashOrder: SlashDateOrder = 'skip';
+  /** Order detected from the OS locale, used only to pre-offer a one-click option. */
+  private detectedOrder: 'dmy' | 'mdy' | undefined = detectSlashOrderFromLocale(
+    typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().locale
+      : undefined,
+  );
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -89,58 +86,16 @@ export class ReformatDateModal extends PhaseModal {
   // --- Helpers ---
 
   /**
-   * Auto-detect and parse a date value. Tries multiple strategies:
-   * 1. Numeric values → epoch timestamp
-   * 2. parseISO for ISO 8601 strings
-   * 3. Common date-fns format strings
-   * 4. Native Date() as last resort
+   * Auto-detect and parse a stored date value, anchored to the configured
+   * timezone. Delegates to the pure `parseDateValueWithZone` helper so every
+   * parse strategy shares ONE timezone reference frame - the inverse of
+   * `formatDate`, which always formats in that zone. Centralizing the logic is
+   * what stops a parse branch from drifting to the host zone and shifting naive
+   * wall-clock values on reformat (see the helper's doc comment for the full
+   * rationale).
    */
   tryParseDate(value: string | number): Date | undefined {
-    if (typeof value === 'number') {
-      const date = epochNumberToDate(value);
-      return isNaN(date.getTime()) ? undefined : date;
-    }
-
-    const str = String(value).trim();
-    if (!str) return undefined;
-
-    // Numeric string → epoch timestamp (but not 8-digit yyyyMMdd-style strings)
-    if (/^\d+$/.test(str) && str.length !== 8) {
-      const date = epochNumberToDate(parseInt(str));
-      return isNaN(date.getTime()) ? undefined : date;
-    }
-
-    // Try parseISO (handles ISO 8601 variants with timezone offsets)
-    try {
-      const iso = parseISO(str);
-      if (!isNaN(iso.getTime())) return iso;
-    } catch {
-      // continue to next strategy
-    }
-
-    // Try common date-fns formats
-    const tzOptions = this.plugin.settings.timezone
-      ? { in: tz(this.plugin.settings.timezone) }
-      : {};
-
-    for (const fmt of COMMON_DATE_FORMATS) {
-      try {
-        const parsed = parse(str, fmt, new Date(), tzOptions);
-        if (!isNaN(parsed.getTime())) return parsed;
-      } catch {
-        // continue to next format
-      }
-    }
-
-    // Last resort: native Date parser
-    try {
-      const native = new Date(str);
-      if (!isNaN(native.getTime())) return native;
-    } catch {
-      // give up
-    }
-
-    return undefined;
+    return parseDateValueWithZone(value, this.plugin.settings.timezone);
   }
 
   private formatWithNewFormat(date: Date): string | number | undefined {
@@ -244,43 +199,32 @@ export class ReformatDateModal extends PhaseModal {
     let createdOldValue: string | number | null = null;
     let createdNewValue: string | number | null = null;
     let createdError = false;
+    let createdAmbiguous = false;
 
     let updatedOldValue: string | number | null = null;
     let updatedNewValue: string | number | null = null;
     let updatedError = false;
+    let updatedAmbiguous = false;
 
     let viewedOldValue: string | number | null = null;
     let viewedNewValue: string | number | null = null;
     let viewedError = false;
+    let viewedAmbiguous = false;
 
     if (includeCreated && createdKey && cached?.[createdKey] != null) {
       createdOldValue = cached[createdKey] as string | number;
-      const parsed = this.tryParseDate(createdOldValue);
-      if (parsed) {
-        const formatted = this.formatWithNewFormat(parsed);
-        if (formatted !== undefined) {
-          if (String(createdOldValue) !== String(formatted)) {
-            createdNewValue = formatted;
-          }
-        }
-      } else {
-        createdError = true;
-      }
+      const r = this.resolveField(createdOldValue);
+      createdNewValue = r.newValue;
+      createdError = r.error;
+      createdAmbiguous = r.ambiguous;
     }
 
     if (includeUpdated && updatedKey && cached?.[updatedKey] != null) {
       updatedOldValue = cached[updatedKey] as string | number;
-      const parsed = this.tryParseDate(updatedOldValue);
-      if (parsed) {
-        const formatted = this.formatWithNewFormat(parsed);
-        if (formatted !== undefined) {
-          if (String(updatedOldValue) !== String(formatted)) {
-            updatedNewValue = formatted;
-          }
-        }
-      } else {
-        updatedError = true;
-      }
+      const r = this.resolveField(updatedOldValue);
+      updatedNewValue = r.newValue;
+      updatedError = r.error;
+      updatedAmbiguous = r.ambiguous;
     }
 
     if (
@@ -290,17 +234,10 @@ export class ReformatDateModal extends PhaseModal {
       cached?.[viewedKey] != null
     ) {
       viewedOldValue = cached[viewedKey] as string | number;
-      const parsed = this.tryParseDate(viewedOldValue);
-      if (parsed) {
-        const formatted = this.formatWithNewFormat(parsed);
-        if (formatted !== undefined) {
-          if (String(viewedOldValue) !== String(formatted)) {
-            viewedNewValue = formatted;
-          }
-        }
-      } else {
-        viewedError = true;
-      }
+      const r = this.resolveField(viewedOldValue);
+      viewedNewValue = r.newValue;
+      viewedError = r.error;
+      viewedAmbiguous = r.ambiguous;
     }
 
     return {
@@ -308,16 +245,66 @@ export class ReformatDateModal extends PhaseModal {
       createdOldValue,
       createdNewValue,
       createdError,
+      createdAmbiguous,
       updatedOldValue,
       updatedNewValue,
       updatedError,
+      updatedAmbiguous,
       viewedOldValue,
       viewedNewValue,
       viewedError,
+      viewedAmbiguous,
       willChange:
         createdNewValue !== null ||
         updatedNewValue !== null ||
         viewedNewValue !== null,
+    };
+  }
+
+  /**
+   * Convert one stored date value under the current `slashOrder`. Genuinely
+   * ambiguous slash/dot dates are resolved per the chosen order, or left
+   * unchanged (and flagged) under `skip` - never silently guessed. A value with
+   * only one valid reading (or any non-ambiguous value) goes through the normal
+   * `parseDateValueWithZone` path. An ambiguous value left unchanged is NOT an
+   * error: it is a deliberate skip the preview surfaces separately.
+   */
+  private resolveField(oldValue: string | number): {
+    newValue: string | number | null;
+    error: boolean;
+    ambiguous: boolean;
+  } {
+    const readings = detectSlashDateReadings(
+      oldValue,
+      this.plugin.settings.timezone,
+    );
+
+    let parsed: Date | undefined;
+    if (readings.ambiguous) {
+      if (this.slashOrder === 'dmy') parsed = readings.dmyDate;
+      else if (this.slashOrder === 'mdy') parsed = readings.mdyDate;
+      // 'skip': leave unchanged (parsed stays undefined, not an error).
+    } else {
+      parsed = this.tryParseDate(oldValue);
+    }
+
+    if (parsed) {
+      const formatted = this.formatWithNewFormat(parsed);
+      if (formatted !== undefined && String(oldValue) !== String(formatted)) {
+        return {
+          newValue: formatted,
+          error: false,
+          ambiguous: readings.ambiguous,
+        };
+      }
+      return { newValue: null, error: false, ambiguous: readings.ambiguous };
+    }
+
+    // Not parsed: an error only when it was not a deliberate ambiguous skip.
+    return {
+      newValue: null,
+      error: !readings.ambiguous,
+      ambiguous: readings.ambiguous,
     };
   }
 
@@ -352,6 +339,7 @@ export class ReformatDateModal extends PhaseModal {
     const allFiles = this.app.vault.getMarkdownFiles();
     const progress = renderProgress(contentEl, allFiles.length);
 
+    this.scannedFiles = allFiles;
     this.previewEntries = await runBatchedScan({
       files: allFiles,
       isOpen: () => this.isOpenState(),
@@ -362,7 +350,28 @@ export class ReformatDateModal extends PhaseModal {
     });
     if (!this.isOpenState()) return;
 
+    this.renderPreviewResult();
+  }
+
+  /**
+   * Render the preview from the current `previewEntries`. Split out from the scan
+   * so changing the day/month order re-renders instantly (recompute is in-memory,
+   * no re-scan). Re-derives the changed/error/ambiguous sets every call.
+   */
+  private renderPreviewResult() {
+    const { contentEl } = this;
     contentEl.empty();
+
+    const createdKey = this.plugin.settings.headerCreated.trim();
+    const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const viewedKey = (
+      this.plugin.settings.headerLastViewed ?? 'viewed'
+    ).trim();
+    const scopeAll =
+      this.reformatScope === 'all' || this.reformatScope === 'both';
+    const includeCreated = this.reformatScope === 'created' || scopeAll;
+    const includeUpdated = this.reformatScope === 'updated' || scopeAll;
+    const includeViewed = this.reformatScope === 'viewed' || scopeAll;
 
     const willChange = this.previewEntries.filter((e) => e.willChange);
     const errorEntries = this.previewEntries.filter(
@@ -372,12 +381,22 @@ export class ReformatDateModal extends PhaseModal {
       (e) =>
         !e.willChange && !e.createdError && !e.updatedError && !e.viewedError,
     );
+    const ambiguousCount = this.previewEntries.filter(
+      (e) => e.createdAmbiguous || e.updatedAmbiguous || e.viewedAmbiguous,
+    ).length;
 
     renderHeader(contentEl, 'Preview: standardize dates');
 
+    if (ambiguousCount > 0)
+      this.renderAmbiguityControl(contentEl, ambiguousCount);
+
     if (willChange.length === 0) {
+      const noChangeText =
+        ambiguousCount > 0 && this.slashOrder === 'skip'
+          ? `Nothing to convert yet. ${ambiguousCount} date(s) could be read two ways and are left unchanged - choose a day/month order above to convert them.`
+          : 'No files need reformatting. All dates are already in the target format or could not be parsed.';
       contentEl.createEl('p', {
-        text: 'No files need reformatting. All dates are already in the target format or could not be parsed.',
+        text: noChangeText,
         cls: 'frontmatter-date-manager-bulk-summary',
       });
       if (errorEntries.length > 0) {
@@ -422,6 +441,7 @@ export class ReformatDateModal extends PhaseModal {
             entry.createdOldValue,
             entry.createdNewValue,
             entry.createdError,
+            entry.createdAmbiguous,
           ),
         );
       }
@@ -431,6 +451,7 @@ export class ReformatDateModal extends PhaseModal {
             entry.updatedOldValue,
             entry.updatedNewValue,
             entry.updatedError,
+            entry.updatedAmbiguous,
           ),
         );
       }
@@ -440,6 +461,7 @@ export class ReformatDateModal extends PhaseModal {
             entry.viewedOldValue,
             entry.viewedNewValue,
             entry.viewedError,
+            entry.viewedAmbiguous,
           ),
         );
       }
@@ -447,6 +469,13 @@ export class ReformatDateModal extends PhaseModal {
     });
 
     renderPaginatedDiffTable(contentEl, { columns, rows });
+
+    if (this.slashOrder !== 'skip' && ambiguousCount > 0) {
+      contentEl.createDiv({
+        cls: 'frontmatter-date-manager-reformat-note',
+        text: 'Rows marked [check] could be read two ways - confirm the new date looks right.',
+      });
+    }
 
     renderWarning(
       contentEl,
@@ -475,19 +504,68 @@ export class ReformatDateModal extends PhaseModal {
     });
   }
 
+  /**
+   * Inline control for ambiguous day/month dates. Defaults to leaving them
+   * unchanged; the OS-detected order is offered as a one-click choice but never
+   * applied silently. Changing it recomputes in-memory and re-renders.
+   */
+  private renderAmbiguityControl(
+    contentEl: HTMLElement,
+    ambiguousCount: number,
+  ) {
+    const detectedHint =
+      this.detectedOrder === 'mdy'
+        ? ' Your system suggests month first.'
+        : this.detectedOrder === 'dmy'
+          ? ' Your system suggests day first.'
+          : '';
+    new Setting(contentEl)
+      .setName('Dates that could be read two ways')
+      .setDesc(
+        `${ambiguousCount} date(s) could mean day-first or month-first (e.g. 01/05/2024).${detectedHint}`,
+      )
+      .addDropdown((dd) => {
+        dd.selectEl.addClass('frontmatter-date-manager-slash-order');
+        dd.addOption('skip', 'Leave unclear dates unchanged');
+        dd.addOption('dmy', 'Day first (01/05 = day 1, month 5)');
+        dd.addOption('mdy', 'Month first (01/05 = month 1, day 5)');
+        dd.setValue(this.slashOrder);
+        dd.onChange((val) => {
+          this.slashOrder = val as SlashDateOrder;
+          this.recomputeAndRerender();
+        });
+      });
+  }
+
+  /**
+   * Recompute entries under the current order (in-memory) and re-render.
+   * Synchronous and only fired from a live dropdown change, so the modal is
+   * guaranteed open - no `isOpenState()` guard needed (add one if this ever
+   * becomes async).
+   */
+  private recomputeAndRerender() {
+    this.previewEntries = this.scannedFiles.map((file) =>
+      this.computePreviewEntry(file),
+    );
+    this.renderPreviewResult();
+  }
+
   private formatPreviewCell(
     oldValue: string | number | null,
     newValue: string | number | null,
     isError: boolean,
+    isAmbiguous = false,
   ): string {
     if (isError && oldValue !== null) {
       return `${String(oldValue)} (could not read date)`;
     }
     if (newValue === null) return '-';
+    // Mark a converted ambiguous value so the user double-checks the reading.
+    const check = isAmbiguous ? ' [check]' : '';
     if (oldValue !== null) {
-      return `${String(oldValue)} → ${String(newValue)}`;
+      return `${String(oldValue)} → ${String(newValue)}${check}`;
     }
-    return String(newValue);
+    return `${String(newValue)}${check}`;
   }
 
   // --- Phase 3: Execute ---

@@ -165,6 +165,10 @@ No. The hash cache entry is automatically migrated to the new path. Existing tim
 
 Not automatically. Use Settings → Bulk operations → Reformat dates to standardize all values. The plugin auto-detects existing formats (ISO 8601, European, US, numeric timestamps) and rewrites them using your current format. Preview all changes before applying.
 
+> A date like `01/05/2024` could mean January 5 or May 1. What happens?
+
+Such ambiguous day/month dates are left unchanged by default - the plugin never guesses. The preview shows how many were found and offers a one-click choice (day first or month first), pre-suggested from your system region, so you decide before anything is rewritten. Dates with only one valid reading (e.g. `25/12/2024`) are always converted.
+
 > I renamed the property (e.g. `created` → `date_created`). What about existing files?
 
 Use Settings → Bulk operations → Rename property. Enter the old and new property names, preview affected notes, then apply. You can choose whether to delete the old property or keep both.
