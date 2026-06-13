@@ -215,7 +215,7 @@
 
 /* Widen the host .modal so the paginated diff tables have room to breathe.
    PhaseModal tags the .modal element itself with this class in onOpen(), so we
-   size it directly instead of reaching up via :has() — Obsidian's CSS review
+   size it directly instead of reaching up via :has() - Obsidian's CSS review
    flags :has() for the broad selector invalidation it can trigger. Capped so it
    stays compact on large monitors. */
 .frontmatter-date-manager-bulk-modal-host {

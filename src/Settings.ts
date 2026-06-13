@@ -86,10 +86,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       cls: 'frontmatter-date-manager-plugin-description',
     });
     descEl.createEl('p', {
-      text: "Sync services, backup tools, and other plugins often rewrite files without changing their content — which resets the file's dates on disk. That makes it impossible to tell when you actually last edited a note.",
+      text: "Sync services, backup tools, and other plugins often rewrite files without changing their content - which resets the file's dates on disk. That makes it impossible to tell when you actually last edited a note.",
     });
     descEl.createEl('p', {
-      text: "This plugin writes created and last-edited dates straight into each note's properties, and detects real changes by comparing content, so your dates reflect actual edits — not sync artifacts.",
+      text: "This plugin writes created and last-edited dates straight into each note's properties, and detects real changes by comparing content, so your dates reflect actual edits - not sync artifacts.",
     });
 
     // --- Section 1: Timestamp fields ---
@@ -466,7 +466,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     const warnEl = this.containerEl.createEl('div', {
       cls: 'frontmatter-date-manager-filter-warn',
-      text: 'No rules set — all notes get automatic date updates.',
+      text: 'No rules set - all notes get automatic date updates.',
     });
 
     const errorsEl = this.containerEl.createEl('div', {
@@ -490,7 +490,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         const { errors } = parseFilterRules(trimmed);
         for (const err of errors) {
           errorsEl.createEl('div', {
-            text: `Line ${err.lineNumber}: ${err.message} — "${err.text.trim()}"`,
+            text: `Line ${err.lineNumber}: ${err.message} - "${err.text.trim()}"`,
           });
         }
       }
@@ -591,8 +591,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     addSection('Syntax basics', [
       ['# comment', 'Lines starting with # are ignored'],
       ['', 'Blank lines are ignored'],
-      ['templates/', 'Exclude — files inside templates/ are skipped'],
-      ['!templates/keep.md', 'Re-include — prefix with ! to undo exclusion'],
+      ['templates/', 'Exclude - files inside templates/ are skipped'],
+      ['!templates/keep.md', 'Re-include - prefix with ! to undo exclusion'],
       ['', 'When multiple rules match, the last one wins'],
     ]);
 
@@ -667,8 +667,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setName('Change detection (content hashing)')
       .setDesc(
         hashEnabled
-          ? "The last-edited date is written only when the note's content actually changes — this prevents false updates from sync plugins."
-          : 'Disabled — the last-edited date is written on every save, even if nothing changed.',
+          ? "The last-edited date is written only when the note's content actually changes - this prevents false updates from sync plugins."
+          : 'Disabled - the last-edited date is written on every save, even if nothing changed.',
       )
       .addToggle((cb) =>
         cb.setValue(hashEnabled).onChange(async (newValue) => {
@@ -689,9 +689,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setName('What counts as a change')
       .setDesc(
         'Which part of a note counts as a change. ' +
-          '"Body only" — editing properties (tags, aliases, etc.) will not update the date. ' +
-          '"Properties only" — editing the note text will not update the date. ' +
-          '"Both" — any edit updates the date.',
+          '"Body only" - editing properties (tags, aliases, etc.) will not update the date. ' +
+          '"Properties only" - editing the note text will not update the date. ' +
+          '"Both" - any edit updates the date.',
       )
       .addDropdown((dropdown) => {
         dropdown.addOption('body', 'Note body only (default)');
@@ -863,7 +863,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       )
       .addDropdown((dropdown) => {
         dropdown.addOption('', 'None');
-        // Obsidian internal API — no public typings available
+        // Obsidian internal API - no public typings available
         const internalApp = this.app as unknown as {
           commands: { commands: Record<string, { name: string }> };
         };

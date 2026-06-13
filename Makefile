@@ -7,7 +7,7 @@ PLUGIN_DIR := $(OBSIDIAN_VAULT_TEST)/.obsidian/plugins/$(PLUGIN_ID)
 # the forbidden Content-Length/Connection headers `webdriver` sets (wdio #15265),
 # so e2e must run under Node <= 22. E2E_NODE_DIR points at a Node 22 bin dir
 # (defaults to Homebrew's keg-only node@22) and is prepended to PATH for the e2e
-# run only — your default `node` is untouched. Override if yours lives elsewhere:
+# run only - your default `node` is untouched. Override if yours lives elsewhere:
 #   make test-e2e E2E_NODE_DIR=/path/to/node22/bin
 E2E_NODE_DIR ?= /opt/homebrew/opt/node@22/bin
 

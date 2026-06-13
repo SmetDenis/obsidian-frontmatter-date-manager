@@ -401,7 +401,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return { ignored: true };
     }
 
-    // All path-based checks passed — now read the file
+    // All path-based checks passed - now read the file
     const fileContent = (await this.app.vault.read(file)).trim();
 
     if (fileContent.length === 0) {
@@ -415,7 +415,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const contentToHash = this.getContentForHashing(fileContent);
         const sha = this.hashString(contentToHash);
         if (sha === entry.hash) {
-          this.log('Ignoring file — SHA is the same');
+          this.log('Ignoring file - SHA is the same');
           return { ignored: true };
         }
       }
@@ -620,7 +620,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       updates.createdValue !== undefined || updates.updatedValue !== undefined;
 
     if (!hasChanges) {
-      this.log('Skipping processFrontMatter — no changes needed');
+      this.log('Skipping processFrontMatter - no changes needed');
       if (updates.retryAfterMs != null && updates.retryAfterMs > 0) {
         // Content changed but rate limit blocked the update.
         // Don't cache the hash so the retry still detects the change
@@ -633,7 +633,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           this.modifyTimers.set(file.path, timer);
         }
       } else {
-        // Genuinely no changes needed — cache hash to skip future events.
+        // Genuinely no changes needed - cache hash to skip future events.
         if (checkResult.fileContent) {
           await this.populateCacheForFile(file, checkResult.fileContent);
         }
@@ -664,7 +664,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
       if (this.settings.postUpdateCommand) {
         try {
-          // Obsidian internal API — no public typings available
+          // Obsidian internal API - no public typings available
           const internalApp = this.app as unknown as {
             commands: { executeCommandById: (id: string) => void };
           };
@@ -704,7 +704,7 @@ ${e.message}`;
   // If another modify fires mid-processing, we re-schedule instead of dropping it.
   private async processFileWithLock(file: TFile): Promise<void> {
     if (this.processingFiles.has(file.path)) {
-      // Already processing this file — re-schedule
+      // Already processing this file - re-schedule
       const retryTimer = window.setTimeout(() => {
         this.modifyTimers.delete(file.path);
         void this.processFileWithLock(file);
@@ -739,7 +739,7 @@ ${e.message}`;
     if (!viewedKey) return;
 
     // Single source of truth for ignore checks (extension, Canvas.md,
-    // Excalidraw, filter rules, empty files) — never re-implement a subset here,
+    // Excalidraw, filter rules, empty files) - never re-implement a subset here,
     // it drifts out of sync with shouldFileBeIgnored. skipHashCheck is required:
     // opening a file does not change its content, so the hash would always match
     // the cache and the file would be wrongly ignored. The viewed stamp is
@@ -761,7 +761,7 @@ ${e.message}`;
       }
     }
 
-    // Share processingFiles lock — skip if file is mid-write
+    // Share processingFiles lock - skip if file is mid-write
     if (this.processingFiles.has(file.path)) return;
 
     this.processingFiles.add(file.path);
@@ -815,7 +815,7 @@ ${e.message}`;
           const timer = window.setTimeout(() => {
             this.newFileTimers.delete(path);
             this.recentlyCreated.delete(path);
-            // The delay only suppresses processing — it must not cancel it.
+            // The delay only suppresses processing - it must not cancel it.
             // If a template/editor populated the file during the window, a
             // modify event was deferred; process the settled state now so the
             // file gets stamped. Files with no deferred modify are left

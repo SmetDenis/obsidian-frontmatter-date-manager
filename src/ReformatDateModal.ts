@@ -37,7 +37,7 @@ export interface ReformatPreviewEntry {
 
 /**
  * Common date formats to try when auto-detecting.
- * Order matters — more specific formats first to avoid ambiguous matches.
+ * Order matters - more specific formats first to avoid ambiguous matches.
  * ISO 8601 is handled separately via parseISO before these are tried.
  */
 const COMMON_DATE_FORMATS = [
@@ -483,7 +483,7 @@ export class ReformatDateModal extends PhaseModal {
     if (isError && oldValue !== null) {
       return `${String(oldValue)} (could not read date)`;
     }
-    if (newValue === null) return '—';
+    if (newValue === null) return '-';
     if (oldValue !== null) {
       return `${String(oldValue)} → ${String(newValue)}`;
     }

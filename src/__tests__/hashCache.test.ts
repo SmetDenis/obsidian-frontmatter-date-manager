@@ -90,11 +90,11 @@ describe('hash cache debounce', () => {
     vi.advanceTimersByTime(20_000);
     plugin.markHashCacheDirty(); // restart debounce
     vi.advanceTimersByTime(20_000);
-    // 40s total, but only 20s since last dirty — no flush yet
+    // 40s total, but only 20s since last dirty - no flush yet
     expect(writeSpy).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(10_000);
-    // 30s since last dirty — flush
+    // 30s since last dirty - flush
     expect(writeSpy).toHaveBeenCalledTimes(1);
   });
 

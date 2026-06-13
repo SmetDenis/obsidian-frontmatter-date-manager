@@ -29,7 +29,7 @@ describe('command: update timestamps for current file', function () {
       `---\ncreated: 2020-01-01T00:00:00\n---\n\n# Note\n\noriginal body\n`,
     );
 
-    // Edit the body — with auto-update off, no `updated` may appear.
+    // Edit the body - with auto-update off, no `updated` may appear.
     await appendToNote(path, '\nedit while auto is off\n');
     await browser.pause(3_000); // past the 2s debounce
     assert.equal(

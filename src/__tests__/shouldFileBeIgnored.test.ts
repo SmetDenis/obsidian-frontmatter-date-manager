@@ -25,7 +25,7 @@ function createPluginWithVaultRead(
   return plugin;
 }
 
-describe('shouldFileBeIgnored — filter rules (exclude)', () => {
+describe('shouldFileBeIgnored - filter rules (exclude)', () => {
   it('does not ignore a markdown file outside excluded patterns', async () => {
     const plugin = createPluginWithVaultRead({
       filterRules: 'excluded/',
@@ -90,7 +90,7 @@ describe('shouldFileBeIgnored — filter rules (exclude)', () => {
   });
 });
 
-describe('shouldFileBeIgnored — filter rules (allowlist via ** + !)', () => {
+describe('shouldFileBeIgnored - filter rules (allowlist via ** + !)', () => {
   it('empty filterRules does not filter anything', async () => {
     const plugin = createPluginWithVaultRead({
       filterRules: '',
@@ -139,7 +139,7 @@ describe('shouldFileBeIgnored — filter rules (allowlist via ** + !)', () => {
   });
 });
 
-describe('shouldFileBeIgnored — negate (re-include) rules', () => {
+describe('shouldFileBeIgnored - negate (re-include) rules', () => {
   it('negate re-includes a previously excluded subfolder', async () => {
     const plugin = createPluginWithVaultRead({
       filterRules: 'templates/\n!templates/daily/',
@@ -172,7 +172,7 @@ describe('shouldFileBeIgnored — negate (re-include) rules', () => {
   });
 });
 
-describe('shouldFileBeIgnored — Canvas.md handling', () => {
+describe('shouldFileBeIgnored - Canvas.md handling', () => {
   it('ignores Canvas.md (exact case)', async () => {
     const plugin = createPluginWithVaultRead();
     const file = createTFile('Canvas.md');
@@ -193,7 +193,7 @@ describe('shouldFileBeIgnored — Canvas.md handling', () => {
   });
 });
 
-describe('shouldFileBeIgnored — performance: filter rules before file read', () => {
+describe('shouldFileBeIgnored - performance: filter rules before file read', () => {
   it('does not read file when excluded by filter rules', async () => {
     const readSpy = vi.fn().mockResolvedValue('some content');
     const plugin = createPlugin({
@@ -219,7 +219,7 @@ describe('shouldFileBeIgnored — performance: filter rules before file read', (
   });
 });
 
-describe('shouldFileBeIgnored — glob patterns in filter rules', () => {
+describe('shouldFileBeIgnored - glob patterns in filter rules', () => {
   it('glob pattern excludes matching files', async () => {
     const plugin = createPluginWithVaultRead({
       filterRules: '**/README.md',

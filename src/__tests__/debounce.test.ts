@@ -60,7 +60,7 @@ describe('modify debounce', () => {
     const timer1 = setTimeout(callback, 2000);
     timers.set('test.md', timer1);
 
-    // Second "modify" event — clears previous timer, sets new one
+    // Second "modify" event - clears previous timer, sets new one
     clearTimeout(timers.get('test.md')!);
     const timer2 = setTimeout(callback, 2000);
     timers.set('test.md', timer2);

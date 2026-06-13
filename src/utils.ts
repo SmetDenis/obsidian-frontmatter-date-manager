@@ -41,7 +41,7 @@ export function isGlobPattern(pattern: string): boolean {
  * milliseconds, so a seconds value (~1.7e9) would resolve to ~1970. Values
  * below this threshold are too small to be a plausible modern millisecond
  * timestamp, so they are treated as seconds. 1e11 ms = 1973; 1e11 s = year
- * 5138 — the only misread values are millisecond timestamps before 1973.
+ * 5138 - the only misread values are millisecond timestamps before 1973.
  */
 export const EPOCH_SECONDS_THRESHOLD = 1e11;
 

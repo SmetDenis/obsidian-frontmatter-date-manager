@@ -70,7 +70,7 @@ export class FindInversionsModal extends PhaseModal {
     this.bar = null;
   }
 
-  // Per-file detection — runs inside the batched scan so large vaults don't
+  // Per-file detection - runs inside the batched scan so large vaults don't
   // freeze. Detection is independent of the chosen fix strategy.
   private computeInvertedForFile(file: TFile): InvertedFileEntry | null {
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;

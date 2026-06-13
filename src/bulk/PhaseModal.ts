@@ -5,7 +5,7 @@ type PhaseRender = () => void | Promise<void>;
 /**
  * Thin host for multi-phase bulk modals. Single responsibility: phase
  * navigation (a render stack with goTo/back) plus open-state lifecycle. It
- * renders no UI of its own — concrete modals build screens with the helpers
+ * renders no UI of its own - concrete modals build screens with the helpers
  * in chrome.ts. Operation-specific logic must NOT live here.
  */
 export abstract class PhaseModal extends Modal {
@@ -15,7 +15,7 @@ export abstract class PhaseModal extends Modal {
   onOpen() {
     this.opened = true;
     // Tag the host .modal element itself so the stylesheet can widen it
-    // directly. Avoids a `.modal:has(...)` selector — Obsidian's CSS review
+    // directly. Avoids a `.modal:has(...)` selector - Obsidian's CSS review
     // flags `:has()` for the broad selector invalidation it can trigger.
     this.modalEl.addClass('frontmatter-date-manager-bulk-modal-host');
   }

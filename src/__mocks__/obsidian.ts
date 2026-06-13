@@ -1,5 +1,5 @@
 // Minimal stubs for Obsidian API types used across the codebase.
-// Only shapes needed for imports to resolve — no real behavior.
+// Only shapes needed for imports to resolve - no real behavior.
 
 export class TAbstractFile {
   vault: any;

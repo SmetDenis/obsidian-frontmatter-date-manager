@@ -54,7 +54,7 @@ export class UpdateAllCacheData extends PhaseModal {
     });
   }
 
-  // Rebuild core — extracted so it is testable without the DOM. Rebuilding the
+  // Rebuild core - extracted so it is testable without the DOM. Rebuilding the
   // cache is intentional bulk processing; populateCacheForFileDirect mutates the
   // cache without marking it dirty (batched for performance), so onComplete must
   // evict + mark dirty + flush, otherwise the rebuild is lost on reload.

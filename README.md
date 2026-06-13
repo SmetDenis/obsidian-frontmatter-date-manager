@@ -179,7 +179,7 @@ The plugin skips that file and shows a notice with the file path and error detai
 
 > I'm saving rapidly. Will the timestamp update on every save?
 
-No. There is a minimum 30-second interval between updates (configurable: 5–300 seconds) plus a 2-second debounce, so rapid edits are consolidated into a single timestamp write.
+No. There is a minimum 30-second interval between updates (configurable: 5-300 seconds) plus a 2-second debounce, so rapid edits are consolidated into a single timestamp write.
 
 ## Sync and version control
 

@@ -108,7 +108,7 @@ export function renderSummary(
 
 export interface PaginatedDiffTableOptions {
   columns: string[];
-  /** The FULL set of changed rows — never pre-sliced. Pagination shows them all. */
+  /** The FULL set of changed rows - never pre-sliced. Pagination shows them all. */
   rows: string[][];
   /** Rows per page. Defaults to PREVIEW_MAX_ROWS. */
   pageSize?: number;
@@ -224,7 +224,7 @@ export function renderCopyPreviewButton(
  * Render the list of items that failed during execution as a paginated
  * `File | Error` table plus a "Copy full preview" button. This is the user-facing
  * channel for execute-phase failures: `logError` is a no-op in production, so the
- * console shows nothing — the failing paths and reasons must be presented here.
+ * console shows nothing - the failing paths and reasons must be presented here.
  */
 export function renderFailureTable(
   parent: HTMLElement,

@@ -61,7 +61,7 @@ describe('new file delay', () => {
     // A template plugin populates the file inside the delay window.
     handlers.modify(file);
 
-    // Still within the window — nothing should run yet.
+    // Still within the window - nothing should run yet.
     expect(process).not.toHaveBeenCalled();
 
     // Window expires.
@@ -76,7 +76,7 @@ describe('new file delay', () => {
     const { handlers, file, process } = setupHandlers(5000);
 
     handlers.create(file);
-    // No modify event — the file was created but never edited.
+    // No modify event - the file was created but never edited.
     vi.advanceTimersByTime(5000);
 
     expect(process).not.toHaveBeenCalled();

@@ -6,12 +6,12 @@ import { globalIgnores } from 'eslint/config';
 
 // This config is deliberately a STRICT SUPERSET of the Obsidian review bot:
 //   1. `...obsidianmd.configs.recommended` is the bot's exact ruleset, so
-//      `make lint` flags everything the bot would — including across e2e/,
+//      `make lint` flags everything the bot would - including across e2e/,
 //      which is intentionally NOT excluded. Only genuinely un-lintable files
 //      (build scripts, the .mts runner config, tsconfig-excluded test/mock
 //      dirs) are ignored below.
 //   2. The `**/*.ts` block then promotes/adds rules the bot does not run, so
-//      local linting is at least as strict as the bot — never looser. One of
+//      local linting is at least as strict as the bot - never looser. One of
 //      those is `@eslint-community/eslint-comments/require-description`: the
 //      Obsidian review runs it (it is NOT part of obsidianmd's published
 //      ruleset, so a bare directive comment passed `make lint` locally yet
@@ -20,7 +20,7 @@ import { globalIgnores } from 'eslint/config';
 // global that would hide a bot failure. Mocha's describe/it stay OUT of the
 // shared globals: the review lints e2e/ under its OWN config (no describe/it
 // globals, `no-undef` ON), so each spec MUST declare them inline with
-// `/* global describe, it */` or `no-undef` fails upstream — putting them in
+// `/* global describe, it */` or `no-undef` fails upstream - putting them in
 // this config would suppress that locally but not on review. That inline
 // directive, in turn, must carry a `-- <reason>` description to satisfy
 // require-description (above); a bare `/* global ... */` is now a lint error.

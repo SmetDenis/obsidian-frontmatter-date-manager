@@ -17,7 +17,7 @@ describe('isGlobPattern', () => {
   });
 });
 
-describe('matchesPathPattern — backward compat (plain folders)', () => {
+describe('matchesPathPattern - backward compat (plain folders)', () => {
   it('matches file in folder', () => {
     expect(matchesPathPattern('notes/test.md', 'notes')).toBe(true);
   });
@@ -39,7 +39,7 @@ describe('matchesPathPattern — backward compat (plain folders)', () => {
   });
 });
 
-describe('matchesPathPattern — glob patterns', () => {
+describe('matchesPathPattern - glob patterns', () => {
   it('matches ** recursive pattern', () => {
     expect(matchesPathPattern('a/b/README.md', '**/README.md')).toBe(true);
   });
@@ -87,7 +87,7 @@ describe('matchesPathPattern — glob patterns', () => {
   });
 });
 
-describe('matchesPathPattern — edge cases', () => {
+describe('matchesPathPattern - edge cases', () => {
   it('empty pattern returns false', () => {
     expect(matchesPathPattern('any/path.md', '')).toBe(false);
   });

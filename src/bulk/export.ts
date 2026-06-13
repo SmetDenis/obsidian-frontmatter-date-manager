@@ -18,7 +18,7 @@ export function toTSV(columns: string[], rows: string[][]): string {
 
 /**
  * Copy the full preview diff to the clipboard as TSV. The complete diff is
- * already held in memory by each modal, so this exports EVERY changed row — the
+ * already held in memory by each modal, so this exports EVERY changed row - the
  * escape hatch that lets the paginated preview honor the "exact diff" contract
  * for review in an external tool. No vault file is written.
  */

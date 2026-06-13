@@ -278,7 +278,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       }
     }
 
-    // Null out proposed values that match existing — no real change
+    // Null out proposed values that match existing - no real change
     if (
       proposedCreated !== null &&
       existingCreated !== null &&
@@ -427,7 +427,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     proposed: string | number | null,
     existing: string | number | null,
   ): string {
-    if (proposed === null) return '—';
+    if (proposed === null) return '-';
     if (existing != null) {
       return `${String(existing)} → ${String(proposed)}`;
     }

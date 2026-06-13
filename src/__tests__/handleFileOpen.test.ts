@@ -38,7 +38,7 @@ function setupOpenPlugin(
   return { plugin, processFrontMatter };
 }
 
-describe('handleFileOpen — viewed stamping respects shouldFileBeIgnored', () => {
+describe('handleFileOpen - viewed stamping respects shouldFileBeIgnored', () => {
   it('does not write frontmatter when opening Canvas.md', async () => {
     const { plugin, processFrontMatter } = setupOpenPlugin();
     await (plugin as any).handleFileOpen(createTFile('Canvas.md'));

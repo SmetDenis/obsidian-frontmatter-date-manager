@@ -22,7 +22,7 @@ export interface ExecutePhaseResult {
   errors: number;
   /**
    * Per-item failures collected in order, so the modal can show the user exactly
-   * which files failed and why — `logError` is a no-op in production, so the
+   * which files failed and why - `logError` is a no-op in production, so the
    * console is not a viable channel for these details.
    */
   failures: ExecuteFailure[];

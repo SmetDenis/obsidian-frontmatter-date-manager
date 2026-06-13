@@ -4,13 +4,13 @@
 // `import/no-nodejs-modules` (meant for the shipped plugin, which must avoid
 // Node builtins for mobile compatibility) across the whole repo. These tiny
 // helpers replace `node:assert/strict` so that rule stays satisfied without a
-// Node builtin import — equality is strict (===), matching `assert/strict`.
+// Node builtin import - equality is strict (===), matching `assert/strict`.
 
 function fail(message: string | undefined, fallback: string): never {
   throw new Error(message ?? fallback);
 }
 
-// Structural equality via JSON — sufficient and exact for the JSON-serializable
+// Structural equality via JSON - sufficient and exact for the JSON-serializable
 // test values compared here (arrays of strings); order-sensitive, as intended.
 function isDeepEqual(actual: unknown, expected: unknown): boolean {
   return JSON.stringify(actual) === JSON.stringify(expected);
