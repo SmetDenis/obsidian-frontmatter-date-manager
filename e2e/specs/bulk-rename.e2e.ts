@@ -1,5 +1,6 @@
+/* global describe, it */
 import { browser } from '@wdio/globals';
-import assert from 'node:assert/strict';
+import { assert } from '../helpers/assert';
 import { createNote, readNote } from '../helpers/vault';
 import { setSettings } from '../helpers/settings';
 import { fmValue } from '../helpers/frontmatter';
@@ -16,8 +17,14 @@ describe('bulk: rename frontmatter key (UI-driven)', function () {
 
     await settingsTab.open();
     await settingsTab.openModal('frontmatter-date-manager-open-rename');
-    await bulkModal.setText('frontmatter-date-manager-rename-old', 'created');
-    await bulkModal.setText('frontmatter-date-manager-rename-new', 'createdAt');
+    await bulkModal.fillByClass(
+      'frontmatter-date-manager-rename-old',
+      'created',
+    );
+    await bulkModal.fillByClass(
+      'frontmatter-date-manager-rename-new',
+      'createdAt',
+    );
     await bulkModal.clickPrimary(); // Scan & preview
     await bulkModal.waitForPreview();
     await bulkModal.clickPrimary(); // Run

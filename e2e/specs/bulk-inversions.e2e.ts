@@ -1,5 +1,6 @@
+/* global describe, it */
 import { browser } from '@wdio/globals';
-import assert from 'node:assert/strict';
+import { assert } from '../helpers/assert';
 import { createNote, readNote } from '../helpers/vault';
 import { setSettings } from '../helpers/settings';
 import { fmValue } from '../helpers/frontmatter';

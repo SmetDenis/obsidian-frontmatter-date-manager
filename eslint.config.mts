@@ -3,6 +3,19 @@ import obsidianmd from 'eslint-plugin-obsidianmd';
 import globals from 'globals';
 import { globalIgnores } from 'eslint/config';
 
+// This config is deliberately a STRICT SUPERSET of the Obsidian review bot:
+//   1. `...obsidianmd.configs.recommended` is the bot's exact ruleset, so
+//      `make lint` flags everything the bot would — including across e2e/,
+//      which is intentionally NOT excluded. Only genuinely un-lintable files
+//      (build scripts, the .mts runner config, tsconfig-excluded test/mock
+//      dirs) are ignored below.
+//   2. The `**/*.ts` block then promotes/adds rules the bot does not run, so
+//      local linting is at least as strict as the bot — never looser.
+// Keep it that way: never weaken an obsidianmd rule here, and never add a
+// global that would hide a bot failure (Mocha's describe/it stay OUT — specs
+// declare them with an inline `/* global describe, it */`, which the bot
+// honors too — so a missing declaration fails locally exactly as it would
+// upstream).
 export default tseslint.config(
   {
     languageOptions: {
@@ -23,7 +36,7 @@ export default tseslint.config(
   {
     files: ['**/*.ts'],
     rules: {
-      // Catch real bugs
+      // Stricter than the obsidianmd bot: extra real-bug catchers it omits.
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/restrict-template-expressions': [
         'error',
@@ -64,7 +77,9 @@ export default tseslint.config(
     'src/__tests__/**',
     'src/__mocks__/**',
     'vitest.config.ts',
+    // wdio runner config (TS-typed .mts); the obsidianmd TS parser only covers
+    // **/*.ts, so .mts is treated like the other excluded runner/build configs.
+    'e2e/wdio.conf.mts',
     'tmp/**',
-    'e2e/**',
   ]),
 );

@@ -5,13 +5,13 @@
 /** The text between the opening and closing `---` fences (without fences). */
 export function getFrontmatterBlock(raw: string): string {
   const m = raw.match(/^---\n([\s\S]*?)\n---/);
-  return m ? m[1]! : '';
+  return m ? (m[1] ?? '') : '';
 }
 
 /** Everything after the closing `---` fence (the note body). */
 export function getBody(raw: string): string {
   const m = raw.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
-  return m ? m[1]! : raw;
+  return m ? (m[1] ?? raw) : raw;
 }
 
 /** Trimmed value of a top-level scalar key in the frontmatter, or undefined. */

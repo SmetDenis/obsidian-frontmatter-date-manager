@@ -24,7 +24,7 @@ export const settingsTab = {
 
   /** Click a bulk-operation button by its stable class (opens the modal). */
   async openModal(buttonClass: string): Promise<void> {
-    const btn = await $(`.${buttonClass}`);
+    const btn = $(`.${buttonClass}`);
     await btn.waitForClickable({ timeout: 5_000 });
     await btn.click();
   },
@@ -33,10 +33,10 @@ export const settingsTab = {
 
   /** Type into the exclude input and click "+" to commit. */
   async addExcludeProperty(value: string): Promise<void> {
-    const input = await $(EXCLUDE_INPUT);
+    const input = $(EXCLUDE_INPUT);
     await input.waitForExist({ timeout: 5_000 });
     await input.setValue(value);
-    await (await $(EXCLUDE_ADD)).click();
+    await $(EXCLUDE_ADD).click();
   },
 
   /** Labels of the currently rendered exclude chips, in order. */
@@ -45,12 +45,12 @@ export const settingsTab = {
   },
 
   async excludeChipCount(): Promise<number> {
-    return (await $$(CHIP)).length;
+    return $$(CHIP).length;
   },
 
   /** Click the remove control of the chip whose label matches. */
   async removeExcludeChip(label: string): Promise<void> {
-    const chips = await $$(CHIP);
+    const chips = await $$(CHIP).getElements();
     for (const chip of chips) {
       if ((await chip.$(CHIP_LABEL).getText()) === label) {
         await chip.$(CHIP_REMOVE).click();

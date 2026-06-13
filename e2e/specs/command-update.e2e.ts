@@ -1,6 +1,7 @@
+/* global describe, it */
 import { browser } from '@wdio/globals';
 import { obsidianPage } from 'wdio-obsidian-service';
-import assert from 'node:assert/strict';
+import { assert } from '../helpers/assert';
 import {
   createNote,
   readNote,

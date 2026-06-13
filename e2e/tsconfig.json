@@ -10,6 +10,7 @@
       "wdio-obsidian-service"
     ],
     "strict": true,
+    "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noEmit": true

@@ -10,27 +10,27 @@ const NEXT = `${M} .frontmatter-date-manager-bulk-pager-next`;
 export const bulkModal = {
   /** Choose a dropdown value by the dropdown's stable class. */
   async select(selectClass: string, value: string): Promise<void> {
-    const sel = await $(`${M} .${selectClass}`);
+    const sel = $(`${M} .${selectClass}`);
     await sel.waitForExist({ timeout: 5_000 });
     await sel.selectByAttribute('value', value);
   },
 
-  /** Set a text input by its stable class. */
-  async setText(inputClass: string, value: string): Promise<void> {
-    const input = await $(`${M} .${inputClass}`);
+  /** Fill a text input by its stable class. */
+  async fillByClass(inputClass: string, value: string): Promise<void> {
+    const input = $(`${M} .${inputClass}`);
     await input.waitForExist({ timeout: 5_000 });
     await input.setValue(value);
   },
 
   /** Click the primary (Run / Scan & preview) button. */
   async clickPrimary(): Promise<void> {
-    const btn = await $(PRIMARY);
+    const btn = $(PRIMARY);
     await btn.waitForClickable({ timeout: 10_000 });
     await btn.click();
   },
 
   async isPrimaryDisabled(): Promise<boolean> {
-    const btn = await $(PRIMARY);
+    const btn = $(PRIMARY);
     return (await btn.getAttribute('disabled')) !== null;
   },
 
@@ -53,7 +53,7 @@ export const bulkModal = {
 
   /** Close the modal via its footer (Cancel/Close) button. */
   async close(): Promise<void> {
-    const btn = await $(FOOTER);
+    const btn = $(FOOTER);
     if (await btn.isExisting()) await btn.click();
   },
 };

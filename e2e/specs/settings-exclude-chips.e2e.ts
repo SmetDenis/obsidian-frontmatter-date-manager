@@ -1,5 +1,6 @@
+/* global describe, it */
 import { browser } from '@wdio/globals';
-import assert from 'node:assert/strict';
+import { assert } from '../helpers/assert';
 import { setSettings } from '../helpers/settings';
 import { settingsTab } from '../pageobjects/settingsTab';
 
@@ -14,7 +15,9 @@ async function excludeKeys(): Promise<string[]> {
       };
     };
     const s = internal.plugins.plugins[id]?.settings;
-    return ((s?.frontmatterHashExcludeKeys as string[]) ?? []).slice();
+    return (
+      (s?.frontmatterHashExcludeKeys as string[] | undefined) ?? []
+    ).slice();
   }, PLUGIN_ID);
 }
 
