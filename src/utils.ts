@@ -313,6 +313,24 @@ export function errorToMessage(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
+/**
+ * Parse the "Maximum cache entries" text input into a valid setting value.
+ *
+ * `0` is a meaningful value here - it means "no limit" (the engine treats
+ * `maxSize <= 0` as unlimited). The naive `parseInt(value) || 10_000` idiom
+ * breaks this: `parseInt('0')` is `0`, which is falsy, so `0 || 10_000` yields
+ * `10_000` and the documented "0 = no limit" is unreachable from the UI. To
+ * tell a meaningful `0` apart from empty/garbage input we must check for a
+ * finite parse explicitly rather than rely on truthiness. A negative value is
+ * clamped to `0` (unlimited), matching the engine's `maxSize <= 0` branch; an
+ * unparseable value falls back to the default so clearing the field cannot
+ * silently disable the limit. Mirrors the `inversionToleranceSec` handler.
+ */
+export function parseCacheMaxSize(value: string): number {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 10_000;
+}
+
 export function getMomentFormatHint(formatStr: string): string | undefined {
   const replacements: [RegExp, string][] = [
     [/YYYY/, 'Use "yyyy" instead of "YYYY" for year'],

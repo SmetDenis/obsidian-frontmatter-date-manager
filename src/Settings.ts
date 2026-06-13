@@ -1,7 +1,11 @@
 import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
 import { TimezoneSuggest } from './suggesters/TimezoneSuggest';
-import { getMomentFormatHint, parsePropertyKeys } from './utils';
+import {
+  getMomentFormatHint,
+  parseCacheMaxSize,
+  parsePropertyKeys,
+} from './utils';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
@@ -915,7 +919,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           .setPlaceholder('10000')
           .setValue(String(this.plugin.settings.hashCacheMaxSize ?? 10_000))
           .onChange(async (value) => {
-            this.plugin.settings.hashCacheMaxSize = parseInt(value) || 10_000;
+            this.plugin.settings.hashCacheMaxSize = parseCacheMaxSize(value);
             await this.saveSettings();
           }),
       );
