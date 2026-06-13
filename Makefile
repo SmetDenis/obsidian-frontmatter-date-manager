@@ -3,6 +3,14 @@
 PLUGIN_ID  := frontmatter-date-manager
 PLUGIN_DIR := $(OBSIDIAN_VAULT_TEST)/.obsidian/plugins/$(PLUGIN_ID)
 
+# WebdriverIO 9.x cannot open a WebDriver session on Node 26: its undici rejects
+# the forbidden Content-Length/Connection headers `webdriver` sets (wdio #15265),
+# so e2e must run under Node <= 22. E2E_NODE_DIR points at a Node 22 bin dir
+# (defaults to Homebrew's keg-only node@22) and is prepended to PATH for the e2e
+# run only — your default `node` is untouched. Override if yours lives elsewhere:
+#   make test-e2e E2E_NODE_DIR=/path/to/node22/bin
+E2E_NODE_DIR ?= /opt/homebrew/opt/node@22/bin
+
 .PHONY: help install build dev lint typecheck-e2e format format-check test test-watch test-e2e test-e2e-spec pre-commit local-test
 
 help: ## Show available commands
@@ -35,17 +43,27 @@ test: ## Run all tests
 test-watch: ## Run tests in watch mode
 	npm run test:watch
 
-test-e2e: ## Run all e2e tests (builds plugin, launches real Obsidian)
-	npm run test:e2e
+test-e2e: ## Run all e2e tests under Node 22 (builds plugin, launches real Obsidian)
+	@PATH="$(E2E_NODE_DIR):$$PATH" node --version | grep -qE 'v(1[0-9]|2[0-2])\.' || { \
+		echo "Error: e2e needs Node <= 22 (wdio #15265 breaks WebDriver session creation on Node 26)."; \
+		echo "       Looked in E2E_NODE_DIR=$(E2E_NODE_DIR) and PATH; neither was Node <= 22."; \
+		echo "       Fix: brew install node@22  (or: make test-e2e E2E_NODE_DIR=/path/to/node22/bin)"; \
+		exit 1; }
+	PATH="$(E2E_NODE_DIR):$$PATH" npm run test:e2e
 
-test-e2e-spec: ## Run one e2e spec: make test-e2e-spec SPEC=auto-stamp
+test-e2e-spec: ## Run one e2e spec under Node 22: make test-e2e-spec SPEC=auto-stamp
 	@if [ -z "$(SPEC)" ]; then \
 		echo "Error: set SPEC to a spec name, e.g. make test-e2e-spec SPEC=auto-stamp"; \
 		echo "Available: $$(ls e2e/specs/*.e2e.ts | sed 's|e2e/specs/||;s|\.e2e\.ts||' | tr '\n' ' ')"; \
 		exit 1; \
 	fi
+	@PATH="$(E2E_NODE_DIR):$$PATH" node --version | grep -qE 'v(1[0-9]|2[0-2])\.' || { \
+		echo "Error: e2e needs Node <= 22 (wdio #15265 breaks WebDriver session creation on Node 26)."; \
+		echo "       Looked in E2E_NODE_DIR=$(E2E_NODE_DIR) and PATH; neither was Node <= 22."; \
+		echo "       Fix: brew install node@22  (or add E2E_NODE_DIR=/path/to/node22/bin)"; \
+		exit 1; }
 	@$(MAKE) build
-	npx wdio run e2e/wdio.conf.mts --spec e2e/specs/$(SPEC).e2e.ts
+	PATH="$(E2E_NODE_DIR):$$PATH" npx wdio run e2e/wdio.conf.mts --spec e2e/specs/$(SPEC).e2e.ts
 
 pre-commit: ## Run all checks (format, lint, typecheck-e2e, test, build)
 	@$(MAKE) format-check
