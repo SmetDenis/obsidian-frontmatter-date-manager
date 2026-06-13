@@ -1,5 +1,6 @@
 import tseslint from 'typescript-eslint';
 import obsidianmd from 'eslint-plugin-obsidianmd';
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import globals from 'globals';
 import { globalIgnores } from 'eslint/config';
 
@@ -10,12 +11,19 @@ import { globalIgnores } from 'eslint/config';
 //      (build scripts, the .mts runner config, tsconfig-excluded test/mock
 //      dirs) are ignored below.
 //   2. The `**/*.ts` block then promotes/adds rules the bot does not run, so
-//      local linting is at least as strict as the bot — never looser.
+//      local linting is at least as strict as the bot — never looser. One of
+//      those is `@eslint-community/eslint-comments/require-description`: the
+//      Obsidian review runs it (it is NOT part of obsidianmd's published
+//      ruleset, so a bare directive comment passed `make lint` locally yet
+//      failed review). Mirroring it here closes that gap.
 // Keep it that way: never weaken an obsidianmd rule here, and never add a
-// global that would hide a bot failure (Mocha's describe/it stay OUT — specs
-// declare them with an inline `/* global describe, it */`, which the bot
-// honors too — so a missing declaration fails locally exactly as it would
-// upstream).
+// global that would hide a bot failure. Mocha's describe/it stay OUT of the
+// shared globals: the review lints e2e/ under its OWN config (no describe/it
+// globals, `no-undef` ON), so each spec MUST declare them inline with
+// `/* global describe, it */` or `no-undef` fails upstream — putting them in
+// this config would suppress that locally but not on review. That inline
+// directive, in turn, must carry a `-- <reason>` description to satisfy
+// require-description (above); a bare `/* global ... */` is now a lint error.
 export default tseslint.config(
   {
     languageOptions: {
@@ -35,7 +43,16 @@ export default tseslint.config(
   ...obsidianmd.configs.recommended,
   {
     files: ['**/*.ts'],
+    plugins: {
+      // Provides require-description below; obsidianmd does not bundle it.
+      '@eslint-community/eslint-comments': { rules: eslintComments.rules },
+    },
     rules: {
+      // Stricter than the obsidianmd bot: every directive comment (e.g. the
+      // specs' `/* global describe, it */`) must explain itself via `-- ...`,
+      // matching the Obsidian review's own require-description finding.
+      '@eslint-community/eslint-comments/require-description': 'error',
+
       // Stricter than the obsidianmd bot: extra real-bug catchers it omits.
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/restrict-template-expressions': [

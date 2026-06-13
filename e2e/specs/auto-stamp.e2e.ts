@@ -1,4 +1,4 @@
-/* global describe, it */
+/* global describe, it -- Mocha BDD globals injected by the WebdriverIO test runner */
 import { browser } from '@wdio/globals';
 import { assert } from '../helpers/assert';
 import {
