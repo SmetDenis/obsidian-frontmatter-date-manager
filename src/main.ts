@@ -2,9 +2,9 @@ import { Notice, Plugin, TAbstractFile, TFile, normalizePath } from 'obsidian';
 import { format, parse, add, isAfter } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import {
-  DEFAULT_SETTINGS,
   FrontmatterDateManagerSettings,
   FrontmatterDateManagerSettingsTab,
+  sanitizeSettings,
 } from './Settings';
 import { epochNumberToDate, errorToMessage, isTFile } from './utils';
 import { sha256 } from 'js-sha256';
@@ -953,9 +953,13 @@ ${e.message}`;
   }
 
   async loadSettings() {
-    const data =
-      (await this.loadData()) as Partial<FrontmatterDateManagerSettings> | null;
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, data ?? {});
+    // sanitizeSettings validates field types: data.json is external (hand-edited
+    // or sync-rewritten), so a wrong-typed value must be coerced to its default
+    // here at the boundary - otherwise it crashes recompileFilterRules below
+    // (and onload), exactly as a malformed hash-cache.json is handled in
+    // loadHashCache.
+    const data: unknown = await this.loadData();
+    this.settings = sanitizeSettings(data);
 
     this.recompileFilterRules();
     await this.loadHashCache();

@@ -37,6 +37,17 @@ describe('parseFilterRules', () => {
     expect(result.errors).toHaveLength(0);
   });
 
+  // Defense-in-depth: a corrupt/synced data.json can hand a non-string here.
+  // The function must not throw (e.g. `(42).trim()`), so a bad value can never
+  // crash onload via recompileFilterRules.
+  it('returns empty without throwing for non-string input', () => {
+    for (const bad of [42, true, { a: 1 }, ['x'], null, undefined]) {
+      const result = parseFilterRules(bad as never);
+      expect(result.rules).toHaveLength(0);
+      expect(result.errors).toHaveLength(0);
+    }
+  });
+
   it('skips comment lines', () => {
     const result = parseFilterRules('# this is a comment\n# another');
     expect(result.rules).toHaveLength(0);

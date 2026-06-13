@@ -28,11 +28,16 @@ export function validatePattern(pattern: string): string | null {
   }
 }
 
-export function parseFilterRules(text: string): ParseResult {
+// Accepts `unknown` defensively: a corrupt/synced data.json can hand a non-string
+// value through settings.filterRules. A non-string (or empty) input yields no
+// rules instead of throwing `text.trim is not a function`, so it can never crash
+// onload via recompileFilterRules. The settings boundary (sanitizeSettings) is
+// the primary guard; this is the second line of defense.
+export function parseFilterRules(text: unknown): ParseResult {
   const rules: FilterRule[] = [];
   const errors: ParseResult['errors'] = [];
 
-  if (!text || text.trim().length === 0) {
+  if (typeof text !== 'string' || text.trim().length === 0) {
     return { rules, errors };
   }
 

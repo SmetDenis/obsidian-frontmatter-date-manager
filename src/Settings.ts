@@ -65,6 +65,72 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   inversionToleranceSec: 0,
 };
 
+// Validate externally-loaded settings against DEFAULT_SETTINGS types. data.json
+// can be hand-edited or rewritten by a sync/backup tool, so a field may arrive
+// with the wrong type. Each wrong-typed known field is replaced with its default
+// so it can never reach code that asserts a type (.trim(), for...of, date-fns)
+// and crash onload or file processing. Unknown keys are preserved for forward
+// compatibility. This mirrors the runtime type-validation already done for the
+// equally-external hash-cache.json in loadHashCache.
+export function sanitizeSettings(raw: unknown): FrontmatterDateManagerSettings {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return { ...DEFAULT_SETTINGS };
+  }
+
+  const input = raw as Record<string, unknown>;
+  // Preserve unknown keys, then overwrite every known field with a valid value.
+  const result: Record<string, unknown> = { ...DEFAULT_SETTINGS, ...input };
+
+  // Primitive fields (string / number / boolean): the runtime type must match
+  // the default's. Numbers must also be finite. Arrays are handled separately.
+  for (const key of Object.keys(
+    DEFAULT_SETTINGS,
+  ) as (keyof FrontmatterDateManagerSettings)[]) {
+    const def = DEFAULT_SETTINGS[key];
+    if (Array.isArray(def)) continue;
+    const val = input[key];
+    const typeMatches = typeof val === typeof def;
+    const finiteIfNumber =
+      typeof def !== 'number' ||
+      (typeof val === 'number' && Number.isFinite(val));
+    if (!typeMatches || !finiteIfNumber) {
+      result[key] = def;
+    }
+  }
+
+  // String-array field: keep only string elements; anything else -> default [].
+  // A plain typeof check is not enough here ([] and {} are both 'object'), so a
+  // non-array (or array of non-strings) must be coerced explicitly.
+  result.frontmatterHashExcludeKeys = Array.isArray(
+    input.frontmatterHashExcludeKeys,
+  )
+    ? input.frontmatterHashExcludeKeys.filter(
+        (k): k is string => typeof k === 'string',
+      )
+    : [...(DEFAULT_SETTINGS.frontmatterHashExcludeKeys ?? [])];
+
+  // Enum fields: a string of the wrong value passes the typeof check above, so
+  // membership in the allowed set must be verified explicitly.
+  const hashModes: HashTrackingMode[] = ['body', 'frontmatter', 'both'];
+  if (!hashModes.includes(result.hashTrackingMode as HashTrackingMode)) {
+    result.hashTrackingMode = DEFAULT_SETTINGS.hashTrackingMode;
+  }
+
+  const strategies: InversionFixStrategy[] = [
+    'disabled',
+    'created-to-updated',
+    'updated-to-created',
+    'max-all',
+  ];
+  if (
+    !strategies.includes(result.inversionFixStrategy as InversionFixStrategy)
+  ) {
+    result.inversionFixStrategy = DEFAULT_SETTINGS.inversionFixStrategy;
+  }
+
+  return result as unknown as FrontmatterDateManagerSettings;
+}
+
 export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   plugin: FrontmatterDateManagerPlugin;
   // Obsidian re-renders the entire settings tab (calls display()) on any
