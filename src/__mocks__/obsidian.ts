@@ -54,6 +54,10 @@ export class Modal {
     addClass: () => {},
     removeChild: () => {},
   };
+  modalEl: any = {
+    addClass: () => {},
+    removeClass: () => {},
+  };
   containerEl: any = {};
   constructor(app: any) {
     this.app = app;

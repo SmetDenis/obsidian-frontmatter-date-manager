@@ -14,6 +14,10 @@ export abstract class PhaseModal extends Modal {
 
   onOpen() {
     this.opened = true;
+    // Tag the host .modal element itself so the stylesheet can widen it
+    // directly. Avoids a `.modal:has(...)` selector — Obsidian's CSS review
+    // flags `:has()` for the broad selector invalidation it can trigger.
+    this.modalEl.addClass('frontmatter-date-manager-bulk-modal-host');
   }
 
   onClose() {
