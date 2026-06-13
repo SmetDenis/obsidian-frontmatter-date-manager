@@ -1,0 +1,20 @@
+# Dependabot configuration.
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# Goal: keep security updates for runtime (production) dependencies only, and
+# stop the noise/failures from dev-only dependencies. The dev toolchain (esbuild,
+# wdio/mocha, eslint, etc.) and its transitive packages (e.g. serialize-javascript)
+# never ship in the built plugin (esbuild bundles only what src/main.ts imports),
+# so a vulnerability there does not reach users. Some of those advisories also have
+# no resolvable upgrade path, which makes the Dependabot security-update job fail.
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    # Version-update pull requests stay off (only security updates run, as before).
+    open-pull-requests-limit: 0
+    # Security updates only for production dependencies; dev dependencies are excluded.
+    allow:
+      - dependency-type: 'production'
