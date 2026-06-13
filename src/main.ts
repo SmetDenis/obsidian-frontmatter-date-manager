@@ -616,27 +616,33 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return { status: 'ignored' };
     }
 
+    // A pending rate-limit retry takes precedence over writing this pass.
+    // `updated` is blocked by minSecondsBetweenSaves, but another change (a
+    // missing `created` fill) could otherwise be written now - which would drop
+    // the retry and refresh the hash, permanently losing the still-pending
+    // `updated` bump. Defer the WHOLE update (the created fill is non-urgent) to
+    // the proven retry path: don't write, don't cache the hash, then re-detect
+    // and apply everything once the limit expires.
+    if (updates.retryAfterMs != null && updates.retryAfterMs > 0) {
+      this.log('Update rate-limited - deferring to retry');
+      if (!this.modifyTimers.has(file.path)) {
+        const timer = window.setTimeout(() => {
+          this.modifyTimers.delete(file.path);
+          void this.processFileWithLock(file);
+        }, updates.retryAfterMs);
+        this.modifyTimers.set(file.path, timer);
+      }
+      return { status: 'ok' };
+    }
+
     const hasChanges =
       updates.createdValue !== undefined || updates.updatedValue !== undefined;
 
     if (!hasChanges) {
+      // Genuinely no changes needed - cache hash to skip future events.
       this.log('Skipping processFrontMatter - no changes needed');
-      if (updates.retryAfterMs != null && updates.retryAfterMs > 0) {
-        // Content changed but rate limit blocked the update.
-        // Don't cache the hash so the retry still detects the change
-        // via shouldFileBeIgnored. Schedule a retry after the limit expires.
-        if (!this.modifyTimers.has(file.path)) {
-          const timer = window.setTimeout(() => {
-            this.modifyTimers.delete(file.path);
-            void this.processFileWithLock(file);
-          }, updates.retryAfterMs);
-          this.modifyTimers.set(file.path, timer);
-        }
-      } else {
-        // Genuinely no changes needed - cache hash to skip future events.
-        if (checkResult.fileContent) {
-          await this.populateCacheForFile(file, checkResult.fileContent);
-        }
+      if (checkResult.fileContent) {
+        await this.populateCacheForFile(file, checkResult.fileContent);
       }
       return { status: 'ok' };
     }
