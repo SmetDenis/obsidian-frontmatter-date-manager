@@ -14,6 +14,7 @@ import {
   isInversion,
   InversionFixStrategy,
 } from './inversionDetection';
+import { MODIFY_DEBOUNCE_MS } from './constants';
 
 export interface HashCacheEntry {
   hash: string;
@@ -22,7 +23,6 @@ export interface HashCacheEntry {
 
 const HASH_CACHE_FILE = 'hash-cache.json';
 const HASH_CACHE_DEFAULT_MAX_SIZE = 10_000;
-const MODIFY_DEBOUNCE_MS = 2000;
 // Capped debounce pair: DEBOUNCE resets on each dirty event,
 // but MAX_DELAY guarantees a flush even under continuous edits.
 const HASH_CACHE_DEBOUNCE_MS = 30_000;
