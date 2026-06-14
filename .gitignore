@@ -16,5 +16,6 @@ data.json
 
 # e2e (WebdriverIO + real Obsidian): downloaded Obsidian/installer cache (~500MB)
 e2e/.obsidian-cache/
-
 e2e/screenshots
+
+docs/superpowers
