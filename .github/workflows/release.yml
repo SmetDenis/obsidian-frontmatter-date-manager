@@ -3,10 +3,12 @@ name: Release
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-  contents: write
+  contents: write # create the release and upload assets
+  id-token: write # mint the OIDC token Sigstore needs for attestation
+  attestations: write # publish the build-provenance attestation
 
 concurrency:
   group: release-${{ github.ref }}
@@ -34,8 +36,23 @@ jobs:
           cache: npm
 
       - run: make install
-      - run: make test
-      - run: make build
+
+      # Full strict gate before publishing: format, lint, typecheck-e2e, test,
+      # build - identical to the local pre-commit the release skill runs, so a
+      # lint/format/test failure blocks the release instead of shipping. The
+      # final `make build` here produces the dist/ bytes attested + uploaded
+      # below, with no rebuild in between.
+      - run: make pre-commit
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          # Attest the exact dist/ bytes that the next step uploads - no rebuild
+          # in between, so the attested digest matches the released asset.
+          subject-path: |
+            dist/main.js
+            dist/manifest.json
+            dist/styles.css
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

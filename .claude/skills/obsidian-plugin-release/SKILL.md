@@ -51,11 +51,12 @@ Propose the next version from the analysis:
 
 ## Phase 4 - Build the changelog
 
-Read `references/changelog-format.md` and generate `tmp/CHANGELOG-<version>.md` following it exactly:
+Read `references/changelog-format.md` and generate `tmp/CHANGELOG-<version>.md` exactly as it specifies (structure, emoji headers, label semantics, and depth):
 
-- Title, compare blockquote with commit count, intro paragraph, Highlights, the change sections, short-hash commit links, an optional Breaking changes / Migration section (only if Phase 2 found signals), and the Full changelog footer.
+- Title, compare blockquote (commit count, `·` separator), intro paragraph, `## Highlights`, the emoji change sections (`## ✨ New`, `## 🐛 Fixed`, `## 🗑️ Removed`, `## 💅 UX & polish`, `## 🧰 Internal & maintenance`), commit-hash links, an optional Breaking changes / Migration section (only if Phase 2 found signals), and the Full changelog footer.
+- Lead every entry with a bold label. In Fixed the label names the bug as the user hit it (past tense), not the resolved state; the body then explains the fix.
 - Use `<baseline>...<version>` in compare links (the final version, never `main`, so links stay stable).
-- No fluff, no dashes (minus only).
+- Detail scales with the change - no line or sentence cap, never truncate a large changelog. Minus `-` only for dashes (the `·` in the compare line is the one exception). Ground every specific in the actual diff and code.
 
 ## Phase 5 - Changelog review (GATE 2)
 
@@ -72,7 +73,7 @@ Show the full `tmp/CHANGELOG-<version>.md` to the user. Apply requested edits an
   - `<version>` is valid semver and greater than `<baseline>`.
   - The future tag will equal `manifest.json` `version` (this is what `release.yml` checks).
 - Run `make pre-commit`. It must pass (format, lint, typecheck-e2e, test, build). Then confirm `node -p "require('./dist/manifest.json').version"` equals `<version>`.
-- Screenshots: if the Phase 2 diff touched a captured surface (the settings tab, a bulk modal, the note/Properties/editor view, or the filter-rules UI), warn the user that the marketing screenshots are stale and offer to regenerate them with `make test-e2e-spec SPEC=marketing-screenshots` (needs a display and Node <= 22). If no captured surface changed, skip this.
+- Screenshots: if the Phase 2 diff touched a captured surface (the settings tab, a bulk modal, the note/Properties/editor view, or the filter-rules UI), warn the user that the marketing screenshots are stale and offer to regenerate them with `make screenshots` (needs a display and Node <= 22). Use `make screenshots`, NOT the raw `make test-e2e-spec SPEC=marketing-screenshots`: the wrapper runs that spec and THEN downscales every shot to 1200x800, while the raw spec alone leaves oversized 2400x1600 PNGs that violate the store image rules. If no captured surface changed, skip this.
 
 ## Phase 7 - Obsidian requirements check (live)
 
@@ -90,8 +91,12 @@ Read `references/obsidian-requirements.md` and run its checklist. Then do the LI
 
 - Create the tag on the release commit (NO `v` prefix): `git tag <version>`.
 - GATE 4: ASK for explicit confirmation that pushing the tag will publish a public release. On approval: `git push origin <version>`. This triggers `release.yml`.
-- Watch CI: `gh run list --workflow=release.yml --limit 1`, then `gh run watch <run-id>`. If it fails, fetch logs with `gh run view <run-id> --log-failed`, surface the reason, and stop.
+- Watch CI: `gh run list --workflow=release.yml --limit 1`, then `gh run watch <run-id>`. `release.yml` runs the full strict gate (`make install` then `make pre-commit`: format, lint, typecheck-e2e, test, build) before it publishes, so a lint / format / test failure blocks the release here rather than shipping a broken build. If it fails, fetch logs with `gh run view <run-id> --log-failed`, surface the reason, and stop.
 - After the workflow succeeds, confirm the release exists with assets: `gh release view <version> --json assets,tagName,isLatest`. Expect `main.js`, `manifest.json`, `styles.css`.
+- Confirm build provenance attestations were generated (the review-bot scorecard recommendation). Download a published asset and verify it against the repo's attestations - verifying `main.js` is a representative spot-check (the same `actions/attest-build-provenance` step also attests `manifest.json` and `styles.css`), and a passing check proves the attestation exists and is valid:
+  - `gh release download <version> -p main.js -D tmp/verify-attest`
+  - `gh attestation verify tmp/verify-attest/main.js --repo SmetDenis/obsidian-frontmatter-date-manager`
+  - If verification fails ("no attestations found"), the attest step did not run - check `release.yml` kept the `id-token: write` / `attestations: write` permissions and the `actions/attest-build-provenance` step. Surface this to the user; it does not unpublish the release but should be fixed on the next one.
 - GATE 5: ASK to replace the auto-generated notes with our changelog. On approval: `gh release edit <version> --notes-file tmp/CHANGELOG-<version>.md`.
 - Verify links are not broken:
   - Every commit hash in the changelog resolves: for each `<hash>`, `gh api repos/SmetDenis/obsidian-frontmatter-date-manager/commits/<hash> --jq .sha` returns a sha.
