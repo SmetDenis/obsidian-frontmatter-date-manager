@@ -50,6 +50,11 @@ here.
   existing keys and drops empty segments (S2), and a chip's remove control
   deletes a single key (S3).
 
+**Marketing screenshots (manual; NOT a test):** `specs/marketing-screenshots.e2e.ts`
+generates the README / store screenshots (`make test-e2e-spec SPEC=marketing-screenshots`).
+The behind-the-scenes - the shots, the caption banner, the Electron gotchas, and
+when to refresh them - lives in `CLAUDE.md` under "Store screenshots (marketing)".
+
 ## Layout
 
 - `wdio.conf.mts` - WebdriverIO config (Obsidian capability, vault, plugin path).

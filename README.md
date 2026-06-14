@@ -8,6 +8,18 @@
 
 Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatter when editing notes in Obsidian.
 
+## Screenshots
+
+![Created, updated, and last-opened dates maintained automatically in a note](screenshots/01-automatic-dates.png)
+
+![Bulk-fill dates for an existing vault from each file's own history, with a dry-run preview](screenshots/02-populate-vault.png)
+
+![Reformat mixed date formats to one standard, with a guard for ambiguous day/month dates](screenshots/03-reformat-dates.png)
+
+![Organised, plain-language settings](screenshots/04-settings.png)
+
+![Gitignore-style filter rules that choose exactly which notes get dates](screenshots/05-filter-rules.png)
+
 ## Why this plugin?
 
 - **Manual timestamp maintenance is tedious.** Updating `created` and `updated` in frontmatter by hand every time you edit a note is error-prone and breaks your writing flow.
