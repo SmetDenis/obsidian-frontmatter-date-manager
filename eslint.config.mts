@@ -53,6 +53,18 @@ export default tseslint.config(
       // matching the Obsidian review's own require-description finding.
       '@eslint-community/eslint-comments/require-description': 'error',
 
+      // Mirror the Obsidian review SCANNER (not the published eslint-plugin):
+      // the scanner ignores this config and wraps the recommended ruleset with
+      // a "this rule cannot be disabled" check, so an `eslint-disable
+      // obsidianmd/<rule>` that passes a naive `make lint` still FAILS review
+      // with "Disabling 'obsidianmd/<rule>' is not allowed". Replicating it
+      // here keeps `make lint` a true superset of the scanner: you cannot
+      // silence an obsidianmd finding by disabling it - fix the code instead.
+      '@eslint-community/eslint-comments/no-restricted-disable': [
+        'error',
+        'obsidianmd/*',
+      ],
+
       // Stricter than the obsidianmd bot: extra real-bug catchers it omits.
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/restrict-template-expressions': [

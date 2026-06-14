@@ -18,14 +18,13 @@ import { bulkModal } from '../pageobjects/bulkModal';
 const ISO = "yyyy-MM-dd'T'HH:mm:ss";
 const OUT = './screenshots';
 
-/* eslint-disable obsidianmd/no-forbidden-elements, obsidianmd/prefer-active-doc -- dev-only screenshot tooling: a marketing caption banner injected into a throwaway test Obsidian instance, never part of the shipped plugin */
 /** Inject a two-line marketing benefit-banner across the top of the window. */
 async function captionOn(line1: string, line2: string): Promise<void> {
   await browser.executeObsidian(
     (_o, l1, l2) => {
       const styleId = 'fdm-caption-style';
-      if (!document.getElementById(styleId)) {
-        const style = document.createElement('style');
+      if (!activeDocument.getElementById(styleId)) {
+        const style = activeDocument.createElement('style');
         style.id = styleId;
         style.textContent =
           '#fdm-caption{position:fixed;top:0;left:0;right:0;z-index:2147483647;' +
@@ -36,20 +35,20 @@ async function captionOn(line1: string, line2: string): Promise<void> {
           'box-shadow:0 3px 16px rgba(0,0,0,.45);}' +
           '#fdm-caption .l1{color:#fff;font-size:20px;font-weight:700;line-height:1.3;text-align:center;}' +
           '#fdm-caption .l2{color:#e6dcff;font-size:14px;font-weight:500;line-height:1.3;text-align:center;}';
-        document.head.appendChild(style);
+        activeDocument.head.appendChild(style);
       }
-      let band = document.getElementById('fdm-caption');
+      let band = activeDocument.getElementById('fdm-caption');
       if (!band) {
-        band = document.createElement('div');
+        band = activeDocument.createElement('div');
         band.id = 'fdm-caption';
-        document.body.appendChild(band);
+        activeDocument.body.appendChild(band);
       }
       band.textContent = '';
-      const a = document.createElement('div');
+      const a = activeDocument.createElement('div');
       a.className = 'l1';
       a.textContent = l1;
       band.appendChild(a);
-      const b = document.createElement('div');
+      const b = activeDocument.createElement('div');
       b.className = 'l2';
       b.textContent = l2;
       band.appendChild(b);
@@ -62,11 +61,10 @@ async function captionOn(line1: string, line2: string): Promise<void> {
 /** Remove the banner so it never leaks into the next shot. */
 async function captionOff(): Promise<void> {
   await browser.executeObsidian(() => {
-    document.getElementById('fdm-caption')?.remove();
-    document.getElementById('fdm-caption-style')?.remove();
+    activeDocument.getElementById('fdm-caption')?.remove();
+    activeDocument.getElementById('fdm-caption-style')?.remove();
   });
 }
-/* eslint-enable obsidianmd/no-forbidden-elements, obsidianmd/prefer-active-doc -- end of dev-only banner helpers */
 
 /** Caption the current screen, capture it, then clear the caption. */
 async function shot(name: string, line1: string, line2: string): Promise<void> {
@@ -118,16 +116,14 @@ async function collapseSidebars(): Promise<void> {
   });
 }
 
-/* eslint-disable obsidianmd/prefer-active-doc -- dev-only screenshot scroll in a throwaway test instance */
 /** Scroll an element into view via in-page JS (wdio's scrollIntoView hits an unsupported Electron CDP command). */
 async function scrollIntoViewInPage(selector: string): Promise<void> {
   await browser.executeObsidian((_o, sel) => {
-    document
+    activeDocument
       .querySelector(sel)
       ?.scrollIntoView({ block: 'center', behavior: 'instant' });
   }, selector);
 }
-/* eslint-enable obsidianmd/prefer-active-doc -- end of dev-only scroll helper */
 
 /** Make the editor use the full pane width (no readable-line-length margins). */
 async function fullWidthEditor(): Promise<void> {
