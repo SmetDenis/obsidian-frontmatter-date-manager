@@ -51,7 +51,8 @@ here.
   deletes a single key (S3).
 
 **Marketing screenshots (manual; NOT a test):** `specs/marketing-screenshots.e2e.ts`
-generates the README / store screenshots (`make test-e2e-spec SPEC=marketing-screenshots`).
+generates the README / store screenshots (`make screenshots` - runs the spec, then
+downscales to the Obsidian store spec of exactly 1200x800, 3:2).
 The behind-the-scenes - the shots, the caption banner, the Electron gotchas, and
 when to refresh them - lives in `CLAUDE.md` under "Store screenshots (marketing)".
 

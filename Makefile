@@ -11,7 +11,7 @@ PLUGIN_DIR := $(OBSIDIAN_VAULT_TEST)/.obsidian/plugins/$(PLUGIN_ID)
 #   make test-e2e E2E_NODE_DIR=/path/to/node22/bin
 E2E_NODE_DIR ?= /opt/homebrew/opt/node@22/bin
 
-.PHONY: help install build dev lint typecheck-e2e format format-check test test-watch test-e2e test-e2e-spec pre-commit local-test
+.PHONY: help install build dev lint typecheck-e2e format format-check test test-watch test-e2e test-e2e-spec screenshots pre-commit local-test
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -64,6 +64,15 @@ test-e2e-spec: ## Run one e2e spec under Node 22: make test-e2e-spec SPEC=auto-s
 		exit 1; }
 	@$(MAKE) build
 	PATH="$(E2E_NODE_DIR):$$PATH" npx wdio run e2e/wdio.conf.mts --spec e2e/specs/$(SPEC).e2e.ts
+
+screenshots: ## Regenerate store/README screenshots at exactly 1200x800 (3:2)
+	@$(MAKE) test-e2e-spec SPEC=marketing-screenshots
+	@command -v sips >/dev/null 2>&1 || { \
+		echo "Error: sips not found (macOS only). Shots captured at 2400x1600 (3:2);"; \
+		echo "       downscale to 1200x800 yourself, e.g.: mogrify -resize 1200x800 screenshots/*.png"; \
+		exit 1; }
+	@for f in screenshots/*.png; do sips -z 800 1200 "$$f" >/dev/null; done
+	@echo "Downscaled screenshots/*.png to 1200x800 (3:2, Obsidian store spec)"
 
 pre-commit: ## Run all checks (format, lint, typecheck-e2e, test, build)
 	@$(MAKE) format-check

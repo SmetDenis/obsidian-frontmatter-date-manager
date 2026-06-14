@@ -9,7 +9,12 @@ import { bulkModal } from '../pageobjects/bulkModal';
 // inside a REAL Obsidian. Not a characterization test - it stages curated notes,
 // drives the UI to its most compelling state, overlays a two-line benefit caption
 // banner, and captures the window. Run by hand before a release:
-//   make test-e2e-spec SPEC=marketing-screenshots
+//   make screenshots
+//
+// Store image rules (locked): max 5 shots, 3:2 ratio, recommended 1200x800,
+// PNG/JPEG/WebP, max 5 MB each. The window is sized 1200x800 (3:2); Obsidian
+// renders at retina 2x, so each raw capture is 2400x1600 (still 3:2) and
+// `make screenshots` downscales it to exactly 1200x800 via sips after this spec.
 //
 // Output: screenshots/0N-*.png at the repo root (tracked in git, embedded in
 // README). The dir must already exist - `browser.saveScreenshot` does not create
@@ -138,6 +143,23 @@ async function fullWidthEditor(): Promise<void> {
   });
 }
 
+/** Turn off editor spellcheck so red squiggles never leak into a shot. */
+async function disableSpellcheck(): Promise<void> {
+  await browser.executeObsidian(({ app }) => {
+    try {
+      (
+        app.vault as unknown as { setConfig(k: string, v: unknown): void }
+      ).setConfig('spellcheck', false);
+      // Re-apply editor options so any already-open editor drops the squiggles too.
+      (
+        app.workspace as unknown as { updateOptions?: () => void }
+      ).updateOptions?.();
+    } catch {
+      /* internal config API absent; keep default */
+    }
+  });
+}
+
 /**
  * Resize the Electron window. `browser.setWindowSize` (Set Window Rect) is
  * unsupported by Obsidian's Electron chromedriver, so we drive Electron's own
@@ -175,10 +197,13 @@ async function resizeWindow(width: number, height: number): Promise<void> {
 
 describe('marketing screenshots (manual; staged, not characterization)', function () {
   before(async function () {
-    // Narrow desktop window: the diff modals (max-width min(85vw, 900px)) then
-    // fill the frame, so there is little dead space on the sides.
-    await resizeWindow(1040, 880);
+    // Obsidian-recommended store screenshot ratio is 3:2 (1200x800). Capture at a
+    // 1200x800 window; retina 2x makes the raw shot 2400x1600 (still 3:2), which
+    // `make screenshots` downscales to exactly 1200x800. The diff modals (max-width
+    // min(85vw, 900px)) sit centered in the wider frame.
+    await resizeWindow(1200, 800);
     await fullWidthEditor();
+    await disableSpellcheck();
     await collapseSidebars();
     await browser.pause(600);
   });
@@ -216,7 +241,7 @@ describe('marketing screenshots (manual; staged, not characterization)', functio
         '- **One format** - reformat every date in the vault; ambiguous day/month values are never guessed.',
         '- **Fix mistakes** - find and repair notes whose edit date is older than their creation date.',
         '- **Precise scope** - gitignore-style include and exclude rules pick which notes get dates.',
-        '- **Last-opened** - an optional viewed date, stamped on open, for review and Dataview workflows.',
+        '- **Last-opened** - an optional viewed date, stamped on open, for review and Obsidian Bases workflows.',
         '',
         'Why it helps:',
         '',
