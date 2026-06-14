@@ -36,7 +36,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Bulk-fill dates from each file's own dates on disk, with dry-run preview
 - Rename a property across all notes (migrate old names with preview)
 - Reformat existing dates from one format to another (parse old, write new, with preview)
-- Every bulk preview is paginated (Prev/Next), shows all affected files (no row cap), and can copy the full diff to the clipboard
+- Every bulk preview is paginated (Prev/Next), shows all affected files (no row cap), and can download the full diff as a TSV file on desktop (saved to your system downloads, never written into your vault)
 - Toggle auto-update via command palette or status bar
 - Pause auto-update for 5 minutes with automatic resume
 - Works on desktop and mobile
@@ -212,6 +212,15 @@ Add to your `.gitignore`:
 For **Obsidian Sync**: the file is already excluded automatically (Sync does not sync plugin data files beyond `data.json`).
 
 For **iCloud, Syncthing, Dropbox, or other file-based sync**: add `hash-cache.json` to your sync tool's ignore/exclusion list for the plugin directory.
+
+## Privacy & capabilities
+
+This plugin is fully local. It has no backend, makes no network requests, and collects no telemetry or analytics of any kind. The community plugin scorecard lists the capabilities a plugin's code can use; here is exactly what this plugin uses each one for:
+
+- **Reads markdown files in your vault.** The bulk tools (fill dates, rename a property, reformat dates, find out-of-order dates, rebuild the change-detection cache) operate across the whole vault, so they list your markdown notes via Obsidian's `getMarkdownFiles()`. The plugin never enumerates non-markdown files (`getFiles()` is not used), so attachments, images, and other binaries are never touched.
+- **Writes only the configured date properties.** All changes go through Obsidian's `processFrontMatter()`, which touches only the `created` / `updated` / `viewed` properties you configure and leaves the note body, key order, comments, and unrelated properties untouched.
+- **Writes one sidecar file in its own plugin folder.** The SHA-256 change-detection cache (`hash-cache.json`) is written inside `.obsidian/plugins/frontmatter-date-manager/`, never into your notes.
+- **Local export only.** The "Download full preview" button saves the diff as a local `.tsv` file via the browser and writes no file into your vault. File download is desktop only - on mobile the full diff stays readable in the on-screen table.
 
 ## Development
 

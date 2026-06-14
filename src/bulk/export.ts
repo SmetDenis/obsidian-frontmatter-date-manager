@@ -17,24 +17,47 @@ export function toTSV(columns: string[], rows: string[][]): string {
 }
 
 /**
- * Copy the full preview diff to the clipboard as TSV. The complete diff is
- * already held in memory by each modal, so this exports EVERY changed row - the
- * escape hatch that lets the paginated preview honor the "exact diff" contract
- * for review in an external tool. No vault file is written.
+ * Download the full preview diff as a TSV file. The complete diff is already
+ * held in memory by each modal, so this exports EVERY changed row - the escape
+ * hatch that lets the paginated preview honor the "exact diff" contract for
+ * review in an external tool. The file is saved to the user's system downloads
+ * via a transient object-URL anchor; NO vault file is written. Synchronous (the
+ * browser handles the download).
+ *
+ * Desktop only: callers gate the button with `Platform.isMobileApp` (see
+ * `renderDownloadPreviewButton`) because the HTML `download` attribute is
+ * unreliable in Obsidian's mobile (Capacitor) webview. This function therefore
+ * assumes a desktop context and does not re-check.
  */
-export async function copyPreviewToClipboard(
+export function downloadPreviewAsFile(
   plugin: FrontmatterDateManagerPlugin,
   columns: string[],
   rows: string[][],
-): Promise<void> {
+  filenameBase = 'frontmatter-date-manager-preview',
+): void {
   try {
-    await navigator.clipboard.writeText(toTSV(columns, rows));
-    new Notice(`Copied ${rows.length} row(s) to clipboard.`, 2000);
-  } catch (err: unknown) {
-    plugin.logError('Failed to copy preview to clipboard', err);
+    const blob = new Blob([toTSV(columns, rows)], {
+      type: 'text/tab-separated-values',
+    });
+    const url = URL.createObjectURL(blob);
+    const filename = `${filenameBase}.tsv`;
+    // createEl (Obsidian helper) appends to body; satisfies prefer-active-doc
+    // and is not a forbidden element (only style/link are).
+    const anchor = activeDocument.body.createEl('a', {
+      attr: { href: url, download: filename },
+    });
+    anchor.click();
+    anchor.remove();
+    // Revoke on the next tick so the download has started.
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 0);
     new Notice(
-      'Could not copy to clipboard. Check clipboard permissions.',
-      4000,
+      `Downloaded ${rows.length} row(s) as ${filename} to your downloads folder.`,
+      2500,
     );
+  } catch (err: unknown) {
+    plugin.logError('Failed to download preview', err);
+    new Notice('Could not download the preview file.', 4000);
   }
 }

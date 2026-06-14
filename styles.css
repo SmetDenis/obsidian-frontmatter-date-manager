@@ -308,8 +308,8 @@
     text-align: center;
 }
 
-/* "Copy full preview" button row */
-.frontmatter-date-manager-bulk-copy {
+/* "Download full preview" button row */
+.frontmatter-date-manager-bulk-download {
     margin: 0.5rem 0;
 }
 

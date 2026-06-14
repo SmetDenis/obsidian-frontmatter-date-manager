@@ -1,7 +1,7 @@
-import { ButtonComponent, Setting } from 'obsidian';
+import { ButtonComponent, Platform, Setting } from 'obsidian';
 import { clampPage, getPageCount, getPageSlice } from './pagination';
 import type { ExecuteFailure } from './executePhase';
-import { copyPreviewToClipboard } from './export';
+import { downloadPreviewAsFile } from './export';
 import type FrontmatterDateManagerPlugin from '../main';
 
 export const PREVIEW_MAX_ROWS = 100;
@@ -202,19 +202,26 @@ export function renderPaginatedDiffTable(
 }
 
 /**
- * Render a neutral "Copy full preview" button that exports the COMPLETE diff
- * (every changed row, not just the visible page) via the provided callback.
+ * Render a neutral "Download full preview" button that exports the COMPLETE
+ * diff (every changed row, not just the visible page) via the provided callback.
  * Placed between the table and the action bar.
+ *
+ * Desktop only: the file download relies on the HTML `download` attribute, which
+ * is unreliable in Obsidian's mobile (Capacitor) webview. Rather than offer a
+ * button that would silently no-op there, we hide it entirely on mobile - the
+ * full diff stays readable in the on-screen paginated table. We do not add a
+ * per-platform fallback that would re-introduce a removed capability disclosure.
  */
-export function renderCopyPreviewButton(
+export function renderDownloadPreviewButton(
   parent: HTMLElement,
   onClick: () => void,
 ): void {
+  if (Platform.isMobileApp) return;
   const wrapper = parent.createDiv({
-    cls: 'frontmatter-date-manager-bulk-copy',
+    cls: 'frontmatter-date-manager-bulk-download',
   });
   new ButtonComponent(wrapper)
-    .setButtonText('Copy full preview')
+    .setButtonText('Download full preview')
     .onClick(() => {
       onClick();
     });
@@ -222,9 +229,10 @@ export function renderCopyPreviewButton(
 
 /**
  * Render the list of items that failed during execution as a paginated
- * `File | Error` table plus a "Copy full preview" button. This is the user-facing
- * channel for execute-phase failures: `logError` is a no-op in production, so the
- * console shows nothing - the failing paths and reasons must be presented here.
+ * `File | Error` table plus a "Download full preview" button. This is the
+ * user-facing channel for execute-phase failures: `logError` is a no-op in
+ * production, so the console shows nothing - the failing paths and reasons must
+ * be presented here.
  */
 export function renderFailureTable(
   parent: HTMLElement,
@@ -234,8 +242,13 @@ export function renderFailureTable(
   const columns = ['File', 'Error'];
   const rows = failures.map((f) => [f.label, f.message]);
   renderPaginatedDiffTable(parent, { columns, rows });
-  renderCopyPreviewButton(parent, () => {
-    void copyPreviewToClipboard(plugin, columns, rows);
+  renderDownloadPreviewButton(parent, () => {
+    downloadPreviewAsFile(
+      plugin,
+      columns,
+      rows,
+      'frontmatter-date-manager-failures',
+    );
   });
 }
 

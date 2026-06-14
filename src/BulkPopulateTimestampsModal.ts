@@ -4,14 +4,14 @@ import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
-import { copyPreviewToClipboard } from './bulk/export';
+import { downloadPreviewAsFile } from './bulk/export';
 import {
   renderHeader,
   renderButtonBar,
   renderWarning,
   renderSummary,
   renderPaginatedDiffTable,
-  renderCopyPreviewButton,
+  renderDownloadPreviewButton,
   renderProgress,
   renderFailureTable,
 } from './bulk/chrome';
@@ -399,8 +399,8 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       );
     }
 
-    renderCopyPreviewButton(contentEl, () => {
-      void copyPreviewToClipboard(this.plugin, columns, rows);
+    renderDownloadPreviewButton(contentEl, () => {
+      downloadPreviewAsFile(this.plugin, columns, rows);
     });
 
     renderButtonBar(contentEl, {
