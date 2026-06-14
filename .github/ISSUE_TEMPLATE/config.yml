@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue
+    url: https://github.com/SmetDenis/obsidian-frontmatter-date-manager/security/advisories/new
+    about: Report a vulnerability privately. Do not open a public issue.

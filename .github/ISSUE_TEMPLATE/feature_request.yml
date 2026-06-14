@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest a feature or improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that the plugin makes hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety fit
+      description: This plugin edits irreplaceable note data, so new behavior must be safe by default.
+      options:
+        - label: The request can be opt-in and safe-by-default (no destructive or overwriting behavior on by default).
+          required: true
