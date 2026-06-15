@@ -343,4 +343,61 @@ describe('getContentForHashing', () => {
       expect(result).toContain('title: Test');
     });
   });
+
+  describe('edit-activity counter key exclusion', () => {
+    it('excludes the counter key when the counter is enabled (frontmatter mode)', () => {
+      const plugin = createPlugin({
+        hashTrackingMode: 'frontmatter',
+        countUpdatesEnabled: true,
+        headerUpdateCount: 'updated_count',
+      });
+      const content =
+        '---\ntitle: Test\nupdated_count: 5\ntags: foo\n---\nBody';
+      const result = plugin.getContentForHashing(content);
+      expect(result).toContain('title: Test');
+      expect(result).not.toContain('updated_count:');
+      expect(result).toContain('tags: foo');
+    });
+
+    it('the counter write does not change the hash in both mode (no self-amplifying loop)', () => {
+      const plugin = createPlugin({
+        hashTrackingMode: 'both',
+        countUpdatesEnabled: true,
+        headerUpdateCount: 'updated_count',
+      });
+      const before = '---\ntitle: Test\nupdated_count: 5\n---\nBody';
+      const after = '---\ntitle: Test\nupdated_count: 6\n---\nBody';
+      expect(plugin.getContentForHashing(before)).toBe(
+        plugin.getContentForHashing(after),
+      );
+    });
+
+    it('excludes the counter key even when the counter is disabled (toggling stays hash-neutral)', () => {
+      // The configured counter key is plugin-managed, so it is excluded from the
+      // hash unconditionally - whether the counter is on or off. This keeps the
+      // tracked hash identical across a toggle, so enabling/disabling the counter
+      // never causes a spurious `updated` re-stamp on already-counted notes.
+      const plugin = createPlugin({
+        hashTrackingMode: 'frontmatter',
+        countUpdatesEnabled: false,
+        headerUpdateCount: 'updated_count',
+      });
+      const content = '---\ntitle: Test\nupdated_count: 5\n---\nBody';
+      const result = plugin.getContentForHashing(content);
+      expect(result).not.toContain('updated_count:');
+      expect(result).toContain('title: Test');
+    });
+
+    it('respects a custom counter property name', () => {
+      const plugin = createPlugin({
+        hashTrackingMode: 'frontmatter',
+        countUpdatesEnabled: true,
+        headerUpdateCount: 'edits',
+      });
+      const content = '---\ntitle: Test\nedits: 9\n---\nBody';
+      const result = plugin.getContentForHashing(content);
+      expect(result).not.toContain('edits:');
+      expect(result).toContain('title: Test');
+    });
+  });
 });

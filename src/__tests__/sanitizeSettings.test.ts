@@ -210,6 +210,108 @@ describe('sanitizeSettings (pure)', () => {
       expect(result.futureKey).toBe('whatever');
     });
   });
+
+  describe('edit-activity counter fields', () => {
+    it('defaults: countUpdatesEnabled false, headerUpdateCount "updated_count"', () => {
+      expect(sanitizeSettings({}).countUpdatesEnabled).toBe(false);
+      expect(sanitizeSettings({}).headerUpdateCount).toBe('updated_count');
+    });
+
+    it('coerces a non-boolean countUpdatesEnabled to the default false', () => {
+      expect(
+        sanitizeSettings({ countUpdatesEnabled: 'yes' as never })
+          .countUpdatesEnabled,
+      ).toBe(false);
+    });
+
+    it('coerces a non-string headerUpdateCount to the default', () => {
+      expect(
+        sanitizeSettings({ headerUpdateCount: 42 as never }).headerUpdateCount,
+      ).toBe('updated_count');
+    });
+
+    it('resets empty / whitespace-only headerUpdateCount to the default', () => {
+      expect(
+        sanitizeSettings({ headerUpdateCount: '' }).headerUpdateCount,
+      ).toBe('updated_count');
+      expect(
+        sanitizeSettings({ headerUpdateCount: '   ' }).headerUpdateCount,
+      ).toBe('updated_count');
+    });
+
+    it('preserves a valid distinct name with the counter enabled', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        headerUpdateCount: 'edits',
+      });
+      expect(r.headerUpdateCount).toBe('edits');
+      expect(r.countUpdatesEnabled).toBe(true);
+    });
+
+    // R13: name-collision resolution = DISABLE the counter, never rename.
+    it('disables the counter when its name collides with the updated key (name left unchanged)', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        headerUpdated: 'updated',
+        headerUpdateCount: 'updated',
+      });
+      expect(r.countUpdatesEnabled).toBe(false);
+      expect(r.headerUpdateCount).toBe('updated');
+    });
+
+    it('disables the counter when its name collides with the created key', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        headerCreated: 'created',
+        headerUpdateCount: 'created',
+      });
+      expect(r.countUpdatesEnabled).toBe(false);
+    });
+
+    it('disables the counter when its name collides with an ENABLED viewed key', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        enableLastViewed: true,
+        headerLastViewed: 'seen',
+        headerUpdateCount: 'seen',
+      });
+      expect(r.countUpdatesEnabled).toBe(false);
+    });
+
+    it('disables when the default name collides with a date key set to "updated_count" (resetting would re-collide)', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        headerUpdated: 'updated_count',
+        headerUpdateCount: 'updated_count',
+      });
+      expect(r.countUpdatesEnabled).toBe(false);
+      expect(r.headerUpdateCount).toBe('updated_count');
+    });
+
+    it('disables even when the collision is with a DISABLED date key (symmetric with counterKeyOrNull)', () => {
+      // The collision check covers all three date-key names unconditionally, so the
+      // settings state stays consistent with the write-boundary guard - no silently
+      // inert "enabled but never writes" counter.
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        enableLastViewed: false,
+        headerLastViewed: 'viewed',
+        headerUpdateCount: 'viewed',
+      });
+      expect(r.countUpdatesEnabled).toBe(false);
+      expect(r.headerUpdateCount).toBe('viewed');
+    });
+
+    it('keeps the counter enabled for a distinct non-colliding name', () => {
+      const r = sanitizeSettings({
+        countUpdatesEnabled: true,
+        headerCreated: 'created',
+        headerUpdated: 'updated',
+        headerUpdateCount: 'edits',
+      });
+      expect(r.countUpdatesEnabled).toBe(true);
+    });
+  });
 });
 
 // Integration: the fix must protect the real flows that crash today.

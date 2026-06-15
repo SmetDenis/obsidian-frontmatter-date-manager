@@ -23,6 +23,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Auto-update `updated` field on file modification (syncs with `mtime`)
 - Auto-set `created` field on new files (syncs with `ctime`)
 - Auto-set `viewed` field when a file is opened - unique feature not found in other plugins (disabled by default)
+- Count how often you edit each note (`updated_count`, disabled by default) - an approximate activity signal you can sort or filter in Bases/Dataview to find your most-edited notes
 - Customizable date format (uses [date-fns](https://date-fns.org/v4.1.0/docs/format) syntax)
 - Timezone support with IANA timezone autocomplete
 - String and number property types (number useful for Unix timestamps)
@@ -89,6 +90,8 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 | Created property                   | `created`               | Property name where the creation date is saved                                   |
 | Track last-edited date             | `true`                  | Update this date whenever you edit the note                                      |
 | Updated property                   | `updated`               | Property name where the last-edited date is saved                                |
+| Count edits                        | `false`                 | Add a number property that goes up by one on each edit (an approximate activity count, not an exact history) |
+| Edit count property                | `updated_count`         | Property name where the edit count is saved                                       |
 | Track last-opened date             | `false`                 | Save the date each time you open the note                                        |
 | Viewed property                    | `viewed`                | Property name where the last-opened date is saved                                |
 | Date format                        | `yyyy-MM-dd'T'HH:mm:ss` | Date & time format ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format))  |
@@ -126,6 +129,21 @@ Available strategies: `Set creation date to the last-edited date`, `Set last-edi
 | `T`                     | 1776268200000 (Unix ms)   |
 
 > **Note:** This plugin uses **date-fns**, not Moment.js. Common migration: `YYYY` -> `yyyy`, `DD` -> `dd`.
+
+## Finding your most-edited notes (optional)
+
+Once **Count edits** is on, the `updated_count` property is a plain number you can sort and filter however you like. The plugin only writes the number - composing a view is up to you. For example, a Dataview query for the notes you edit most:
+
+````markdown
+```dataview
+TABLE updated_count, updated
+WHERE updated_count
+SORT updated_count DESC
+LIMIT 20
+```
+````
+
+Or in Obsidian **Bases**, sort by `updated_count` descending (optionally filter by a recent `updated`). The count is an approximate activity signal, not an exact history - it starts from the moment you enable the feature. It goes up once per edit *session*, not per keystroke: rapid edits within your **Minimum seconds between updates** window count as one. Running the **Update timestamps for current file** command also counts; bulk operations (populate/reformat/rename) rewrite dates without changing the count.
 
 ## FAQ
 

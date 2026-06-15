@@ -35,6 +35,9 @@ export interface FrontmatterDateManagerSettings {
   enableLastViewed?: boolean;
   headerLastViewed?: string;
 
+  countUpdatesEnabled?: boolean;
+  headerUpdateCount?: string;
+
   enableContentHashCheck?: boolean;
   hashTrackingMode?: HashTrackingMode;
   frontmatterHashExcludeKeys?: string[];
@@ -60,6 +63,8 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   enableModifiedTime: true,
   enableLastViewed: false,
   headerLastViewed: 'viewed',
+  countUpdatesEnabled: false,
+  headerUpdateCount: 'updated_count',
   enableContentHashCheck: true,
   hashTrackingMode: 'body',
   frontmatterHashExcludeKeys: [],
@@ -132,7 +137,46 @@ export function sanitizeSettings(raw: unknown): FrontmatterDateManagerSettings {
     result.inversionFixStrategy = DEFAULT_SETTINGS.inversionFixStrategy;
   }
 
-  return result as unknown as FrontmatterDateManagerSettings;
+  // Cast to the settings shape for the remaining checks: every field read below
+  // was already type-coerced by the loop above, so they read as their declared
+  // types here. `sanitized` is the same object reference as `result`.
+  const sanitized = result as unknown as FrontmatterDateManagerSettings;
+
+  // The edit-activity counter name must be a non-empty string: '' passes the
+  // generic typeof-string check above, so reset it explicitly (an empty key
+  // would write a '' property; data.json can also set it blank directly).
+  if (
+    typeof sanitized.headerUpdateCount !== 'string' ||
+    sanitized.headerUpdateCount.trim() === ''
+  ) {
+    sanitized.headerUpdateCount = DEFAULT_SETTINGS.headerUpdateCount;
+  }
+
+  // Name-collision guard: the counter and a date property cannot share a key, or
+  // they would clobber each other in a single processFrontMatter write. On
+  // collision, DISABLE the counter (never reset the name to the default, which
+  // could itself collide and silently reintroduce the clash). Compare against ALL
+  // three date-key names UNCONDITIONALLY (not just the enabled ones), so this stays
+  // symmetric with the write-boundary guard `counterKeyOrNull()` in main.ts. An
+  // enabled-only check here would leave the counter enabled in settings while
+  // `counterKeyOrNull` silently rejects the same name - a confusing inert toggle.
+  // It also covers the cases where a "disabled" date key still gets written: the
+  // inversion fix can stamp `created`/`updated` even when their toggle is off, and
+  // last-viewed can be re-enabled later.
+  const counterName = (sanitized.headerUpdateCount ?? '').trim();
+  const dateKeys = [
+    sanitized.headerCreated.trim(),
+    sanitized.headerUpdated.trim(),
+    (sanitized.headerLastViewed ?? 'viewed').trim(),
+  ];
+  if (
+    sanitized.countUpdatesEnabled === true &&
+    dateKeys.includes(counterName)
+  ) {
+    sanitized.countUpdatesEnabled = false;
+  }
+
+  return sanitized;
 }
 
 export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
@@ -169,6 +213,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     this.addFrontMatterCreated();
     this.addEnableModifiedTime();
     this.addFrontMatterUpdated();
+    this.addEnableUpdateCount();
+    this.addFrontMatterUpdateCount();
     this.addEnableLastViewed();
     this.addFrontMatterLastViewed();
 
@@ -297,6 +343,48 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
             const trimmed = value.trim();
             if (trimmed.length === 0) return;
             this.plugin.settings.headerUpdated = trimmed;
+            await this.saveSettings();
+          }),
+      );
+  }
+
+  addEnableUpdateCount(): void {
+    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
+      return;
+    }
+    new Setting(this.containerEl)
+      .setName('Count edits')
+      .setDesc(
+        'Add a number property that goes up by one each time you edit a note. An approximate activity count, not an exact history.',
+      )
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.countUpdatesEnabled ?? false)
+          .onChange(async (newValue) => {
+            this.plugin.settings.countUpdatesEnabled = newValue;
+            await this.saveSettings();
+            this.display();
+          }),
+      );
+  }
+
+  addFrontMatterUpdateCount(): void {
+    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
+      return;
+    }
+    if (!(this.plugin.settings.countUpdatesEnabled ?? false)) {
+      return;
+    }
+    new Setting(this.containerEl)
+      .setName('Edit count property')
+      .setDesc('Property name where the edit count is saved.')
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings.headerUpdateCount ?? 'updated_count')
+          .onChange(async (value) => {
+            const trimmed = value.trim();
+            if (trimmed.length === 0) return;
+            this.plugin.settings.headerUpdateCount = trimmed;
             await this.saveSettings();
           }),
       );

@@ -246,4 +246,174 @@ describe('handleFileChange', () => {
       expect(processFrontMatter).not.toHaveBeenCalled();
     });
   });
+
+  // Edit-activity counter (updated_count). The counter rides ONLY the `updated`
+  // write of a Counted edit, in the same processFrontMatter call, as a native
+  // number. It must never count a created-only fill, the inversion-fix service
+  // write, or its own write; it must defer atomically with a rate-limited
+  // `updated`; and it must read its base from the callback frontmatter.
+  describe('edit-activity counter (updated_count)', () => {
+    const ENABLED = {
+      countUpdatesEnabled: true,
+      headerUpdateCount: 'updated_count',
+    };
+
+    it('AC-1: with the counter OFF (default), an edit never writes the count', async () => {
+      const { plugin, file, writes } = setup({ frontmatter: {} });
+
+      await plugin.handleFileChange(file);
+
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toHaveProperty('updated');
+      expect(writes[0]).not.toHaveProperty('updated_count');
+    });
+
+    it('AC-2: first counted edit on a note without the property writes updated_count: 1 (native number)', async () => {
+      const { plugin, file, writes } = setup({
+        settings: ENABLED,
+        frontmatter: {},
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toHaveProperty('updated');
+      expect(writes[0]!.updated_count).toBe(1);
+      expect(typeof writes[0]!.updated_count).toBe('number');
+    });
+
+    it('AC-3: an existing count increments by exactly 1 in the same write as updated', async () => {
+      const { plugin, file, writes, processFrontMatter } = setup({
+        settings: ENABLED,
+        frontmatter: {
+          created: T - 86_400_000,
+          updated: T - 60_000,
+          updated_count: 4,
+        },
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]!.updated_count).toBe(5);
+      expect(writes[0]).toHaveProperty('updated');
+    });
+
+    it('R11: the base is read from the callback frontmatter (external 45 -> 46), as a native number', async () => {
+      const { plugin, file, writes } = setup({
+        settings: ENABLED,
+        frontmatter: {
+          created: T - 86_400_000,
+          updated: T - 60_000,
+          updated_count: 45,
+        },
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(writes[0]!.updated_count).toBe(46);
+      expect(typeof writes[0]!.updated_count).toBe('number');
+    });
+
+    it('smart-coerces a corrupt existing value (string "12x" -> 1)', async () => {
+      const { plugin, file, writes } = setup({
+        settings: ENABLED,
+        frontmatter: {
+          created: T - 86_400_000,
+          updated: T - 60_000,
+          updated_count: '12x',
+        },
+      });
+
+      await plugin.handleFileChange(file);
+
+      // "12x" is not a clean number -> coerceCount -> 0 -> +1 -> 1 (self-heals).
+      expect(writes[0]!.updated_count).toBe(1);
+    });
+
+    it('AC-5: a created-only fill (modified-time tracking off) does NOT increment', async () => {
+      const { plugin, file, writes } = setup({
+        settings: { ...ENABLED, enableModifiedTime: false },
+        frontmatter: {}, // created absent -> createdValue set; no updated write
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toHaveProperty('created');
+      expect(writes[0]).not.toHaveProperty('updated_count');
+    });
+
+    it('R16: an inversion-fix service write of updated does NOT increment the counter', async () => {
+      // Modified-time tracking off so the modified block sets no countedEdit; the
+      // inversion fix still rewrites `updated` - which must NOT move the counter.
+      const { plugin, file, writes } = setup({
+        settings: {
+          ...ENABLED,
+          enableModifiedTime: false,
+          inversionFixStrategy: 'updated-to-created',
+        },
+        // updated earlier than created -> inversion detected and fixed.
+        frontmatter: { created: T, updated: T - 100_000, updated_count: 3 },
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(writes).toHaveLength(1);
+      expect(writes[0]).toHaveProperty('updated'); // the fix was applied
+      expect(writes[0]!.updated_count).toBe(3); // unchanged - not a Counted edit
+    });
+
+    it('R3: a rate-limited edit defers the count, then increments exactly once on retry', async () => {
+      const { plugin, file, writes, processFrontMatter } = setup({
+        settings: { ...ENABLED, minSecondsBetweenSaves: 30 },
+        frontmatter: {
+          created: T - 86_400_000,
+          updated: T - 5000,
+          updated_count: 7,
+        },
+      });
+
+      await plugin.handleFileChange(file);
+      // Deferred: nothing written this pass, so the count is not applied early.
+      expect(processFrontMatter).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(31_000);
+
+      // Applied exactly once on the retry: 7 -> 8, never +2.
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]!.updated_count).toBe(8);
+    });
+
+    it('R1: a self-triggered modify event does not re-increment', async () => {
+      const { plugin, file, writes, lastWrite } = setup({
+        settings: ENABLED,
+        frontmatter: {
+          created: T - 86_400_000,
+          updated: T - 60_000,
+          updated_count: 9,
+        },
+      });
+      lastWrite.set(file.path, file.stat.mtime);
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok' });
+      expect(writes).toHaveLength(0); // no write at all -> no second increment
+    });
+
+    it('respects the name-collision guard at the write boundary (counter name == updated key -> no count write)', async () => {
+      const { plugin, file, writes } = setup({
+        settings: { countUpdatesEnabled: true, headerUpdateCount: 'updated' },
+        frontmatter: {},
+      });
+
+      await plugin.handleFileChange(file);
+
+      // The counter key equals the updated key; the guard returns null so only
+      // the date is written, never a clobbering double-write.
+      expect(writes[0]).toHaveProperty('updated');
+      expect(writes[0]!.updated).not.toBe(1);
+    });
+  });
 });

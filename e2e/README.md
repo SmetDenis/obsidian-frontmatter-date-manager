@@ -30,6 +30,14 @@ here.
   - A4 - with auto-update OFF an edit must not stamp, but the
     "Update timestamps for current file" command does; `created` and body
     preserved.
+- `specs/update-count.e2e.ts`
+  - UC1 - first counted edit writes `updated_count: 1` as a **native unquoted
+    number**, co-located with the bumped `updated`; `created`, an unrelated key,
+    and the body survive.
+  - UC2 - an existing count increments by exactly one (4 -> 5).
+  - UC3 - R11 stale-base: an externally-set `updated_count: 45` is read from disk
+    and increments to `46` (native number), not clobbered from a stale cache.
+  - UC4 - with the counter OFF an edit never writes `updated_count`.
 
 **Group B - bulk operations (full UI-driven, all five modals):**
 

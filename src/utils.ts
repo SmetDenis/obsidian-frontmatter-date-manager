@@ -58,6 +58,30 @@ export function epochNumberToDate(input: number): Date {
 }
 
 /**
+ * Coerce any stored edit-activity counter value into a clean non-negative integer
+ * BASE. The counter property is user-editable YAML and can be rewritten by sync,
+ * so it may arrive as a number, a numeric string, a float, a negative, garbage,
+ * an array/object/boolean, or be missing. Returns a finite integer `>= 0`; the
+ * caller adds the `+ 1`. Never throws. A leading type guard rejects
+ * non-number/non-string values before `Number()` so e.g. `Number([5]) === 5`
+ * cannot leak an array element through. Mirrors the "disambiguate, never
+ * guess-corrupt" doctrine of `epochNumberToDate`.
+ */
+export function coerceCount(raw: unknown): number {
+  let n: number;
+  if (typeof raw === 'number') {
+    n = raw;
+  } else if (typeof raw === 'string') {
+    if (raw.trim() === '') return 0;
+    n = Number(raw);
+  } else {
+    return 0;
+  }
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.trunc(n));
+}
+
+/**
  * Date formats tried when auto-detecting a stored date string (the Reformat
  * tool). Order matters - more specific formats first to avoid ambiguous matches.
  * ISO 8601 is handled separately via `parseISO` before these are tried.

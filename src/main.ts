@@ -6,7 +6,12 @@ import {
   FrontmatterDateManagerSettingsTab,
   sanitizeSettings,
 } from './Settings';
-import { epochNumberToDate, errorToMessage, isTFile } from './utils';
+import {
+  coerceCount,
+  epochNumberToDate,
+  errorToMessage,
+  isTFile,
+} from './utils';
 import { sha256 } from 'js-sha256';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
 import {
@@ -327,6 +332,17 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     if (updatedKey) excludedKeys.add(updatedKey);
     const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
     if (viewedKey) excludedKeys.add(viewedKey);
+    // The edit-activity counter is plugin-managed too; exclude its configured key
+    // UNCONDITIONALLY (regardless of countUpdatesEnabled). Two reasons: (1) the
+    // counter's own write must never re-dirty the tracked hash, or it would drive
+    // a self-amplifying increment loop under frontmatter/both mode; (2) gating the
+    // exclusion on the enabled flag made toggling the counter on/off flip whether
+    // the key is hashed - a one-time spurious `updated` re-stamp on already-counted
+    // notes. Always excluding a key the plugin owns keeps the toggle hash-neutral.
+    const countKey = (this.settings.headerUpdateCount ?? '').trim();
+    if (countKey) {
+      excludedKeys.add(countKey);
+    }
     for (const key of this.settings.frontmatterHashExcludeKeys ?? []) {
       const trimmed = key.trim();
       if (trimmed) excludedKeys.add(trimmed);
@@ -483,10 +499,32 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     this.hashCache[file.path] = { hash: sha, lastAccessed: Date.now() };
   }
 
+  // The effective edit-activity counter key, or null when the counter is off,
+  // unnamed, or (defense-in-depth) colliding with a date key. sanitizeSettings
+  // already disables the counter on a date-key collision; this guards the write
+  // boundary too so a colliding key can never clobber a date in a single write.
+  private counterKeyOrNull(): string | null {
+    if (this.settings.countUpdatesEnabled !== true) return null;
+    const key = (this.settings.headerUpdateCount ?? '').trim();
+    if (!key) return null;
+    const dateKeys = [
+      this.settings.headerCreated.trim(),
+      this.settings.headerUpdated.trim(),
+      (this.settings.headerLastViewed ?? 'viewed').trim(),
+    ];
+    if (dateKeys.includes(key)) return null;
+    return key;
+  }
+
   private computeFrontmatterUpdates(file: TFile): {
     createdValue?: string | number;
     updatedValue?: string | number;
     retryAfterMs?: number;
+    // True only when this pass writes `updated` for a real user edit (a Counted
+    // edit), NOT for a created-only fill or the inversion-fix service write. The
+    // edit-activity counter increments iff this is true - so a service rewrite of
+    // `updated` (which sets `updatedValue` with no edit) never moves the counter.
+    countedEdit?: boolean;
   } | null {
     const updatedKey = this.settings.headerUpdated.trim();
     const createdKey = this.settings.headerCreated.trim();
@@ -510,6 +548,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       createdValue?: string | number;
       updatedValue?: string | number;
       retryAfterMs?: number;
+      countedEdit?: boolean;
     } = {};
 
     if (this.settings.enableCreateTime && createdKey) {
@@ -527,22 +566,23 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         | string
         | number
         | undefined;
-      if (!existingUpdated) {
+      const currentMTimeOnFile = existingUpdated
+        ? this.parseDate(existingUpdated)
+        : undefined;
+      if (!existingUpdated || !currentMTimeOnFile) {
+        // No prior value (or an unparseable one): write `updated` for this edit.
         result.updatedValue = this.formatDate(mTime);
+        result.countedEdit = true;
+      } else if (this.shouldUpdateValue(new Date(), currentMTimeOnFile)) {
+        result.updatedValue = this.formatDate(mTime);
+        result.countedEdit = true;
       } else {
-        const currentMTimeOnFile = this.parseDate(existingUpdated);
-        if (!currentMTimeOnFile) {
-          result.updatedValue = this.formatDate(mTime);
-        } else if (this.shouldUpdateValue(new Date(), currentMTimeOnFile)) {
-          result.updatedValue = this.formatDate(mTime);
-        } else {
-          // Rate-limited: signal the caller to retry after the limit expires
-          const nextUpdate = add(currentMTimeOnFile, {
-            seconds: this.settings.minSecondsBetweenSaves,
-          });
-          result.retryAfterMs =
-            Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
-        }
+        // Rate-limited: signal the caller to retry after the limit expires
+        const nextUpdate = add(currentMTimeOnFile, {
+          seconds: this.settings.minSecondsBetweenSaves,
+        });
+        result.retryAfterMs =
+          Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
       }
     }
 
@@ -659,6 +699,19 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           }
           if (updates.updatedValue !== undefined) {
             frontmatter[this.settings.headerUpdated] = updates.updatedValue;
+          }
+          // The edit-activity counter rides ONLY the `updated` write of a Counted
+          // edit - never a created-only fill or the inversion-fix service write.
+          // Read the base from THIS callback's frontmatter (the authoritative
+          // on-disk value, not the possibly-stale metadataCache) so a sync-merged
+          // value is respected. A native number writes unquoted YAML.
+          const counterKey = this.counterKeyOrNull();
+          if (
+            counterKey &&
+            updates.countedEdit === true &&
+            updates.updatedValue !== undefined
+          ) {
+            frontmatter[counterKey] = coerceCount(frontmatter[counterKey]) + 1;
           }
         },
       );
