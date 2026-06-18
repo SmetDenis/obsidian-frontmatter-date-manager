@@ -15,6 +15,7 @@ import { ReformatDateModal } from './ReformatDateModal';
 import { FindInversionsModal } from './FindInversionsModal';
 import { parseFilterRules, isFileExcluded } from './filterRules';
 import { InversionFixStrategy } from './inversionDetection';
+import { strings, format as t } from './i18n';
 
 export type HashTrackingMode = 'body' | 'frontmatter' | 'both';
 
@@ -200,14 +201,16 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       cls: 'frontmatter-date-manager-plugin-description',
     });
     descEl.createEl('p', {
-      text: "Sync services, backup tools, and other plugins often rewrite files without changing their content - which resets the file's dates on disk. That makes it impossible to tell when you actually last edited a note.",
+      text: strings.settings.description.syncIntro,
     });
     descEl.createEl('p', {
-      text: "This plugin writes created and last-edited dates straight into each note's properties, and detects real changes by comparing content, so your dates reflect actual edits - not sync artifacts.",
+      text: strings.settings.description.pluginIntro,
     });
 
     // --- Section 1: Timestamp fields ---
-    new Setting(containerEl).setHeading().setName('Dates to track');
+    new Setting(containerEl)
+      .setHeading()
+      .setName(strings.settings.dates.heading);
 
     this.addEnableCreated();
     this.addFrontMatterCreated();
@@ -228,20 +231,24 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     ) {
       containerEl.createEl('div', {
         cls: 'frontmatter-date-manager-hint-message',
-        text: 'Turn on at least one date above to set up the plugin.',
+        text: strings.settings.dates.enableNoneHint,
       });
       return;
     }
 
     // --- Section 2: Date formatting ---
-    new Setting(containerEl).setHeading().setName('Date formatting');
+    new Setting(containerEl)
+      .setHeading()
+      .setName(strings.settings.formatting.heading);
 
     this.addDateFormat();
     this.addTimezone();
     this.addEnableNumberProperties();
 
     // --- Section 3: Behavior ---
-    new Setting(containerEl).setHeading().setName('Behavior');
+    new Setting(containerEl)
+      .setHeading()
+      .setName(strings.settings.behavior.heading);
 
     this.addEnableAutoUpdate();
     this.addTimeBetweenUpdates();
@@ -251,7 +258,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     // --- Section: Timestamp inversion ---
     new Setting(containerEl)
       .setHeading()
-      .setName('Modified-before-created dates');
+      .setName(strings.settings.inversions.heading);
     this.addInversionStrategy();
     this.addInversionTolerance();
 
@@ -266,7 +273,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     advancedDetails.addEventListener('toggle', () => {
       this.advancedOpen = advancedDetails.open;
     });
-    advancedDetails.createEl('summary', { text: 'Advanced' });
+    advancedDetails.createEl('summary', {
+      text: strings.settings.advanced.summary,
+    });
 
     this.addDelayForNewFiles(advancedDetails);
     this.addAutoPopulateCache(advancedDetails);
@@ -274,16 +283,16 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     this.addPostUpdateCommand(advancedDetails);
 
     // --- Section 4: Bulk operations ---
-    new Setting(containerEl).setHeading().setName('Bulk operations');
+    new Setting(containerEl)
+      .setHeading()
+      .setName(strings.settings.bulk.heading);
 
     new Setting(this.containerEl)
-      .setName("Set dates from the file's own dates")
-      .setDesc(
-        "Fill in the created and last-edited dates from each file's own creation and modification dates on disk. Great for first-time setup.",
-      )
+      .setName(strings.settings.bulk.populate.name)
+      .setDesc(strings.settings.bulk.populate.desc)
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-open-populate');
-        cb.setButtonText('Fill in dates').onClick(() => {
+        cb.setButtonText(strings.settings.bulk.populate.button).onClick(() => {
           new BulkPopulateTimestampsModal(this.app, this.plugin).open();
         });
       });
@@ -294,15 +303,15 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
     if (this.plugin.settings.enableContentHashCheck ?? true) {
       new Setting(this.containerEl)
-        .setName('Rebuild hash cache')
-        .setDesc(
-          'Recompute change-detection data (content hashes) for all your notes. Useful after changing what counts as a change above.',
-        )
+        .setName(strings.settings.bulk.rebuildCache.name)
+        .setDesc(strings.settings.bulk.rebuildCache.desc)
         .addButton((cb) => {
           cb.buttonEl.addClass('frontmatter-date-manager-open-rebuild-cache');
-          cb.setButtonText('Rebuild cache').onClick(() => {
-            new UpdateAllCacheData(this.app, this.plugin).open();
-          });
+          cb.setButtonText(strings.settings.bulk.rebuildCache.button).onClick(
+            () => {
+              new UpdateAllCacheData(this.app, this.plugin).open();
+            },
+          );
         });
     }
   }
@@ -315,8 +324,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addEnableModifiedTime(): void {
     new Setting(this.containerEl)
-      .setName('Track last-edited date')
-      .setDesc('Update this date whenever you edit the note.')
+      .setName(strings.settings.dates.updated.enableName)
+      .setDesc(strings.settings.dates.updated.enableDesc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableModifiedTime ?? true)
@@ -333,11 +342,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Updated property')
-      .setDesc('Property name where the last-edited date is saved.')
+      .setName(strings.settings.dates.updated.propertyName)
+      .setDesc(strings.settings.dates.updated.propertyDesc)
       .addText((text) =>
         text
-          .setPlaceholder('Updated')
+          .setPlaceholder(strings.settings.dates.updated.propertyPlaceholder)
           .setValue(this.plugin.settings.headerUpdated)
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -353,10 +362,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Count edits')
-      .setDesc(
-        'Add a number property that goes up by one each time you edit a note. An approximate activity count, not an exact history.',
-      )
+      .setName(strings.settings.dates.updateCount.enableName)
+      .setDesc(strings.settings.dates.updateCount.enableDesc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.countUpdatesEnabled ?? false)
@@ -376,8 +383,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Edit count property')
-      .setDesc('Property name where the edit count is saved.')
+      .setName(strings.settings.dates.updateCount.propertyName)
+      .setDesc(strings.settings.dates.updateCount.propertyDesc)
       .addText((text) =>
         text
           .setValue(this.plugin.settings.headerUpdateCount ?? 'updated_count')
@@ -392,14 +399,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   private addRenameKeyButton(): void {
     new Setting(this.containerEl)
-      .setName('Rename a property')
-      .setDesc(
-        'Move values from an old property name to a new one across all notes. ' +
-          'Useful after changing a property name above.',
-      )
+      .setName(strings.settings.bulk.rename.name)
+      .setDesc(strings.settings.bulk.rename.desc)
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-open-rename');
-        cb.setButtonText('Rename property').onClick(() => {
+        cb.setButtonText(strings.settings.bulk.rename.button).onClick(() => {
           new RenameKeyModal(this.app, this.plugin).open();
         });
       });
@@ -407,8 +411,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addEnableCreated(): void {
     new Setting(this.containerEl)
-      .setName('Track creation date')
-      .setDesc("Add a creation date to notes that don't have one yet.")
+      .setName(strings.settings.dates.created.enableName)
+      .setDesc(strings.settings.dates.created.enableDesc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableCreateTime)
@@ -425,11 +429,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Created property')
-      .setDesc('Property name where the creation date is saved.')
+      .setName(strings.settings.dates.created.propertyName)
+      .setDesc(strings.settings.dates.created.propertyDesc)
       .addText((text) =>
         text
-          .setPlaceholder('Created')
+          .setPlaceholder(strings.settings.dates.created.propertyPlaceholder)
           .setValue(this.plugin.settings.headerCreated)
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -442,8 +446,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addEnableLastViewed(): void {
     new Setting(this.containerEl)
-      .setName('Track last-opened date')
-      .setDesc('Save the date each time you open the note.')
+      .setName(strings.settings.dates.viewed.enableName)
+      .setDesc(strings.settings.dates.viewed.enableDesc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableLastViewed ?? false)
@@ -460,11 +464,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Viewed property')
-      .setDesc('Property name where the last-opened date is saved.')
+      .setName(strings.settings.dates.viewed.propertyName)
+      .setDesc(strings.settings.dates.viewed.propertyDesc)
       .addText((text) =>
         text
-          .setPlaceholder('Viewed')
+          .setPlaceholder(strings.settings.dates.viewed.propertyPlaceholder)
           .setValue(this.plugin.settings.headerLastViewed ?? 'viewed')
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -480,22 +484,19 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   addDateFormat(): void {
     this.createDateFormatEditor({
       getValue: () => this.plugin.settings.dateFormat,
-      name: 'Date format',
-      description: 'How dates and times are written into your notes.',
+      name: strings.settings.formatting.dateFormat.name,
+      description: strings.settings.formatting.dateFormat.desc,
       setValue: (newValue) => (this.plugin.settings.dateFormat = newValue),
     });
   }
 
   private addReformatDateButton(): void {
     new Setting(this.containerEl)
-      .setName('Reformat existing dates')
-      .setDesc(
-        'Find dates written in an old format and rewrite them in your current format. ' +
-          'Useful after changing the date format above.',
-      )
+      .setName(strings.settings.bulk.reformat.name)
+      .setDesc(strings.settings.bulk.reformat.desc)
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-open-reformat');
-        cb.setButtonText('Reformat dates').onClick(() => {
+        cb.setButtonText(strings.settings.bulk.reformat.button).onClick(() => {
           new ReformatDateModal(this.app, this.plugin).open();
         });
       });
@@ -505,14 +506,14 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     new Setting(this.containerEl)
-      .setName('Timezone')
-      .setDesc(
-        `Timezone used when writing dates. Leave blank to use your device's timezone (${localTz}).`,
-      )
+      .setName(strings.settings.formatting.timezone.name)
+      .setDesc(t(strings.settings.formatting.timezone.desc, { localTz }))
       .addText((text) => {
         new TimezoneSuggest(this.app, text.inputEl);
         text
-          .setPlaceholder(`Local (${localTz})`)
+          .setPlaceholder(
+            t(strings.settings.formatting.timezone.placeholder, { localTz }),
+          )
           .setValue(this.plugin.settings.timezone)
           .onChange(async (value) => {
             const trimmed = value.trim();
@@ -531,7 +532,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       })
       .addExtraButton((cb) => {
         cb.setIcon('reset')
-          .setTooltip('Reset to local timezone')
+          .setTooltip(strings.settings.formatting.timezone.resetTooltip)
           .onClick(async () => {
             this.plugin.settings.timezone = '';
             await this.saveSettings();
@@ -542,10 +543,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addEnableNumberProperties(): void {
     new Setting(this.containerEl)
-      .setName('Save number-only dates without quotes')
-      .setDesc(
-        'If your date format is only digits (like a unix timestamp), write it as a plain number (updated: 1712930400) instead of text in quotes (updated: "1712930400"). No effect when your format includes dashes or colons.',
-      )
+      .setName(strings.settings.formatting.numberProperties.name)
+      .setDesc(strings.settings.formatting.numberProperties.desc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableNumberProperties)
@@ -560,10 +559,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addEnableAutoUpdate(): void {
     new Setting(this.containerEl)
-      .setName('Auto-update')
-      .setDesc(
-        'Automatically update dates when you edit a note. Also available from the command palette.',
-      )
+      .setName(strings.settings.behavior.autoUpdate.name)
+      .setDesc(strings.settings.behavior.autoUpdate.desc)
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableAutoUpdate)
@@ -582,10 +579,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       return;
     }
     new Setting(this.containerEl)
-      .setName('Minimum seconds between updates')
-      .setDesc(
-        'Avoids updating the date too often while you type or switch between notes.',
-      )
+      .setName(strings.settings.behavior.minSeconds.name)
+      .setDesc(strings.settings.behavior.minSeconds.desc)
       .addSlider((slider) =>
         slider
           .setLimits(5, 300, 5)
@@ -601,30 +596,30 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   addFilterRulesSetting(): void {
     const descr = createFragment();
     descr.append(
-      'Choose files or folders to leave alone (no automatic date updates). ',
-      'One pattern per line. Lines starting with ',
+      strings.settings.filterRules.descIntro,
+      strings.settings.filterRules.descOnePerLine,
     );
     descr.createEl('code', { text: '#' });
-    descr.append(' are comments. Start a line with ');
+    descr.append(strings.settings.filterRules.descCommentsAre);
     descr.createEl('code', { text: '!' });
     descr.append(
-      ' to add a path back. ',
-      'If several lines match, the last one wins.',
+      strings.settings.filterRules.descAddBack,
+      strings.settings.filterRules.descLastWins,
     );
     descr.createEl('br');
     descr.createEl('a', {
       href: 'https://git-scm.com/docs/gitignore',
-      text: 'Advanced syntax (gitignore-style)',
+      text: strings.settings.filterRules.advancedSyntaxLink,
     });
 
     const setting = new Setting(this.containerEl)
-      .setName('Files and folders to skip')
+      .setName(strings.settings.filterRules.name)
       .setDesc(descr);
     setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
 
     const warnEl = this.containerEl.createEl('div', {
       cls: 'frontmatter-date-manager-filter-warn',
-      text: 'No rules set - all notes get automatic date updates.',
+      text: strings.settings.filterRules.noRulesWarning,
     });
 
     const errorsEl = this.containerEl.createEl('div', {
@@ -648,7 +643,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         const { errors } = parseFilterRules(trimmed);
         for (const err of errors) {
           errorsEl.createEl('div', {
-            text: `Line ${err.lineNumber}: ${err.message} - "${err.text.trim()}"`,
+            text: t(strings.settings.filterRules.parseError, {
+              lineNumber: err.lineNumber,
+              message: err.message,
+              text: err.text.trim(),
+            }),
           });
         }
       }
@@ -658,13 +657,13 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       textArea.inputEl.addClass('frontmatter-date-manager-filter-textarea');
       textArea.inputEl.rows = 10;
       textArea.inputEl.placeholder = [
-        '# Exclude a folder',
+        strings.settings.filterRules.placeholderExcludeFolder,
         'templates/',
         '',
-        '# Exclude by pattern',
+        strings.settings.filterRules.placeholderExcludeByPattern,
         'daily/**/*.md',
         '',
-        '# Re-include a specific file',
+        strings.settings.filterRules.placeholderReinclude,
         '!daily/important.md',
       ].join('\n');
       textArea.setValue(currentValue);
@@ -680,7 +679,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     });
 
     new Setting(this.containerEl).setName('').addButton((btn) => {
-      btn.setButtonText('Preview matching files');
+      btn.setButtonText(strings.settings.filterRules.previewButton);
       btn.onClick(() => {
         previewEl.empty();
         const rules = this.plugin.getCompiledRules();
@@ -697,14 +696,19 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         }
 
         previewEl.createEl('div', {
-          text: `${tracked.length} notes tracked, ${excluded.length} notes skipped`,
+          text: t(strings.settings.filterRules.previewSummary, {
+            tracked: tracked.length,
+            excluded: excluded.length,
+          }),
           cls: 'frontmatter-date-manager-filter-preview-summary',
         });
 
         if (excluded.length > 0) {
           const details = previewEl.createEl('details');
           details.createEl('summary', {
-            text: `Skipped files (${excluded.length})`,
+            text: t(strings.settings.filterRules.skippedFilesSummary, {
+              excluded: excluded.length,
+            }),
           });
           const list = details.createEl('ul');
           const limit = Math.min(excluded.length, 50);
@@ -713,7 +717,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           }
           if (excluded.length > 50) {
             list.createEl('li', {
-              text: `...and ${excluded.length - 50} more`,
+              text: t(strings.settings.filterRules.skippedMore, {
+                count: excluded.length - 50,
+              }),
             });
           }
         }
@@ -725,7 +731,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     const refEl = this.containerEl.createEl('details', {
       cls: 'frontmatter-date-manager-filter-reference',
     });
-    refEl.createEl('summary', { text: 'Pattern syntax reference' });
+    refEl.createEl('summary', {
+      text: strings.settings.filterRules.reference.summary,
+    });
 
     const addSection = (title: string, rows: [string, string][]): void => {
       refEl.createEl('div', {
@@ -746,87 +754,87 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       }
     };
 
-    addSection('Syntax basics', [
-      ['# comment', 'Lines starting with # are ignored'],
-      ['', 'Blank lines are ignored'],
-      ['templates/', 'Exclude - files inside templates/ are skipped'],
-      ['!templates/keep.md', 'Re-include - prefix with ! to undo exclusion'],
-      ['', 'When multiple rules match, the last one wins'],
+    const ref = strings.settings.filterRules.reference;
+
+    addSection(ref.sectionBasics, [
+      ['# comment', ref.basicsCommentDesc],
+      ['', ref.basicsBlankDesc],
+      ['templates/', ref.basicsExcludeDesc],
+      ['!templates/keep.md', ref.basicsReincludeDesc],
+      ['', ref.basicsLastWinsDesc],
     ]);
 
-    addSection('Exclude a folder', [
-      ['templates/', 'All files inside templates/'],
-      ['templates', 'Same effect (trailing slash is optional)'],
-      ['projects/drafts/', 'Nested folder'],
+    addSection(ref.sectionExcludeFolder, [
+      ['templates/', ref.excludeFolderAllFilesDesc],
+      ['templates', ref.excludeFolderSameEffectDesc],
+      ['projects/drafts/', ref.excludeFolderNestedDesc],
     ]);
 
-    addSection('Re-include (undo an exclusion)', [
-      ['templates/', 'Exclude the whole folder'],
-      ['!templates/keep.md', 'But keep tracking this specific file'],
+    addSection(ref.sectionReinclude, [
+      ['templates/', ref.reincludeExcludeWholeDesc],
+      ['!templates/keep.md', ref.reincludeKeepDesc],
     ]);
 
-    addSection('Wildcards', [
-      ['*', 'Any characters except /'],
-      ['**', 'Any characters including / (crosses folders)'],
-      ['?', 'Exactly one character'],
+    addSection(ref.sectionWildcards, [
+      ['*', ref.wildcardStarDesc],
+      ['**', ref.wildcardDoubleStarDesc],
+      ['?', ref.wildcardQuestionDesc],
     ]);
 
-    addSection('Wildcard examples', [
-      ['*.canvas.md', 'Files ending in .canvas.md at vault root'],
-      ['**/*.canvas.md', 'Files ending in .canvas.md in any folder'],
-      ['daily/2024-*.md', 'Files like daily/2024-01-01.md'],
-      ['notes/??.md', 'Two-character filenames in notes/'],
+    addSection(ref.sectionWildcardExamples, [
+      ['*.canvas.md', ref.wildcardExCanvasRootDesc],
+      ['**/*.canvas.md', ref.wildcardExCanvasAnyDesc],
+      ['daily/2024-*.md', ref.wildcardExDailyDesc],
+      ['notes/??.md', ref.wildcardExTwoCharDesc],
     ]);
 
-    addSection('Specific files', [
-      ['inbox/scratch.md', 'One exact file'],
-      ['README.md', 'A file at vault root'],
+    addSection(ref.sectionSpecificFiles, [
+      ['inbox/scratch.md', ref.specificFilesOneExactDesc],
+      ['README.md', ref.specificFilesRootDesc],
     ]);
 
-    addSection('Paths with spaces', [
-      ['My Folder/My Notes/', 'Just write the path as-is'],
-      ['Work in Progress/', 'No quotes needed around spaces'],
+    addSection(ref.sectionPathsWithSpaces, [
+      ['My Folder/My Notes/', ref.pathsWithSpacesAsIsDesc],
+      ['Work in Progress/', ref.pathsWithSpacesNoQuotesDesc],
     ]);
 
-    addSection('Non-Latin characters', [
-      ['notes/Заметки/', 'Cyrillic folder name'],
-      ['projects/日记/', 'Chinese characters'],
-      ['Записки/черновики.md', 'Full non-Latin path'],
+    addSection(ref.sectionNonLatin, [
+      ['notes/Заметки/', ref.nonLatinCyrillicDesc],
+      ['projects/日记/', ref.nonLatinChineseDesc],
+      ['Записки/черновики.md', ref.nonLatinFullPathDesc],
     ]);
 
-    addSection('Obsidian-specific examples', [
-      ['templates/', 'Template folder'],
-      ['daily/', 'Daily notes folder'],
-      ['attachments/', 'Attachments / media folder'],
-      ['**/*.canvas.md', 'All canvas files'],
-      ['**/*.excalidraw.md', 'All Excalidraw drawings'],
-      ['inbox/', 'Inbox / scratchpad folder'],
-      ['archive/', 'Archived notes'],
+    addSection(ref.sectionObsidianExamples, [
+      ['templates/', ref.obsidianTemplateFolderDesc],
+      ['daily/', ref.obsidianDailyFolderDesc],
+      ['attachments/', ref.obsidianAttachmentsDesc],
+      ['**/*.canvas.md', ref.obsidianCanvasDesc],
+      ['**/*.excalidraw.md', ref.obsidianExcalidrawDesc],
+      ['inbox/', ref.obsidianInboxDesc],
+      ['archive/', ref.obsidianArchiveDesc],
     ]);
 
-    addSection('Allowlist mode (track only specific folders)', [
-      ['**', 'First, exclude everything'],
-      ['!projects/', 'Then re-include only what you want'],
-      ['!notes/', 'Re-include another folder'],
+    addSection(ref.sectionAllowlist, [
+      ['**', ref.allowlistExcludeEverythingDesc],
+      ['!projects/', ref.allowlistReincludeWantedDesc],
+      ['!notes/', ref.allowlistReincludeAnotherDesc],
     ]);
 
     const noteEl = refEl.createEl('p', {
       cls: 'frontmatter-date-manager-ref-note',
     });
-    noteEl.append(
-      'When this field is empty, all notes get automatic date updates.',
-    );
+    noteEl.append(ref.emptyNote);
   }
 
   addContentHashToggle(): void {
     const hashEnabled = this.plugin.settings.enableContentHashCheck ?? true;
 
     new Setting(this.containerEl)
-      .setName('Change detection (content hashing)')
+      .setName(strings.settings.behavior.changeDetection.name)
       .setDesc(
         hashEnabled
-          ? "The last-edited date is written only when the note's content actually changes - this prevents false updates from sync plugins."
-          : 'Disabled - the last-edited date is written on every save, even if nothing changed.',
+          ? strings.settings.behavior.changeDetection.descEnabled
+          : strings.settings.behavior.changeDetection.descDisabled,
       )
       .addToggle((cb) =>
         cb.setValue(hashEnabled).onChange(async (newValue) => {
@@ -844,23 +852,27 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   private addFrontmatterHashTracking(): void {
     const setting = new Setting(this.containerEl)
-      .setName('What counts as a change')
-      .setDesc(
-        'Which part of a note counts as a change. ' +
-          '"Body only" - editing properties (tags, aliases, etc.) will not update the date. ' +
-          '"Properties only" - editing the note text will not update the date. ' +
-          '"Both" - any edit updates the date.',
-      )
+      .setName(strings.settings.behavior.hashTrackingMode.name)
+      .setDesc(strings.settings.behavior.hashTrackingMode.desc)
       .addDropdown((dropdown) => {
-        dropdown.addOption('body', 'Note body only (default)');
-        dropdown.addOption('frontmatter', 'Properties only');
-        dropdown.addOption('both', 'Body and properties');
+        dropdown.addOption(
+          'body',
+          strings.settings.behavior.hashTrackingMode.optionBody,
+        );
+        dropdown.addOption(
+          'frontmatter',
+          strings.settings.behavior.hashTrackingMode.optionFrontmatter,
+        );
+        dropdown.addOption(
+          'both',
+          strings.settings.behavior.hashTrackingMode.optionBoth,
+        );
         dropdown.setValue(this.plugin.settings.hashTrackingMode ?? 'body');
         dropdown.onChange(async (value) => {
           this.plugin.settings.hashTrackingMode = value as HashTrackingMode;
           await this.saveSettings();
           new Notice(
-            'Tracking mode changed. Rebuild the hash cache (in bulk operations) so dates stay accurate.',
+            strings.settings.behavior.hashTrackingMode.changedNotice,
             6000,
           );
           this.display();
@@ -888,15 +900,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     };
 
     const setting = new Setting(this.containerEl)
-      .setName('Ignore these properties')
-      .setDesc(
-        'Editing these properties will not update the date. ' +
-          'You can add several at once, separated by commas. ' +
-          'The created, updated, and viewed properties are always ignored automatically.',
-      )
+      .setName(strings.settings.behavior.excludeKeys.name)
+      .setDesc(strings.settings.behavior.excludeKeys.desc)
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-exclude-input');
-        text.setPlaceholder('Property name like tags');
+        text.setPlaceholder(strings.settings.behavior.excludeKeys.placeholder);
         text.onChange((value) => {
           inputValue = value;
         });
@@ -910,7 +918,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-exclude-add');
         cb.setIcon('plus');
-        cb.setTooltip('Add property');
+        cb.setTooltip(strings.settings.behavior.excludeKeys.addTooltip);
         cb.onClick(() => {
           void addKeys();
         });
@@ -934,7 +942,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           attr: {
             'role': 'button',
             'tabindex': '0',
-            'aria-label': `Remove ${entry}`,
+            'aria-label': t(
+              strings.settings.behavior.excludeKeys.chipRemoveAriaLabel,
+              { entry },
+            ),
           },
         });
         setIcon(remove, 'x');
@@ -965,10 +976,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addDelayForNewFiles(parent: HTMLElement): void {
     new Setting(parent)
-      .setName('New file delay')
-      .setDesc(
-        'Wait this many milliseconds before stamping a date on a newly created note. Helps avoid conflicts with template plugins. Set to 0 to turn off.',
-      )
+      .setName(strings.settings.advanced.newFileDelay.name)
+      .setDesc(strings.settings.advanced.newFileDelay.desc)
       .addText((text) =>
         text
           .setPlaceholder('5000')
@@ -982,10 +991,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addAutoPopulateCache(parent: HTMLElement): void {
     new Setting(parent)
-      .setName('Auto-populate cache on startup')
-      .setDesc(
-        'When the plugin loads, build change-detection data for notes that do not have it yet. Runs in the background.',
-      )
+      .setName(strings.settings.advanced.autoPopulateCache.name)
+      .setDesc(strings.settings.advanced.autoPopulateCache.desc)
       .addToggle((cb) =>
         cb
           .setValue(this.plugin.settings.enableAutoPopulateCache ?? false)
@@ -998,10 +1005,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addMaxCacheEntries(parent: HTMLElement): void {
     new Setting(parent)
-      .setName('Maximum cache entries')
-      .setDesc(
-        'When the cache grows past this limit, the oldest unused entries are removed. 0 = no limit.',
-      )
+      .setName(strings.settings.advanced.maxCacheEntries.name)
+      .setDesc(strings.settings.advanced.maxCacheEntries.desc)
       .addText((text) =>
         text
           .setPlaceholder('10000')
@@ -1015,12 +1020,13 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   addPostUpdateCommand(parent: HTMLElement): void {
     new Setting(parent)
-      .setName('Command after update')
-      .setDesc(
-        'Run an Obsidian command after a date is updated. Leave empty to turn off.',
-      )
+      .setName(strings.settings.advanced.postUpdateCommand.name)
+      .setDesc(strings.settings.advanced.postUpdateCommand.desc)
       .addDropdown((dropdown) => {
-        dropdown.addOption('', 'None');
+        dropdown.addOption(
+          '',
+          strings.settings.advanced.postUpdateCommand.optionNone,
+        );
         // Obsidian internal API - no public typings available
         const internalApp = this.app as unknown as {
           commands: { commands: Record<string, { name: string }> };
@@ -1041,22 +1047,25 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   private addInversionStrategy(): void {
     new Setting(this.containerEl)
-      .setName('How to fix out-of-order dates')
-      .setDesc(
-        'What to do when the last-edited date is earlier than the creation date. ' +
-          'Applies to automatic edits, and sets the default for the bulk tool.',
-      )
+      .setName(strings.settings.inversions.strategy.name)
+      .setDesc(strings.settings.inversions.strategy.desc)
       .addDropdown((dd) => {
-        dd.addOption('disabled', "Don't fix (detect only)");
+        dd.addOption(
+          'disabled',
+          strings.settings.inversions.strategy.optionDisabled,
+        );
         dd.addOption(
           'created-to-updated',
-          'Set creation date to the last-edited date',
+          strings.settings.inversions.strategy.optionCreatedToUpdated,
         );
         dd.addOption(
           'updated-to-created',
-          'Set last-edited date to the creation date',
+          strings.settings.inversions.strategy.optionUpdatedToCreated,
         );
-        dd.addOption('max-all', 'Set both to the most recent date');
+        dd.addOption(
+          'max-all',
+          strings.settings.inversions.strategy.optionMaxAll,
+        );
         dd.setValue(this.plugin.settings.inversionFixStrategy ?? 'disabled');
         dd.onChange(async (value) => {
           this.plugin.settings.inversionFixStrategy =
@@ -1068,10 +1077,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   private addInversionTolerance(): void {
     new Setting(this.containerEl)
-      .setName('Ignore tiny differences (seconds)')
-      .setDesc(
-        'Ignore out-of-order dates when the gap is smaller than this. A small value hides tiny clock differences.',
-      )
+      .setName(strings.settings.inversions.tolerance.name)
+      .setDesc(strings.settings.inversions.tolerance.desc)
       .addText((text) =>
         text
           .setPlaceholder('0')
@@ -1088,15 +1095,15 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
 
   private addFindInversionsButton(): void {
     new Setting(this.containerEl)
-      .setName('Find out-of-order dates')
-      .setDesc(
-        'Scan your notes and list ones where the last-edited date is earlier than the creation date. You can then apply the fix you chose above.',
-      )
+      .setName(strings.settings.bulk.findInversions.name)
+      .setDesc(strings.settings.bulk.findInversions.desc)
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-open-inversions');
-        cb.setButtonText('Find out-of-order dates').onClick(() => {
-          new FindInversionsModal(this.app, this.plugin).open();
-        });
+        cb.setButtonText(strings.settings.bulk.findInversions.button).onClick(
+          () => {
+            new FindInversionsModal(this.app, this.plugin).open();
+          },
+        );
       });
   }
 
@@ -1115,24 +1122,26 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         : {};
       let preview: string;
       try {
-        preview = `Currently: ${format(new Date(), getValue(), tzOptions)}`;
+        preview = t(strings.settings.formatting.dateFormat.currentlyPreview, {
+          preview: format(new Date(), getValue(), tzOptions),
+        });
       } catch {
         const hint = getMomentFormatHint(getValue());
         preview = hint
-          ? `Invalid format. ${hint}`
-          : 'Invalid date format string.';
+          ? t(strings.settings.formatting.dateFormat.invalidWithHint, { hint })
+          : strings.settings.formatting.dateFormat.invalidFormat;
       }
       descr.append(
         description,
         descr.createEl('br'),
         descr.createEl('a', {
           href: 'https://date-fns.org/v4.1.0/docs/format',
-          text: 'See available format codes',
+          text: strings.settings.formatting.dateFormat.formatCodesLink,
         }),
         descr.createEl('br'),
         preview,
         descr.createEl('br'),
-        `Obsidian default: yyyy-MM-dd'T'HH:mm:ss (date and time, local timezone)`,
+        strings.settings.formatting.dateFormat.obsidianDefault,
       );
       return descr;
     };

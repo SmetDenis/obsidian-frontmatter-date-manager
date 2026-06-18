@@ -8,6 +8,7 @@ import {
   renderProgress,
   renderFailureTable,
 } from './bulk/chrome';
+import { strings, format } from './i18n';
 
 export class UpdateAllCacheData extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
@@ -31,7 +32,7 @@ export class UpdateAllCacheData extends PhaseModal {
 
   private async renderConfirmPhase() {
     const { contentEl } = this;
-    renderHeader(contentEl, 'Loading files…');
+    renderHeader(contentEl, strings.modals.rebuildCache.loadingFiles);
     this.files = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: true,
     });
@@ -40,12 +41,14 @@ export class UpdateAllCacheData extends PhaseModal {
     contentEl.empty();
     renderHeader(
       contentEl,
-      `Rebuild change-detection data for ${this.files.length} files`,
-      'This recomputes the content fingerprints (content hashes) used to detect real edits. It does not change your notes.',
+      format(strings.modals.rebuildCache.confirmTitle, {
+        count: this.files.length,
+      }),
+      strings.modals.rebuildCache.confirmSubtitle,
     );
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Run',
+        label: strings.common.run,
         destructive: false,
         disabled: this.files.length === 0,
         onClick: () => void this.renderExecutePhase(),
@@ -80,7 +83,7 @@ export class UpdateAllCacheData extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Rebuilding…');
+    renderHeader(contentEl, strings.modals.rebuildCache.rebuilding);
 
     const progress = renderProgress(contentEl, this.files.length);
 
@@ -88,7 +91,7 @@ export class UpdateAllCacheData extends PhaseModal {
       (done) => void progress.update(done),
     );
     if (!this.isOpenState()) {
-      new Notice('Bulk operation stopped.', 2000);
+      new Notice(strings.modals.rebuildCache.stopped, 2000);
       return;
     }
 
@@ -96,12 +99,14 @@ export class UpdateAllCacheData extends PhaseModal {
     if (errors > 0) {
       renderHeader(
         contentEl,
-        `Done with ${errors} error(s).`,
-        `${processed} file(s) processed.`,
+        format(strings.common.doneWithErrors, { errors }),
+        format(strings.modals.rebuildCache.doneWithErrorsSubtitle, {
+          processed,
+        }),
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
-      renderHeader(contentEl, 'Done! You can safely close this modal.');
+      renderHeader(contentEl, strings.modals.rebuildCache.doneTitle);
     }
     renderButtonBar(contentEl, {
       footer: { kind: 'close', onClick: () => void this.close() },

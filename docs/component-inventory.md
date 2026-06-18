@@ -53,6 +53,17 @@
 | `FindInversionsModal` | `src/FindInversionsModal.ts` | detection-first -> execute | red | `computeInvertedForFile` |
 | `UpdateAllCacheData` | `src/UpdateAllCacheData.ts` | confirm -> execute | blue | `rebuildAll` |
 
+## Internationalization (`src/i18n/`)
+
+The whole UI ships in 21 languages, following Obsidian's app language automatically (no plugin setting). Every user-facing string (settings tab, the five bulk modals, bulk chrome, `export.ts` download notices, and `main.ts` commands/notices/status bar) reads from `strings.*`; dynamic strings go through `format()`.
+
+| Component | File | Pure? | Responsibility |
+| --- | --- | --- | --- |
+| `format` | `src/i18n/format.ts` | Yes | Pure `{token}` substituter (unknown/missing tokens render the literal `{key}`). Unit-tested. |
+| `strings` / `LANGUAGE_MAP` / `mergeTranslationValues` / `Strings` / `DeepPartial` | `src/i18n/index.ts` | No (`getLanguage`) | Resolves the active locale once at module load, deep-merges the locale over English (per-key fallback), exposes the read-only `strings`, re-exports `format`. `LANGUAGE_MAP` keys on codes + aliases (`zh`/`zh-CN`/`zh_cn` -> Simplified, `zh-TW`/`zh_tw` -> Traditional, `pt-BR` -> Brazilian). |
+| `STRINGS_EN` | `src/i18n/locales/en.ts` | Yes | Source-of-truth string object **and** type shape (`type Strings = typeof STRINGS_EN`; never `as const`). |
+| 20 locale files | `src/i18n/locales/*.ts` | Yes | `ru.ts` hand-verified; the other 19 (`ar de es fa fr id it ja ko nl pl pt pt_br th tr uk vi zh_cn zh_tw`) are AI-generated `DeepPartial<Strings>` baselines (a missing key falls back to English per-key). |
+
 ## UI helpers
 
 | Component | File | Responsibility |

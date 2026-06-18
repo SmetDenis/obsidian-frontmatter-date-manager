@@ -34,12 +34,17 @@ obsidian-frontmatter-date-manager/
 │   │   ├── pagination.ts             #   Pure page math (unit-tested).
 │   │   └── export.ts                 #   Pure TSV + local file download (no clipboard).
 │   │
+│   ├── i18n/                         # UI translation module (whole UI in 21 languages)
+│   │   ├── index.ts                  #   Locale detect (getLanguage, once at load) + deep-merge.
+│   │   ├── format.ts                 #   Pure {token} substituter (no Obsidian dep, unit-tested).
+│   │   └── locales/                  #   en.ts (source-of-truth + type) + ru.ts + 19 AI baselines.
+│   │
 │   ├── suggesters/
 │   │   └── TimezoneSuggest.ts        # AbstractInputSuggest for IANA timezones.
 │   │
 │   ├── __mocks__/
-│   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops).
-│   └── __tests__/                    # 33 vitest spec files + helpers/setup.
+│   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops; getLanguage stub).
+│   └── __tests__/                    # 36 vitest spec files + helpers/setup (incl. bulk/).
 │
 ├── e2e/                             # WebdriverIO + real Obsidian (1.12.7). Manual, not CI.
 │   ├── specs/                       #   *.e2e.ts (Group A auto path, Group B bulk modals,
@@ -76,7 +81,7 @@ obsidian-frontmatter-date-manager/
 | --- | --- | --- |
 | `src/` | All production code | Bundled from `main.ts`; tests/mocks excluded from `tsconfig`. |
 | `src/bulk/` | Shared bulk toolkit | The testable seams: `write`, `scan`, `executePhase`, `pagination`, `export`. `chrome`/`PhaseModal` are DOM and not unit-tested. |
-| `src/__tests__/` | Unit tests | 33 specs; mirrors the pure logic and computable seams. |
+| `src/__tests__/` | Unit tests | 36 specs (incl. `bulk/` + i18n `format`/`i18n`); mirrors the pure logic and computable seams. |
 | `e2e/` | Real-Obsidian integration | Only seams the mock cannot reach; needs Node <= 22 and a display. |
 | `screenshots/` | Marketing assets | Regenerated via `make screenshots`; a stale shot is a store regression. |
 

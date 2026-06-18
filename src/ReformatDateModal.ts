@@ -7,6 +7,7 @@ import {
   detectSlashDateReadings,
   detectSlashOrderFromLocale,
 } from './utils';
+import { strings, format as t } from './i18n';
 import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
@@ -109,7 +110,7 @@ export class ReformatDateModal extends PhaseModal {
         : {};
       return format(new Date(), dateFormat, options);
     } catch {
-      return 'Invalid format';
+      return strings.modals.reformat.invalidFormat;
     }
   }
 
@@ -120,8 +121,8 @@ export class ReformatDateModal extends PhaseModal {
 
     renderHeader(
       contentEl,
-      'Standardize date format',
-      'Parse existing date values and rewrite them using the current format from settings.',
+      strings.modals.reformat.configureTitle,
+      strings.modals.reformat.configureSubtitle,
     );
 
     // Current format display
@@ -129,8 +130,8 @@ export class ReformatDateModal extends PhaseModal {
     const formatPreview = this.tryFormatPreview(currentFormat);
 
     new Setting(contentEl)
-      .setName('Target format')
-      .setDesc(`${currentFormat}`)
+      .setName(strings.modals.reformat.targetFormatName)
+      .setDesc(t(strings.modals.reformat.targetFormatDesc, { currentFormat }))
       .addText((text) =>
         text
           .setPlaceholder(currentFormat)
@@ -139,15 +140,15 @@ export class ReformatDateModal extends PhaseModal {
       );
 
     new Setting(contentEl)
-      .setName('Which fields to reformat')
-      .setDesc('Choose which dates to standardize.')
+      .setName(strings.modals.reformat.scopeName)
+      .setDesc(strings.modals.reformat.scopeDesc)
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-reformat-scope');
-        dd.addOption('all', 'All dates');
-        dd.addOption('created', 'Created only');
-        dd.addOption('updated', 'Updated only');
+        dd.addOption('all', strings.modals.reformat.scopeOptionAll);
+        dd.addOption('created', strings.modals.reformat.scopeOptionCreated);
+        dd.addOption('updated', strings.modals.reformat.scopeOptionUpdated);
         if (this.plugin.settings.enableLastViewed ?? false) {
-          dd.addOption('viewed', 'Viewed only');
+          dd.addOption('viewed', strings.modals.reformat.scopeOptionViewed);
         }
         dd.setValue(this.reformatScope);
         dd.onChange((val) => {
@@ -157,12 +158,12 @@ export class ReformatDateModal extends PhaseModal {
 
     contentEl.createDiv({
       cls: 'frontmatter-date-manager-reformat-note',
-      text: 'Dates are auto-detected from common formats (ISO 8601, European, US, numeric dates) and rewritten in your current format.',
+      text: strings.modals.reformat.autoDetectNote,
     });
 
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Scan & preview',
+        label: strings.common.scanAndPreview,
         destructive: false,
         onClick: () => {
           void this.goTo(() => {
@@ -330,12 +331,14 @@ export class ReformatDateModal extends PhaseModal {
     if (includeViewed && !viewedKey) missing.push('viewed');
     if (missing.length > 0) {
       new Notice(
-        `No property name configured for: ${missing.join(', ')}. Check plugin settings.`,
+        t(strings.modals.reformat.noPropertyConfigured, {
+          missing: missing.join(', '),
+        }),
       );
       return;
     }
 
-    renderHeader(contentEl, 'Scanning files…');
+    renderHeader(contentEl, strings.common.scanningFiles);
     const allFiles = this.app.vault.getMarkdownFiles();
     const progress = renderProgress(contentEl, allFiles.length);
 
@@ -385,7 +388,7 @@ export class ReformatDateModal extends PhaseModal {
       (e) => e.createdAmbiguous || e.updatedAmbiguous || e.viewedAmbiguous,
     ).length;
 
-    renderHeader(contentEl, 'Preview: standardize dates');
+    renderHeader(contentEl, strings.modals.reformat.previewTitle);
 
     if (ambiguousCount > 0)
       this.renderAmbiguityControl(contentEl, ambiguousCount);
@@ -393,8 +396,8 @@ export class ReformatDateModal extends PhaseModal {
     if (willChange.length === 0) {
       const noChangeText =
         ambiguousCount > 0 && this.slashOrder === 'skip'
-          ? `Nothing to convert yet. ${ambiguousCount} date(s) could be read two ways and are left unchanged - choose a day/month order above to convert them.`
-          : 'No files need reformatting. All dates are already in the target format or could not be parsed.';
+          ? t(strings.modals.reformat.noChangeAmbiguous, { ambiguousCount })
+          : strings.modals.reformat.noChangeDefault;
       contentEl.createEl('p', {
         text: noChangeText,
         cls: 'frontmatter-date-manager-bulk-summary',
@@ -402,7 +405,9 @@ export class ReformatDateModal extends PhaseModal {
       if (errorEntries.length > 0) {
         renderWarning(
           contentEl,
-          `${errorEntries.length} file(s) have dates that could not be parsed.`,
+          t(strings.modals.reformat.errorWarningNoChange, {
+            errorCount: errorEntries.length,
+          }),
         );
       }
       renderButtonBar(contentEl, {
@@ -424,14 +429,19 @@ export class ReformatDateModal extends PhaseModal {
     if (errorEntries.length > 0) {
       renderWarning(
         contentEl,
-        `${errorEntries.length} file(s) have dates that could not be parsed. These will be skipped.`,
+        t(strings.modals.reformat.errorWarningWillSkip, {
+          errorCount: errorEntries.length,
+        }),
       );
     }
 
-    const columns = ['File'];
-    if (includeCreated && createdKey) columns.push(`Created (${createdKey})`);
-    if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
-    if (includeViewed && viewedKey) columns.push(`Viewed (${viewedKey})`);
+    const columns = [strings.common.file];
+    if (includeCreated && createdKey)
+      columns.push(t(strings.common.createdKeyed, { key: createdKey }));
+    if (includeUpdated && updatedKey)
+      columns.push(t(strings.common.updatedKeyed, { key: updatedKey }));
+    if (includeViewed && viewedKey)
+      columns.push(t(strings.common.viewedKeyed, { key: viewedKey }));
 
     const rows = willChange.map((entry) => {
       const row = [entry.file.path];
@@ -473,14 +483,11 @@ export class ReformatDateModal extends PhaseModal {
     if (this.slashOrder !== 'skip' && ambiguousCount > 0) {
       contentEl.createDiv({
         cls: 'frontmatter-date-manager-reformat-note',
-        text: 'Rows marked [check] could be read two ways - confirm the new date looks right.',
+        text: strings.modals.reformat.checkNote,
       });
     }
 
-    renderWarning(
-      contentEl,
-      'This rewrites existing date values in place. It cannot be undone. Make a backup first.',
-    );
+    renderWarning(contentEl, strings.modals.reformat.rewriteWarning);
 
     renderDownloadPreviewButton(contentEl, () => {
       downloadPreviewAsFile(this.plugin, columns, rows);
@@ -488,7 +495,7 @@ export class ReformatDateModal extends PhaseModal {
 
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Run',
+        label: strings.common.run,
         destructive: true,
         onClick: () => void this.renderExecutePhase(),
       },
@@ -515,20 +522,23 @@ export class ReformatDateModal extends PhaseModal {
   ) {
     const detectedHint =
       this.detectedOrder === 'mdy'
-        ? ' Your system suggests month first.'
+        ? strings.modals.reformat.detectedHintMonthFirst
         : this.detectedOrder === 'dmy'
-          ? ' Your system suggests day first.'
+          ? strings.modals.reformat.detectedHintDayFirst
           : '';
     new Setting(contentEl)
-      .setName('Dates that could be read two ways')
+      .setName(strings.modals.reformat.ambiguityName)
       .setDesc(
-        `${ambiguousCount} date(s) could mean day-first or month-first (e.g. 01/05/2024).${detectedHint}`,
+        t(strings.modals.reformat.ambiguityDesc, {
+          ambiguousCount,
+          detectedHint,
+        }),
       )
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-slash-order');
-        dd.addOption('skip', 'Leave unclear dates unchanged');
-        dd.addOption('dmy', 'Day first (01/05 = day 1, month 5)');
-        dd.addOption('mdy', 'Month first (01/05 = month 1, day 5)');
+        dd.addOption('skip', strings.modals.reformat.ambiguityOptionSkip);
+        dd.addOption('dmy', strings.modals.reformat.ambiguityOptionDmy);
+        dd.addOption('mdy', strings.modals.reformat.ambiguityOptionMdy);
         dd.setValue(this.slashOrder);
         dd.onChange((val) => {
           this.slashOrder = val as SlashDateOrder;
@@ -557,15 +567,24 @@ export class ReformatDateModal extends PhaseModal {
     isAmbiguous = false,
   ): string {
     if (isError && oldValue !== null) {
-      return `${String(oldValue)} (could not read date)`;
+      return t(strings.modals.reformat.cellCouldNotRead, {
+        oldValue: String(oldValue),
+      });
     }
     if (newValue === null) return '-';
     // Mark a converted ambiguous value so the user double-checks the reading.
-    const check = isAmbiguous ? ' [check]' : '';
+    const check = isAmbiguous ? strings.modals.reformat.cellCheckSuffix : '';
     if (oldValue !== null) {
-      return `${String(oldValue)} → ${String(newValue)}${check}`;
+      return t(strings.modals.reformat.cellConversion, {
+        oldValue: String(oldValue),
+        newValue: String(newValue),
+        check,
+      });
     }
-    return `${String(newValue)}${check}`;
+    return t(strings.modals.reformat.cellNewValue, {
+      newValue: String(newValue),
+      check,
+    });
   }
 
   // --- Phase 3: Execute ---
@@ -573,7 +592,7 @@ export class ReformatDateModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Reformatting dates…');
+    renderHeader(contentEl, strings.modals.reformat.reformattingDates);
 
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
@@ -595,7 +614,7 @@ export class ReformatDateModal extends PhaseModal {
       labelFor: (entry) => entry.file.path,
     });
     if (!this.isOpenState()) {
-      new Notice('Reformat stopped.', 2000);
+      new Notice(strings.modals.reformat.reformatStopped, 2000);
       return;
     }
 
@@ -603,12 +622,15 @@ export class ReformatDateModal extends PhaseModal {
     if (errors > 0) {
       renderHeader(
         contentEl,
-        `Done with ${errors} error(s).`,
-        `${processed} file(s) updated.`,
+        t(strings.common.doneWithErrors, { errors }),
+        t(strings.modals.reformat.doneWithErrorsSubtitle, { processed }),
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
-      renderHeader(contentEl, `Done! ${processed} file(s) updated.`);
+      renderHeader(
+        contentEl,
+        t(strings.modals.reformat.doneTitle, { processed }),
+      );
     }
     renderButtonBar(contentEl, {
       footer: {

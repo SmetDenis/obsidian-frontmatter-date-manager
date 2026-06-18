@@ -11,7 +11,7 @@
     padding: 0.75rem 1rem;
     background: var(--background-secondary);
     border-radius: var(--radius-s);
-    border-left: 3px solid var(--text-accent);
+    border-inline-start: 3px solid var(--text-accent);
 }
 
 .frontmatter-date-manager-plugin-description p {
@@ -31,7 +31,7 @@
     padding: 0.75rem 1rem;
     background: var(--background-secondary);
     border-radius: var(--radius-s);
-    border-left: 3px solid var(--text-accent);
+    border-inline-start: 3px solid var(--text-accent);
 }
 
 .frontmatter-date-manager-filter-setting {
@@ -81,7 +81,7 @@
 
 .frontmatter-date-manager-filter-preview ul {
     margin: 0.25rem 0;
-    padding-left: 1.5rem;
+    padding-inline-start: 1.5rem;
 }
 
 .frontmatter-date-manager-filter-preview li {
@@ -121,7 +121,8 @@
 .frontmatter-date-manager-filter-reference td.frontmatter-date-manager-ref-pattern {
     font-family: var(--font-monospace);
     white-space: nowrap;
-    padding: 0.15rem 1rem 0.15rem 0;
+    padding-block: 0.15rem;
+    padding-inline: 0 1rem;
     color: var(--text-normal);
     vertical-align: top;
     width: 40%;
@@ -141,9 +142,9 @@
 
 /* Nested sub-settings (visually indented, tied to a parent toggle) */
 .frontmatter-date-manager-nested-setting {
-    padding-left: 1.5rem;
-    border-left: 2px solid var(--background-modifier-border);
-    margin-left: 0.25rem;
+    padding-inline-start: 1.5rem;
+    border-inline-start: 2px solid var(--background-modifier-border);
+    margin-inline-start: 0.25rem;
 }
 
 /* Ignored-properties list rendered as compact chips (indented under the
@@ -152,7 +153,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin: 0 0 0.75rem 1.75rem;
+    margin-block: 0 0.75rem;
+    margin-inline: 1.75rem 0;
 }
 
 .frontmatter-date-manager-property-chip {
@@ -273,8 +275,11 @@
         top: 0;
         background: var(--background-secondary);
         padding: 0.4rem 0.5rem;
-        text-align: left;
+        text-align: start;
         border-bottom: 1px solid var(--background-modifier-border);
+        /* Headers mix LTR data (keyed names, the -> and delta glyphs); isolate
+           them so they read correctly inside an RTL (ar/fa) line, like the cells. */
+        unicode-bidi: plaintext;
     }
 
     & td {
@@ -285,6 +290,9 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        /* Diff cells hold LTR data (paths, dates, the -> and delta glyphs);
+           isolate them so they read correctly inside an RTL (ar/fa) line. */
+        unicode-bidi: plaintext;
     }
 
     & td:first-child {
@@ -322,7 +330,7 @@
 
     & ul {
         margin: 0.25rem 0;
-        padding-left: 1.5rem;
+        padding-inline-start: 1.5rem;
     }
 
     & p {

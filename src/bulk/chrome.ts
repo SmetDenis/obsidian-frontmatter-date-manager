@@ -2,6 +2,7 @@ import { ButtonComponent, Platform, Setting } from 'obsidian';
 import { clampPage, getPageCount, getPageSlice } from './pagination';
 import type { ExecuteFailure } from './executePhase';
 import { downloadPreviewAsFile } from './export';
+import { strings, format } from '../i18n';
 import type FrontmatterDateManagerPlugin from '../main';
 
 export const PREVIEW_MAX_ROWS = 100;
@@ -63,11 +64,14 @@ export function renderButtonBar(
     const back = spec.back;
     setting.addButton((btn) => {
       btn.buttonEl.addClass('frontmatter-date-manager-bulk-back');
-      btn.setButtonText('Back').onClick(() => void back());
+      btn.setButtonText(strings.common.back).onClick(() => void back());
     });
   }
 
-  const footerLabel = spec.footer.kind === 'cancel' ? 'Cancel' : 'Close';
+  const footerLabel =
+    spec.footer.kind === 'cancel'
+      ? strings.common.cancel
+      : strings.common.close;
   setting.addButton((btn) => {
     btn.buttonEl.addClass('frontmatter-date-manager-bulk-footer');
     btn.setButtonText(footerLabel).onClick(() => void spec.footer.onClick());
@@ -94,11 +98,13 @@ export function renderSummary(
   counts: { changed: number; skipped: number; errors?: number },
 ): void {
   const parts = [
-    `${counts.changed} file(s) will change`,
-    `${counts.skipped} skipped`,
+    format(strings.bulkChrome.summaryWillChange, { changed: counts.changed }),
+    format(strings.bulkChrome.summarySkipped, { skipped: counts.skipped }),
   ];
   if (counts.errors && counts.errors > 0) {
-    parts.push(`${counts.errors} error(s)`);
+    parts.push(
+      format(strings.bulkChrome.summaryErrors, { errors: counts.errors }),
+    );
   }
   parent.createEl('p', {
     text: parts.join(' · '),
@@ -170,16 +176,25 @@ export function renderPaginatedDiffTable(
     const pager = parent.createDiv({
       cls: 'frontmatter-date-manager-bulk-pagination',
     });
-    const prevBtn = new ButtonComponent(pager).setButtonText('Prev');
+    const prevBtn = new ButtonComponent(pager).setButtonText(
+      strings.bulkChrome.pagerPrev,
+    );
     prevBtn.buttonEl.addClass('frontmatter-date-manager-bulk-pager-prev');
     const info = pager.createSpan({
       cls: 'frontmatter-date-manager-bulk-pagination-info',
     });
-    const nextBtn = new ButtonComponent(pager).setButtonText('Next');
+    const nextBtn = new ButtonComponent(pager).setButtonText(
+      strings.bulkChrome.pagerNext,
+    );
     nextBtn.buttonEl.addClass('frontmatter-date-manager-bulk-pager-next');
 
     const syncPager = () => {
-      info.setText(`Page ${page + 1} of ${pageCount}`);
+      info.setText(
+        format(strings.bulkChrome.pageInfo, {
+          current: page + 1,
+          total: pageCount,
+        }),
+      );
       prevBtn.setDisabled(page === 0);
       nextBtn.setDisabled(page === pageCount - 1);
     };
@@ -221,7 +236,7 @@ export function renderDownloadPreviewButton(
     cls: 'frontmatter-date-manager-bulk-download',
   });
   new ButtonComponent(wrapper)
-    .setButtonText('Download full preview')
+    .setButtonText(strings.bulkChrome.downloadFullPreview)
     .onClick(() => {
       onClick();
     });
@@ -239,7 +254,7 @@ export function renderFailureTable(
   plugin: FrontmatterDateManagerPlugin,
   failures: ExecuteFailure[],
 ): void {
-  const columns = ['File', 'Error'];
+  const columns = [strings.common.file, strings.bulkChrome.failureColumnError];
   const rows = failures.map((f) => [f.label, f.message]);
   renderPaginatedDiffTable(parent, { columns, rows });
   renderDownloadPreviewButton(parent, () => {
@@ -270,7 +285,9 @@ export function renderProgress(
   return {
     update(count: number) {
       bar.setAttr('value', count);
-      counter.setText(`${count}/${max}`);
+      counter.setText(
+        format(strings.bulkChrome.progressCounter, { count, max }),
+      );
     },
     remove() {
       wrapper.remove();

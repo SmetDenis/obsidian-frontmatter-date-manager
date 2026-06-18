@@ -20,6 +20,7 @@ import {
   applyInversionFix,
   isInversion,
 } from './inversionDetection';
+import { strings, format } from './i18n';
 
 export interface InvertedFileEntry {
   file: TFile;
@@ -132,14 +133,16 @@ export class FindInversionsModal extends PhaseModal {
     if (this.selectedStrategy === 'disabled') return;
     if (this.invertedEntries.length === 0) return;
     this.warningEl.createSpan({
-      text: `This will modify ${this.invertedEntries.length} notes. This cannot be undone. Make a backup first.`,
+      text: format(strings.modals.inversions.fixWarning, {
+        count: this.invertedEntries.length,
+      }),
       cls: 'frontmatter-date-manager-bulk-warning',
     });
   }
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
-    renderHeader(contentEl, 'Finding out-of-order dates…');
+    renderHeader(contentEl, strings.modals.inversions.scanningTitle);
 
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: true,
@@ -160,14 +163,16 @@ export class FindInversionsModal extends PhaseModal {
     contentEl.empty();
     renderHeader(
       contentEl,
-      `Found ${this.invertedEntries.length} notes with out-of-order dates`,
-      'These notes have a last-edited date earlier than the creation date. Choose how to fix them below, or close to review manually.',
+      format(strings.modals.inversions.foundTitle, {
+        count: this.invertedEntries.length,
+      }),
+      strings.modals.inversions.foundSubtitle,
     );
 
     if (this.invertedEntries.length === 0) {
       contentEl.createDiv({
         cls: 'frontmatter-date-manager-bulk-summary',
-        text: 'No out-of-order dates found.',
+        text: strings.modals.inversions.noneFound,
       });
       renderButtonBar(contentEl, {
         footer: { kind: 'close', onClick: () => void this.close() },
@@ -181,20 +186,23 @@ export class FindInversionsModal extends PhaseModal {
     });
 
     new Setting(contentEl)
-      .setName('How to fix')
-      .setDesc('Choose how to correct the dates.')
+      .setName(strings.modals.inversions.strategyName)
+      .setDesc(strings.modals.inversions.strategyDesc)
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-inversions-strategy');
-        dd.addOption('disabled', "Don't fix (review only)");
+        dd.addOption(
+          'disabled',
+          strings.modals.inversions.strategyOptionDisabled,
+        );
         dd.addOption(
           'created-to-updated',
-          'Set creation date to the last-edited date',
+          strings.modals.inversions.strategyOptionCreatedToUpdated,
         );
         dd.addOption(
           'updated-to-created',
-          'Set last-edited date to the creation date',
+          strings.modals.inversions.strategyOptionUpdatedToCreated,
         );
-        dd.addOption('max-all', 'Set both to the most recent date');
+        dd.addOption('max-all', strings.modals.inversions.strategyOptionMaxAll);
         dd.setValue(this.selectedStrategy);
         dd.onChange((value: string) => {
           this.selectedStrategy = value as InversionFixStrategy;
@@ -206,10 +214,15 @@ export class FindInversionsModal extends PhaseModal {
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
     contentEl.createDiv({
       cls: 'frontmatter-date-manager-bulk-summary',
-      text: `Ignoring differences under ${tolerance} seconds (set in settings).`,
+      text: format(strings.modals.inversions.toleranceNote, { tolerance }),
     });
 
-    const columns = ['File', 'Created', 'Updated', 'Δ'];
+    const columns = [
+      strings.common.file,
+      strings.common.created,
+      strings.common.updated,
+      strings.modals.inversions.columnDelta,
+    ];
     const rows = this.invertedEntries.map((entry) => [
       entry.file.path,
       entry.created.toISOString(),
@@ -236,7 +249,7 @@ export class FindInversionsModal extends PhaseModal {
 
     this.bar = renderButtonBar(contentEl, {
       primary: {
-        label: 'Run',
+        label: strings.common.run,
         destructive: true,
         disabled: this.selectedStrategy === 'disabled',
         onClick: () => void this.renderExecutePhase(),
@@ -248,7 +261,7 @@ export class FindInversionsModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Fixing dates…');
+    renderHeader(contentEl, strings.modals.inversions.fixingDates);
 
     const items = this.invertedEntries.map((e) => e.file);
     const progress = renderProgress(contentEl, items.length);
@@ -262,22 +275,25 @@ export class FindInversionsModal extends PhaseModal {
       labelFor: (file) => file.path,
     });
     if (!this.isOpenState()) {
-      new Notice('Bulk operation stopped.', 2000);
+      new Notice(strings.modals.inversions.stopped, 2000);
       return;
     }
 
-    new Notice(`Fixed ${processed} note(s).`, 4000);
+    new Notice(
+      format(strings.modals.inversions.fixedNotice, { processed }),
+      4000,
+    );
 
     contentEl.empty();
     if (errors > 0) {
       renderHeader(
         contentEl,
-        `Done with ${errors} error(s).`,
-        `${processed} note(s) fixed.`,
+        format(strings.common.doneWithErrors, { errors }),
+        format(strings.modals.inversions.doneWithErrorsSubtitle, { processed }),
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
-      renderHeader(contentEl, 'Done! You can safely close this modal.');
+      renderHeader(contentEl, strings.modals.inversions.doneTitle);
     }
     renderButtonBar(contentEl, {
       footer: { kind: 'close', onClick: () => void this.close() },

@@ -1,0 +1,443 @@
+// Korean. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
+import type { Strings, DeepPartial } from '../index';
+
+export const STRINGS_KO: DeepPartial<Strings> = {
+  common: {
+    run: '실행',
+    back: '뒤로',
+    cancel: '취소',
+    close: '닫기',
+    file: '파일',
+    created: '생성됨',
+    updated: '수정됨',
+    viewed: '열람됨',
+    createdKeyed: '생성됨 ({key})',
+    updatedKeyed: '수정됨 ({key})',
+    viewedKeyed: '열람됨 ({key})',
+    scanAndPreview: '검사 및 미리 보기',
+    scanningFiles: '파일 검사 중…',
+    doneWithErrors: '완료. 오류 {errors}건.',
+  },
+
+  commands: {
+    updateCurrentFile: '현재 파일의 날짜 업데이트',
+    toggleAutoUpdate: '자동 업데이트 켜기/끄기',
+    pauseAutoUpdate: '자동 업데이트 5분간 일시 중지',
+  },
+
+  statusBar: {
+    paused: '일시 중지됨',
+    pausedWithMinutes: '일시 중지됨 ({remaining}분)',
+  },
+
+  notices: {
+    inversionDetectedAndFixed:
+      'Frontmatter Date Manager: 순서가 잘못된 날짜를 감지하여 수정했습니다. 확인하려면 설정에서 "순서가 잘못된 날짜 찾기"를 사용하세요.',
+    timestampsUpdated: '날짜가 업데이트되었습니다.',
+    fileIgnored: '플러그인 설정에 의해 무시되는 파일입니다.',
+    failedToUpdateWithReason: '날짜를 업데이트하지 못했습니다: {reason}',
+    failedToUpdate: '날짜를 업데이트하지 못했습니다.',
+    autoUpdateEnabled: '자동 업데이트 켜짐',
+    autoUpdateDisabled: '자동 업데이트 꺼짐',
+    autoUpdatePausedForMinutes:
+      '자동 업데이트가 {minutes}분간 일시 중지되었습니다. 자동으로 다시 시작됩니다.',
+    autoUpdateResumed: '자동 업데이트가 다시 시작되었습니다.',
+    malformedFrontmatter:
+      'Frontmatter Date Manager 실패\n이 파일의 속성 형식이 잘못되었습니다: {filePath}\n\n{message}',
+  },
+
+  bulkChrome: {
+    summaryWillChange: '변경될 파일: {changed}개',
+    summarySkipped: '건너뜀: {skipped}개',
+    summaryErrors: '오류: {errors}건',
+    pagerPrev: '이전',
+    pagerNext: '다음',
+    pageInfo: '{total} 중 {current} 페이지',
+    downloadFullPreview: '전체 미리 보기 다운로드',
+    downloadSuccess:
+      '{count}개 행을 {filename} 파일로 다운로드 폴더에 저장했습니다.',
+    downloadFailed: '미리 보기 파일을 다운로드하지 못했습니다.',
+    failureColumnError: '오류',
+    progressCounter: '{count}/{max}',
+  },
+
+  settings: {
+    description: {
+      syncIntro:
+        '동기화 서비스, 백업 도구, 다른 플러그인은 내용을 바꾸지 않고도 파일을 다시 쓰는 경우가 많으며, 그러면 디스크상의 파일 날짜가 초기화됩니다. 그러면 노트를 실제로 마지막으로 편집한 시점을 알 수 없게 됩니다.',
+      pluginIntro:
+        '이 플러그인은 생성 날짜와 마지막 편집 날짜를 각 노트의 속성에 직접 기록하고, 내용을 비교하여 실제 변경을 감지하므로, 날짜는 동기화로 인한 흔적이 아니라 실제 편집을 반영합니다.',
+    },
+    dates: {
+      heading: '추적할 날짜',
+      enableNoneHint: '플러그인을 설정하려면 위에서 날짜를 하나 이상 켜세요.',
+      created: {
+        enableName: '생성 날짜 추적',
+        enableDesc: '아직 생성 날짜가 없는 노트에 생성 날짜를 추가합니다.',
+        propertyName: '생성 날짜 속성',
+        propertyDesc: '생성 날짜가 저장되는 속성 이름.',
+      },
+      updated: {
+        enableName: '마지막 편집 날짜 추적',
+        enableDesc: '노트를 편집할 때마다 이 날짜를 업데이트합니다.',
+        propertyName: '수정 날짜 속성',
+        propertyDesc: '마지막 편집 날짜가 저장되는 속성 이름.',
+      },
+      updateCount: {
+        enableName: '편집 횟수 세기',
+        enableDesc:
+          '노트를 편집할 때마다 1씩 증가하는 숫자 속성을 추가합니다. 정확한 기록이 아니라 대략적인 활동 횟수입니다.',
+        propertyName: '편집 횟수 속성',
+        propertyDesc: '편집 횟수가 저장되는 속성 이름.',
+      },
+      viewed: {
+        enableName: '마지막 열람 날짜 추적',
+        enableDesc: '노트를 열 때마다 날짜를 저장합니다.',
+        propertyName: '열람 날짜 속성',
+        propertyDesc: '마지막 열람 날짜가 저장되는 속성 이름.',
+      },
+    },
+    formatting: {
+      heading: '날짜 형식',
+      dateFormat: {
+        name: '날짜 형식',
+        desc: '날짜와 시간이 노트에 기록되는 방식.',
+        formatCodesLink: '사용 가능한 형식 코드 보기',
+        currentlyPreview: '현재: {preview}',
+        invalidWithHint: '잘못된 형식입니다. {hint}',
+        invalidFormat: '잘못된 날짜 형식 문자열입니다.',
+        obsidianDefault:
+          "Obsidian 기본값: yyyy-MM-dd'T'HH:mm:ss (날짜와 시간, 로컬 시간대)",
+      },
+      timezone: {
+        name: '시간대',
+        desc: '날짜를 기록할 때 사용하는 시간대. 기기의 시간대({localTz})를 사용하려면 비워 두세요.',
+        placeholder: '로컬 ({localTz})',
+        resetTooltip: '로컬 시간대로 초기화',
+      },
+      numberProperties: {
+        name: '숫자로만 된 날짜를 따옴표 없이 저장',
+        desc: '날짜 형식이 숫자로만 되어 있으면(예: unix 타임스탬프), 따옴표로 묶인 텍스트(updated: "1712930400")가 아니라 일반 숫자(updated: 1712930400)로 기록합니다. 형식에 하이픈이나 콜론이 포함되어 있으면 영향이 없습니다.',
+      },
+    },
+    behavior: {
+      heading: '동작',
+      autoUpdate: {
+        name: '자동 업데이트',
+        desc: '노트를 편집할 때 날짜를 자동으로 업데이트합니다. 명령어 팔레트에서도 사용할 수 있습니다.',
+      },
+      minSeconds: {
+        name: '업데이트 사이 최소 초',
+        desc: '입력하거나 노트를 전환하는 동안 날짜가 너무 자주 업데이트되는 것을 막습니다.',
+      },
+      changeDetection: {
+        name: '변경 감지 (내용 해싱)',
+        descEnabled:
+          '마지막 편집 날짜는 노트 내용이 실제로 바뀔 때만 기록됩니다. 이는 동기화 플러그인으로 인한 잘못된 업데이트를 방지합니다.',
+        descDisabled:
+          '꺼짐 - 마지막 편집 날짜가 아무것도 바뀌지 않았더라도 저장할 때마다 기록됩니다.',
+      },
+      hashTrackingMode: {
+        name: '무엇을 변경으로 간주할지',
+        desc: '노트의 어느 부분을 변경으로 간주할지. "본문만" - 속성(태그, 별칭 등)을 편집해도 날짜가 업데이트되지 않습니다. "속성만" - 노트 텍스트를 편집해도 날짜가 업데이트되지 않습니다. "둘 다" - 모든 편집이 날짜를 업데이트합니다.',
+        optionBody: '노트 본문만 (기본값)',
+        optionFrontmatter: '속성만',
+        optionBoth: '본문과 속성',
+        changedNotice:
+          '추적 모드가 변경되었습니다. 날짜를 정확하게 유지하려면 (대량 작업에서) 해시 캐시를 다시 만드세요.',
+      },
+      excludeKeys: {
+        name: '이 속성 무시',
+        desc: '이 속성을 편집해도 날짜가 업데이트되지 않습니다. 쉼표로 구분해 한 번에 여러 개를 추가할 수 있습니다. created, updated, viewed 속성은 항상 자동으로 무시됩니다.',
+        placeholder: 'tags 같은 속성 이름',
+        addTooltip: '속성 추가',
+        chipRemoveAriaLabel: '{entry} 제거',
+      },
+    },
+    filterRules: {
+      name: '건너뛸 파일과 폴더',
+      descIntro:
+        '그대로 둘 파일이나 폴더를 선택하세요(자동 날짜 업데이트 없음). ',
+      descOnePerLine: '한 줄에 패턴 하나. 다음으로 시작하는 줄은 ',
+      descCommentsAre: ' 주석입니다. 줄을 다음으로 시작하면 ',
+      descAddBack: ' 경로를 다시 추가합니다. ',
+      descLastWins: '여러 줄이 일치하면 마지막 줄이 우선합니다.',
+      advancedSyntaxLink: '고급 구문 (gitignore 스타일)',
+      noRulesWarning:
+        '규칙이 없습니다 - 모든 노트가 자동 날짜 업데이트를 받습니다.',
+      placeholderExcludeFolder: '# 폴더 제외',
+      placeholderExcludeByPattern: '# 패턴으로 제외',
+      placeholderReinclude: '# 특정 파일 다시 포함',
+      parseError: '{lineNumber}번 줄: {message} - "{text}"',
+      previewButton: '일치하는 파일 미리 보기',
+      previewSummary: '추적되는 노트 {tracked}개, 건너뛴 노트 {excluded}개',
+      skippedFilesSummary: '건너뛴 파일 ({excluded})',
+      skippedMore: '...외 {count}개 더',
+      reference: {
+        summary: '패턴 구문 참고',
+        sectionBasics: '구문 기초',
+        basicsCommentDesc: '#으로 시작하는 줄은 무시됩니다',
+        basicsBlankDesc: '빈 줄은 무시됩니다',
+        basicsExcludeDesc: '제외 - templates/ 안의 파일은 건너뜁니다',
+        basicsReincludeDesc: '다시 포함 - !를 앞에 붙여 제외를 취소합니다',
+        basicsLastWinsDesc: '여러 규칙이 일치하면 마지막 규칙이 우선합니다',
+        sectionExcludeFolder: '폴더 제외',
+        excludeFolderAllFilesDesc: 'templates/ 안의 모든 파일',
+        excludeFolderSameEffectDesc: '동일한 효과 (끝의 슬래시는 선택 사항)',
+        excludeFolderNestedDesc: '중첩 폴더',
+        sectionReinclude: '다시 포함 (제외 취소)',
+        reincludeExcludeWholeDesc: '폴더 전체 제외',
+        reincludeKeepDesc: '하지만 이 특정 파일은 계속 추적',
+        sectionWildcards: '와일드카드',
+        wildcardStarDesc: '/를 제외한 모든 문자',
+        wildcardDoubleStarDesc: '/를 포함한 모든 문자 (폴더를 가로지름)',
+        wildcardQuestionDesc: '정확히 한 문자',
+        sectionWildcardExamples: '와일드카드 예시',
+        wildcardExCanvasRootDesc: '보관함 루트에서 .canvas.md로 끝나는 파일',
+        wildcardExCanvasAnyDesc: '모든 폴더에서 .canvas.md로 끝나는 파일',
+        wildcardExDailyDesc: 'daily/2024-01-01.md 같은 파일',
+        wildcardExTwoCharDesc: 'notes/ 안의 두 글자 파일명',
+        sectionSpecificFiles: '특정 파일',
+        specificFilesOneExactDesc: '정확한 파일 하나',
+        specificFilesRootDesc: '보관함 루트의 파일',
+        sectionPathsWithSpaces: '공백이 있는 경로',
+        pathsWithSpacesAsIsDesc: '경로를 그대로 쓰면 됩니다',
+        pathsWithSpacesNoQuotesDesc: '공백 주위에 따옴표는 필요 없습니다',
+        sectionNonLatin: '비라틴 문자',
+        nonLatinCyrillicDesc: '키릴 문자 폴더 이름',
+        nonLatinChineseDesc: '한자',
+        nonLatinFullPathDesc: '전체 비라틴 경로',
+        sectionObsidianExamples: 'Obsidian 전용 예시',
+        obsidianTemplateFolderDesc: '템플릿 폴더',
+        obsidianDailyFolderDesc: '일일 노트 폴더',
+        obsidianAttachmentsDesc: '첨부 파일 / 미디어 폴더',
+        obsidianCanvasDesc: '모든 캔버스 파일',
+        obsidianExcalidrawDesc: '모든 Excalidraw 그림',
+        obsidianInboxDesc: '받은 편지함 / 임시 메모 폴더',
+        obsidianArchiveDesc: '보관된 노트',
+        sectionAllowlist: '허용 목록 모드 (특정 폴더만 추적)',
+        allowlistExcludeEverythingDesc: '먼저 전부 제외',
+        allowlistReincludeWantedDesc: '그다음 원하는 것만 다시 포함',
+        allowlistReincludeAnotherDesc: '다른 폴더 다시 포함',
+        emptyNote:
+          '이 필드가 비어 있으면 모든 노트가 자동 날짜 업데이트를 받습니다.',
+      },
+    },
+    inversions: {
+      heading: '수정 날짜가 생성 날짜보다 빠름',
+      strategy: {
+        name: '순서가 잘못된 날짜를 고치는 방법',
+        desc: '마지막 편집 날짜가 생성 날짜보다 빠를 때 무엇을 할지. 자동 편집에 적용되며, 대량 도구의 기본값을 설정합니다.',
+        optionDisabled: '고치지 않음 (감지만)',
+        optionCreatedToUpdated: '생성 날짜를 마지막 편집 날짜로 설정',
+        optionUpdatedToCreated: '마지막 편집 날짜를 생성 날짜로 설정',
+        optionMaxAll: '둘 다 가장 최근 날짜로 설정',
+      },
+      tolerance: {
+        name: '작은 차이 무시 (초)',
+        desc: '차이가 이 값보다 작으면 순서가 잘못된 날짜를 무시합니다. 작은 값은 미세한 시계 차이를 가립니다.',
+      },
+    },
+    advanced: {
+      summary: '고급',
+      newFileDelay: {
+        name: '새 파일 지연',
+        desc: '새로 만든 노트에 날짜를 기록하기 전에 이만큼의 밀리초를 기다립니다. 템플릿 플러그인과의 충돌을 피하는 데 도움이 됩니다. 끄려면 0으로 설정하세요.',
+      },
+      autoPopulateCache: {
+        name: '시작 시 캐시 자동 채우기',
+        desc: '플러그인이 로드될 때 변경 감지 데이터가 아직 없는 노트에 대해 이를 만듭니다. 백그라운드에서 실행됩니다.',
+      },
+      maxCacheEntries: {
+        name: '최대 캐시 항목 수',
+        desc: '캐시가 이 한도를 넘으면 사용하지 않은 가장 오래된 항목이 제거됩니다. 0 = 제한 없음.',
+      },
+      postUpdateCommand: {
+        name: '업데이트 후 명령어',
+        desc: '날짜가 업데이트된 후 Obsidian 명령어를 실행합니다. 끄려면 비워 두세요.',
+        optionNone: '없음',
+      },
+    },
+    bulk: {
+      heading: '대량 작업',
+      populate: {
+        name: '파일 자체 날짜로 날짜 설정',
+        desc: '각 파일의 디스크상 생성 및 수정 날짜로 생성 날짜와 마지막 편집 날짜를 채웁니다. 처음 설정할 때 유용합니다.',
+        button: '날짜 채우기',
+      },
+      rename: {
+        name: '속성 이름 바꾸기',
+        desc: '모든 노트에서 이전 속성 이름의 값을 새 이름으로 옮깁니다. 위에서 속성 이름을 바꾼 후에 유용합니다.',
+        button: '속성 이름 바꾸기',
+      },
+      reformat: {
+        name: '기존 날짜 다시 형식화',
+        desc: '이전 형식으로 기록된 날짜를 찾아 현재 형식으로 다시 씁니다. 위에서 날짜 형식을 바꾼 후에 유용합니다.',
+        button: '날짜 다시 형식화',
+      },
+      findInversions: {
+        name: '순서가 잘못된 날짜 찾기',
+        desc: '노트를 검사하여 마지막 편집 날짜가 생성 날짜보다 빠른 노트를 나열합니다. 그런 다음 위에서 선택한 수정을 적용할 수 있습니다.',
+        button: '순서가 잘못된 날짜 찾기',
+      },
+      rebuildCache: {
+        name: '해시 캐시 다시 만들기',
+        desc: '모든 노트에 대해 변경 감지 데이터(내용 해시)를 다시 계산합니다. 위에서 무엇을 변경으로 간주할지 바꾼 후에 유용합니다.',
+        button: '캐시 다시 만들기',
+      },
+    },
+  },
+
+  modals: {
+    populate: {
+      configureTitle: '파일 자체 날짜로 날짜 설정',
+      configureSubtitleLine1: '생성 날짜와 마지막 편집 날짜를',
+      configureSubtitleLine2:
+        '각 파일의 디스크상 생성 및 수정 날짜로 채웁니다.',
+      modeName: '설정할 날짜',
+      modeDesc: '채울 날짜를 선택하세요.',
+      modeOptionBoth: '생성과 수정 둘 다',
+      modeOptionCreated: '생성 날짜만',
+      modeOptionUpdated: '수정 날짜만',
+      overrideName: '이미 날짜가 있는 파일',
+      overrideDesc: '없는 날짜만 채우거나 기존 날짜를 덮어씁니다.',
+      overrideOptionFillMissing: '없는 것만 채우기 (안전)',
+      overrideOptionOverwriteAll: '전부 덮어쓰기 (기존 값 대체)',
+      autoUpdateNoteTitle: '자동 업데이트에 관한 참고:',
+      autoUpdateNoteBody:
+        '자동 업데이트가 활성화되어 있었다면, 디스크상의 파일 자체 날짜가 원래 날짜가 아니라 플러그인 자체 편집을 이미 반영하고 있을 수 있습니다. 최상의 결과를 위해, 자동 업데이트를 켜기 전이나 플러그인을 설치한 직후에 이 기능을 사용하세요.',
+      warningTitleCreatedUnreliable:
+        '파일 생성 날짜는 일부 플랫폼에서 신뢰할 수 없습니다',
+      warningTitlePlatformNote: '플랫폼 참고',
+      platformMacWinNote: '실제 파일 생성 날짜',
+      platformLinuxNote:
+        '시스템이 실제 생성 날짜가 아니라 더 늦은 날짜를 보고합니다',
+      platformAndroidNote: '기기에 따라 다르며, 종종 신뢰할 수 없습니다',
+      platformIosNote: '대체로 신뢰할 수 있습니다',
+      platformReliable: '신뢰할 수 있음',
+      platformUnreliable: '신뢰할 수 없음',
+      platformYourPlatformSuffix: ' (현재 플랫폼)',
+      syncNoteLine1:
+        '동기화된 보관함: 파일 날짜가 동기화 서비스에 의해 초기화될 수 있습니다',
+      syncNoteLine3:
+        '마지막 편집 날짜는 보통 생성 날짜보다 더 신뢰할 수 있습니다.',
+      recommendation: '권장: 실행 후 결과를 확인하세요. 먼저 백업하세요.',
+      overwriteWarning:
+        '이 작업은 노트의 기존 날짜를 대체합니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
+      noPropertyConfigured:
+        '다음에 대한 속성 이름이 설정되지 않았습니다: {missing}. 플러그인 설정을 확인하세요.',
+      previewTitle: '미리 보기: 날짜 설정',
+      noFilesNeedUpdating:
+        '업데이트가 필요한 파일이 없습니다. 모든 해당 파일에 이미 요청한 날짜가 있습니다.',
+      previewOverwriteWarning:
+        '덮어쓰기 모드: 기존 날짜가 대체됩니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
+      settingDates: '날짜 설정 중…',
+      stopped: '중지됨.',
+      doneWithErrorsSubtitle: '{processed}개 파일이 업데이트되었습니다.',
+      doneTitle: '완료! {processed}개 파일이 업데이트되었습니다.',
+    },
+    rename: {
+      configureTitle: '속성 이름 바꾸기',
+      configureSubtitle:
+        '모든 노트에서 한 속성 이름의 값을 다른 이름으로 옮깁니다.',
+      validationEnterOld: '계속하려면 이전 속성 이름을 입력하세요.',
+      validationEnterNew: '계속하려면 새 속성 이름을 입력하세요.',
+      validationMustDiffer: '이전 속성 이름과 새 속성 이름은 달라야 합니다.',
+      oldKeyName: '이전 속성 이름',
+      oldKeyDesc: '현재 노트에서 사용 중인 속성 이름.',
+      newKeyName: '새 속성 이름',
+      newKeyDesc: '사용할 새 속성 이름.',
+      deleteOldName: '이름을 바꾼 후 이전 속성 삭제',
+      deleteOldDesc: '값을 새 속성으로 복사한 후 이전 속성을 제거합니다.',
+      namesCannotBeEmpty: '속성 이름은 비워 둘 수 없습니다.',
+      previewTitle: '미리 보기: 속성 이름 바꾸기',
+      noNotesUseProperty: '"{oldKey}" 속성을 사용하는 노트가 없습니다.',
+      conflictWarning:
+        '{conflicts}개 노트에 이미 "{newKey}" 속성이 있습니다. 기존 값이 덮어써집니다.',
+      columnArrowNew: '→ {newKey}',
+      deleteWarning:
+        '복사 후 이전 속성이 삭제됩니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
+      renamingProperty: '속성 이름 바꾸는 중…',
+      renameStopped: '이름 바꾸기가 중지되었습니다.',
+      doneWithErrorsSubtitle: '{processed}개 파일이 업데이트되었습니다.',
+      doneTitle: '완료! {processed}개 파일이 업데이트되었습니다.',
+    },
+    reformat: {
+      configureTitle: '날짜 형식 표준화',
+      configureSubtitle:
+        '기존 날짜 값을 해석하여 설정의 현재 형식으로 다시 씁니다.',
+      invalidFormat: '잘못된 형식',
+      targetFormatName: '대상 형식',
+      scopeName: '다시 형식화할 필드',
+      scopeDesc: '표준화할 날짜를 선택하세요.',
+      scopeOptionAll: '모든 날짜',
+      scopeOptionCreated: '생성만',
+      scopeOptionUpdated: '수정만',
+      scopeOptionViewed: '열람만',
+      autoDetectNote:
+        '날짜는 흔한 형식(ISO 8601, 유럽식, 미국식, 숫자 날짜)에서 자동으로 감지되어 현재 형식으로 다시 써집니다.',
+      noPropertyConfigured:
+        '다음에 대한 속성 이름이 설정되지 않았습니다: {missing}. 플러그인 설정을 확인하세요.',
+      previewTitle: '미리 보기: 날짜 표준화',
+      noChangeAmbiguous:
+        '아직 변환할 것이 없습니다. {ambiguousCount}개 날짜는 두 가지로 읽힐 수 있어 그대로 둡니다. 변환하려면 위에서 일/월 순서를 선택하세요.',
+      noChangeDefault:
+        '다시 형식화할 파일이 없습니다. 모든 날짜가 이미 대상 형식이거나 해석할 수 없습니다.',
+      errorWarningNoChange:
+        '{errorCount}개 파일에 해석할 수 없는 날짜가 있습니다.',
+      errorWarningWillSkip:
+        '{errorCount}개 파일에 해석할 수 없는 날짜가 있습니다. 이 파일들은 건너뜁니다.',
+      checkNote:
+        '[check] 표시가 있는 행은 두 가지로 읽힐 수 있습니다. 새 날짜가 올바른지 확인하세요.',
+      rewriteWarning:
+        '이 작업은 기존 날짜 값을 그 자리에서 다시 씁니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
+      ambiguityName: '두 가지로 읽힐 수 있는 날짜',
+      ambiguityDesc:
+        '{ambiguousCount}개 날짜는 일 우선 또는 월 우선을 뜻할 수 있습니다(예: 01/05/2024).{detectedHint}',
+      detectedHintMonthFirst: ' 시스템이 월 우선을 제안합니다.',
+      detectedHintDayFirst: ' 시스템이 일 우선을 제안합니다.',
+      ambiguityOptionSkip: '불분명한 날짜는 그대로 두기',
+      ambiguityOptionDmy: '일 우선 (01/05 = 1일, 5월)',
+      ambiguityOptionMdy: '월 우선 (01/05 = 1월, 5일)',
+      cellCouldNotRead: '{oldValue} (날짜를 읽을 수 없음)',
+      cellConversion: '{oldValue} → {newValue}{check}',
+      cellNewValue: '{newValue}{check}',
+      cellCheckSuffix: ' [check]',
+      reformattingDates: '날짜 다시 형식화 중…',
+      reformatStopped: '다시 형식화가 중지되었습니다.',
+      doneWithErrorsSubtitle: '{processed}개 파일이 업데이트되었습니다.',
+      doneTitle: '완료! {processed}개 파일이 업데이트되었습니다.',
+    },
+    inversions: {
+      scanningTitle: '순서가 잘못된 날짜 찾는 중…',
+      foundTitle: '순서가 잘못된 날짜가 있는 노트 {count}개를 찾았습니다',
+      foundSubtitle:
+        '이 노트들은 마지막 편집 날짜가 생성 날짜보다 빠릅니다. 아래에서 고치는 방법을 선택하거나, 닫고 직접 검토하세요.',
+      noneFound: '순서가 잘못된 날짜를 찾지 못했습니다.',
+      strategyName: '고치는 방법',
+      strategyDesc: '날짜를 고치는 방법을 선택하세요.',
+      strategyOptionDisabled: '고치지 않음 (검토만)',
+      strategyOptionCreatedToUpdated: '생성 날짜를 마지막 편집 날짜로 설정',
+      strategyOptionUpdatedToCreated: '마지막 편집 날짜를 생성 날짜로 설정',
+      strategyOptionMaxAll: '둘 다 가장 최근 날짜로 설정',
+      toleranceNote: '{tolerance}초 미만의 차이는 무시합니다(설정에서 지정).',
+      fixWarning:
+        '이 작업은 {count}개 노트를 수정합니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
+      fixingDates: '날짜 고치는 중…',
+      stopped: '대량 작업이 중지되었습니다.',
+      fixedNotice: '{processed}개 노트를 고쳤습니다.',
+      doneWithErrorsSubtitle: '{processed}개 노트를 고쳤습니다.',
+      doneTitle: '완료! 이 창을 안전하게 닫아도 됩니다.',
+    },
+    rebuildCache: {
+      loadingFiles: '파일 불러오는 중…',
+      confirmTitle: '{count}개 파일의 변경 감지 데이터 다시 만들기',
+      confirmSubtitle:
+        '이 작업은 실제 편집을 감지하는 데 쓰이는 내용 지문(내용 해시)을 다시 계산합니다. 노트는 변경되지 않습니다.',
+      rebuilding: '다시 만드는 중…',
+      stopped: '대량 작업이 중지되었습니다.',
+      doneWithErrorsSubtitle: '{processed}개 파일이 처리되었습니다.',
+      doneTitle: '완료! 이 창을 안전하게 닫아도 됩니다.',
+    },
+  },
+};

@@ -128,3 +128,7 @@ export class AbstractInputSuggest<T> {
   setValue(_v: string) {}
   close() {}
 }
+
+export function getLanguage(): string {
+  return 'en';
+}

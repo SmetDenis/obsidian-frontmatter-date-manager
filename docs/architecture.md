@@ -9,7 +9,7 @@ The plugin is an event-driven Obsidian extension bundled to a single CJS file. I
 1. **The automatic pipeline** (`src/main.ts`) - reacts to vault events, detects real content changes via SHA-256 hashing, and writes only the minimal frontmatter mutation needed.
 2. **The bulk operations subsystem** (`src/bulk/` + five `*Modal.ts` files) - opt-in, dry-run-gated tools for retrofitting dates across an entire vault.
 
-Pure, Obsidian-free logic (date parsing/formatting, filter rules, inversion detection, pagination, export) is factored into standalone modules so it can be unit-tested without the Obsidian runtime.
+Pure, Obsidian-free logic (date parsing/formatting, filter rules, inversion detection, pagination, export, the `{token}` string formatter) is factored into standalone modules so it can be unit-tested without the Obsidian runtime. The entire UI ships in 21 languages, following Obsidian's app language automatically (`src/i18n/`).
 
 ## 2. Core safety invariant (the overriding principle)
 
@@ -28,7 +28,7 @@ Concrete rules enforced throughout the code:
 | Category | Technology | Version | Why |
 | --- | --- | --- | --- |
 | Language | TypeScript (strict, `noUncheckedIndexedAccess`) | 6.0.3 | Type safety; `noUncheckedIndexedAccess` forces `arr[i]` to be `T \| undefined`. |
-| Plugin API | obsidian | ~1.12.3 | Pinned with tilde to avoid pulling 1.13 early-access types that would break the public install base. Target `minAppVersion` 1.4.11. |
+| Plugin API | obsidian | ~1.12.3 | Pinned with tilde to avoid pulling 1.13 early-access types that would break the public install base. Target `minAppVersion` 1.11.0 (raised from 1.4.11 for `getLanguage()`, `@since 1.8.7`). |
 | Dates | date-fns v4 + @date-fns/tz | 4.4.0 / ^1.5.0 | Timezone-anchored formatting/parsing via `TZDate`. |
 | Hashing | js-sha256 | ^0.11.1 | Content hashing for change detection. |
 | Glob | picomatch v4 (`picomatch/posix`) | ^4.0.4 | Gitignore-style filter rules. |
@@ -123,17 +123,36 @@ Every data-mutating bulk op presents a **mandatory dry-run preview** showing **e
 
 `formatDate` always renders in the configured timezone (`{ in: tz(timezone) }`). Any code that parses a stored date back must use the **same** zone, or values silently shift by the host<->settings offset on round-trip. `parseDateValueWithZone` (`src/utils.ts`) threads one `tzOptions` through every deterministic strategy. Numeric epochs are disambiguated by magnitude (`epochNumberToDate`, `< 1e11` => seconds) because `new Date(n)` assumes ms.
 
-## 9. Testing strategy
+## 9. Internationalization (`src/i18n/`)
 
-- **Unit (vitest, 33 spec files in `src/__tests__/`):** all pure logic and testable seams - date parse/format, filter rules, inversion detect/prevent, sanitizeSettings, hash cache, debounce, `handleFileChange` entry point, each modal's `compute*`/`rebuildAll`, and the bulk blocks (`write`, `scan`, `executePhase`, `pagination`, `export`). The `obsidian` module is mocked (`src/__mocks__/obsidian.ts`); DOM rendering is not unit-tested (the mock no-ops DOM).
+The whole UI ships in 21 languages and follows Obsidian's app language automatically (no plugin setting). The locale is resolved **once at module load**:
+
+```
+getLanguage()  [obsidian]
+  -> code in LANGUAGE_MAP? use it, else 'en'   [src/i18n/index.ts]
+  -> deep-merge the locale over STRINGS_EN (per-key fallback to English)
+  -> exported read-only `strings`
+  -> read by settings tab / the five modals / bulk chrome / main.ts (commands, notices, status bar)
+```
+
+- **`i18n/locales/en.ts`** (`STRINGS_EN`) is both the source-of-truth string object **and** the type shape (`type Strings = typeof STRINGS_EN`; never `as const`, so leaves infer as `string` and each locale's `DeepPartial<Strings>` stays assignable). `ru.ts` is hand-verified; the other 19 (`ar de es fa fr id it ja ko nl pl pt pt_br th tr uk vi zh_cn zh_tw`) are AI-generated `DeepPartial<Strings>` baselines, so an incomplete locale is safe - a missing key falls back to English per-key.
+- **`i18n/format.ts`** is the pure `{token}` substituter (no Obsidian dependency, unit-tested). Static strings are plain properties; dynamic ones are `{token}` templates resolved by `format()` (unknown/missing tokens render the literal `{key}` - loud, not silent).
+- **`i18n/index.ts`** owns detection + the `DeepPartial` deep-merge and re-exports `format` + `LANGUAGE_MAP`. `LANGUAGE_MAP` keys on exact codes plus explicit aliases (`zh`/`zh-CN`/`zh_cn` -> Simplified, `zh-TW`/`zh_tw` -> Traditional, `pt-BR` -> Brazilian); codes are never "normalized". `strings` is **read-only** - merge returns untouched subtrees by reference from `STRINGS_EN`, so assigning to `strings.*` would mutate the English source.
+- **RTL:** `styles.css` uses logical CSS properties (`*-inline-start`/`-end`, `text-align: start`) so the `ar`/`fa` locales mirror correctly; lightningcss downlevels them to direction-aware `:lang()` rules at build.
+- **Floor:** detection relies on `getLanguage()` (`@since 1.8.7`), which is why `minAppVersion` was raised `1.4.11 -> 1.11.0`.
+- **Out of scope (kept English):** `manifest.json` name/description, note content/frontmatter values (safety invariant), the marketing-screenshots pipeline, and `filterRules.ts` parse-error messages (the module is Obsidian-free; only its error *wrapper* is translated). The three files that already import date-fns `format` (`main.ts`, `ReformatDateModal.ts`, `Settings.ts`) import the i18n helper aliased as `t`.
+
+## 10. Testing strategy
+
+- **Unit (vitest, 36 spec files in `src/__tests__/`):** all pure logic and testable seams - date parse/format, filter rules, inversion detect/prevent, sanitizeSettings, hash cache, debounce, `handleFileChange` entry point, each modal's `compute*`/`rebuildAll`, the bulk blocks (`write`, `scan`, `executePhase`, `pagination`, `export`), and the i18n layer (`format.test.ts`; `i18n.test.ts` adds locale key-coverage plus value-integrity guards - no empty-string overrides, every translated value keeps English's exact `{token}` set). The `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, now including a `getLanguage()` stub); DOM rendering is not unit-tested (the mock no-ops DOM).
 - **E2E (WebdriverIO + real Obsidian, pinned 1.12.7, in `e2e/`):** only the seams the unit mock cannot reach - real `processFrontMatter` serialization (body/key-order/comments survive), number-vs-string on disk, self-trigger suppression on real `mtime`, the five bulk modals via real DOM clicks, and the settings exclude-list UI. Manual/pre-release, not in CI. Requires Node <= 22.
 
 See [Development Guide](./development-guide.md) for commands.
 
-## 10. Build & distribution
+## 11. Build & distribution
 
 esbuild bundles to `dist/`; `manifest.json` is copied; `styles.css` -> `dist/styles.css` via lightningcss. Release is driven by pushing a bare `N.N.N` tag (no `v` prefix - Obsidian requires this) which triggers `.github/workflows/release.yml` to build and publish assets. See [Deployment Guide](./deployment-guide.md).
 
-## 11. Community review compliance (a hard constraint)
+## 12. Community review compliance (a hard constraint)
 
 The plugin targets the Obsidian community store, whose automated scanner runs `eslint-plugin-obsidianmd` (recommended ruleset), **ignores this repo's eslint config**, and **forbids disabling its rules** (`Disabling '<rule>' is not allowed`). `eslint.config.mts` mirrors that with `no-restricted-disable: obsidianmd/*` so `make lint` is a true superset. The 2026 safety scorecard adds **capability disclosures** (informational, non-failing): this plugin keeps Vault Enumeration (irreducible - `getMarkdownFiles()` only) and removed Clipboard Access (replaced clipboard export with a file download). See `CLAUDE.md` -> "Obsidian Community Plugin Review Requirements" for the full ruleset.

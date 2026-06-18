@@ -2,7 +2,7 @@
   "id": "frontmatter-date-manager",
   "name": "Frontmatter Date Manager",
   "version": "1.1.1",
-  "minAppVersion": "1.4.11",
+  "minAppVersion": "1.11.0",
   "description": "Automatically update created, modified, and last-viewed dates in frontmatter.",
   "author": "SmetDenis",
   "authorUrl": "https://github.com/SmetDenis",

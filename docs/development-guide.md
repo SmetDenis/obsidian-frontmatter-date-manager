@@ -52,7 +52,7 @@ Then enable the plugin in Obsidian (Settings -> Community plugins) and reload.
 
 ## Testing approach
 
-- **Unit (vitest, `src/__tests__/`, 33 specs):** required for any logic change. Targets pure functions and computable seams; the `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, DOM is a no-op). Never weaken the `created`/`updated`/body safety assertions.
+- **Unit (vitest, `src/__tests__/`, 36 specs):** required for any logic change. Targets pure functions and computable seams; the `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, DOM is a no-op). Never weaken the `created`/`updated`/body safety assertions.
 - **E2E (`e2e/`, WebdriverIO + real Obsidian 1.12.7):** only seams the mock cannot reach (real `processFrontMatter` serialization, on-disk number-vs-string, self-trigger suppression on real `mtime`, the five bulk modals via DOM, the settings exclude-list UI). Characterization style: a fresh spec passes on first run. Manual / pre-release - not in CI. First run downloads Obsidian to `e2e/.obsidian-cache/` (gitignored). Full scenario list: `e2e/README.md`.
 
 ## Continuous integration

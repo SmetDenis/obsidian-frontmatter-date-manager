@@ -32,7 +32,7 @@ It also ships **five bulk tools** (opened from the settings tab) to retrofit and
 | UI | `PluginSettingTab` + 5 `Modal`-derived bulk wizards |
 | Persistence | `data.json` (settings) + `hash-cache.json` (content hashes) |
 | Mobile support | Yes (`isDesktopOnly: false`) |
-| Min Obsidian version | 1.4.11 |
+| Min Obsidian version | 1.11.0 (raised from 1.4.11 for `getLanguage()` i18n detection) |
 | Current version | 1.1.1 |
 | Distribution | Obsidian community plugin store, via GitHub release assets |
 

@@ -44,7 +44,7 @@ The architecture map (entry point, bulk modals, pure helpers, key patterns) live
 
 This plugin ships to the Obsidian community store, which gates submissions. Do not:
 
-- Bump the `obsidian` types past `~1.12.3` or adopt 1.13+ APIs (e.g. `getSettingDefinitions()`, `ButtonComponent.setDestructive()`) - it breaks every public install. Target is `minAppVersion` 1.4.11.
+- Bump the `obsidian` types past `~1.12.3` or adopt 1.13+ APIs (e.g. `getSettingDefinitions()`, `ButtonComponent.setDestructive()`) - it breaks every public install. Target is `minAppVersion` 1.11.0.
 - Disable any `obsidianmd/*` ESLint rule - the review scanner forbids `eslint-disable` of its rules and `make lint` mirrors that. Fix the code instead.
 - Let the linter pin go stale - the bot always runs the latest `eslint-plugin-obsidianmd`.
 
@@ -63,6 +63,19 @@ Welcome: bug fixes, safer edge-case handling, tests, docs, accessibility and UX 
 Likely to be declined: anything that breaks safety-first (unconditional writes, overwriting parseable values, destructive defaults), bumping the Obsidian API past the supported line, disabling lint rules, or features that add risk to vault data without an opt-in + dry-run.
 
 If unsure whether a feature fits, open an issue first and we'll scope it together.
+
+## Translations
+
+The UI is translatable (`src/i18n/`) and follows Obsidian's app language automatically. English (`src/i18n/locales/en.ts`, `STRINGS_EN`) is the source-of-truth shape and the only fully hand-authored locale; every other locale is a `DeepPartial<Strings>` deep-merged over English, so any missing key falls back to English and a partial translation never breaks the UI.
+
+To add or improve a locale:
+
+1. Copy the shape of `en.ts` into `src/i18n/locales/<code>.ts` as `export const STRINGS_<CODE>: DeepPartial<Strings> = { ... }` (import the type from `../index`). Translate only the **values**; omit keys you are unsure about and they fall back to English.
+2. Keep every `{token}` placeholder **byte-identical** to English (e.g. `{count}`, `{processed}`) - the token name is substituted at runtime; a mistranslated token would print the literal `{name}` to the user. Keep `\n` escapes and literal data fragments (`templates/`, `01/05/2024`, `yyyy-MM-dd'T'HH:mm:ss`, etc.) as-is. Use a plain `-`, never an em/en dash. File comments stay English.
+3. Register the locale in `LANGUAGE_MAP` in `src/i18n/index.ts` (add any code aliases Obsidian may report, as the Chinese entries show).
+4. Run `npm test -- src/__tests__/i18n.test.ts`. The coverage test rejects keys that do not exist in English; the value-integrity test rejects empty-string overrides and any value whose `{token}` set drifts from English. Then `make pre-commit`.
+
+`ru` is maintainer-verified; the other non-English locales are machine-generated baselines marked "Improvements welcome" - translation PRs are very welcome.
 
 ## Tools we use (optional)
 
