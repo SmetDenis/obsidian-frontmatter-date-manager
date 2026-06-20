@@ -1,5 +1,6 @@
 import { Notice } from 'obsidian';
 import FrontmatterDateManagerPlugin from '../main';
+import { strings, format } from '../i18n';
 
 /**
  * Serialize a preview diff (the SAME columns + full rows shown in the on-screen
@@ -53,11 +54,14 @@ export function downloadPreviewAsFile(
       URL.revokeObjectURL(url);
     }, 0);
     new Notice(
-      `Downloaded ${rows.length} row(s) as ${filename} to your downloads folder.`,
+      format(strings.bulkChrome.downloadSuccess, {
+        count: rows.length,
+        filename,
+      }),
       2500,
     );
   } catch (err: unknown) {
     plugin.logError('Failed to download preview', err);
-    new Notice('Could not download the preview file.', 4000);
+    new Notice(strings.bulkChrome.downloadFailed, 4000);
   }
 }

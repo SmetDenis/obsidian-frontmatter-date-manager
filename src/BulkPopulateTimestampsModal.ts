@@ -1,5 +1,6 @@
 import { App, Notice, Platform, Setting, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
+import { strings, format } from './i18n';
 import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
@@ -59,25 +60,23 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     contentEl.empty();
 
     contentEl.createEl('h2', {
-      text: "Set dates from the file's own dates",
+      text: strings.modals.populate.configureTitle,
     });
 
     const subtitle = contentEl.createEl('p');
-    subtitle.appendText('Fill in the created and last-edited dates');
+    subtitle.appendText(strings.modals.populate.configureSubtitleLine1);
     subtitle.createEl('br');
-    subtitle.appendText(
-      "from each file's own creation and modification dates on disk.",
-    );
+    subtitle.appendText(strings.modals.populate.configureSubtitleLine2);
 
     // Mode dropdown
     new Setting(contentEl)
-      .setName('Which dates to set')
-      .setDesc('Choose which dates to fill in.')
+      .setName(strings.modals.populate.modeName)
+      .setDesc(strings.modals.populate.modeDesc)
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-populate-mode');
-        dd.addOption('both', 'Both created and updated')
-          .addOption('created', 'Created dates only')
-          .addOption('updated', 'Updated dates only')
+        dd.addOption('both', strings.modals.populate.modeOptionBoth)
+          .addOption('created', strings.modals.populate.modeOptionCreated)
+          .addOption('updated', strings.modals.populate.modeOptionUpdated)
           .setValue(this.populateMode)
           .onChange((val) => {
             this.populateMode = val as PopulateMode;
@@ -87,14 +86,18 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     // Override mode dropdown
     new Setting(contentEl)
-      .setName('Files that already have dates')
-      .setDesc(
-        'Fill in only the missing dates, or overwrite the existing ones.',
-      )
+      .setName(strings.modals.populate.overrideName)
+      .setDesc(strings.modals.populate.overrideDesc)
       .addDropdown((dd) => {
         dd.selectEl.addClass('frontmatter-date-manager-populate-override');
-        dd.addOption('fill-missing', 'Fill missing only (safe)')
-          .addOption('overwrite-all', 'Overwrite all (replaces existing)')
+        dd.addOption(
+          'fill-missing',
+          strings.modals.populate.overrideOptionFillMissing,
+        )
+          .addOption(
+            'overwrite-all',
+            strings.modals.populate.overrideOptionOverwriteAll,
+          )
           .setValue(this.overrideMode)
           .onChange((val) => {
             this.overrideMode = val as OverrideMode;
@@ -119,19 +122,14 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       cls: 'frontmatter-date-manager-populate-auto-update-note',
     });
     autoUpdateNote.createEl('strong', {
-      text: 'Note about auto-update:',
+      text: strings.modals.populate.autoUpdateNoteTitle,
     });
     autoUpdateNote.createEl('br');
-    autoUpdateNote.appendText(
-      "If auto-update has been active, the file's own dates on disk " +
-        "may already reflect the plugin's own edits, not the original dates. " +
-        'For best results, use this feature before enabling auto-update ' +
-        'or right after installing the plugin.',
-    );
+    autoUpdateNote.appendText(strings.modals.populate.autoUpdateNoteBody);
 
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Scan & preview',
+        label: strings.common.scanAndPreview,
         destructive: false,
         onClick: () => {
           void this.goTo(() => this.renderPreviewPhase());
@@ -159,35 +157,35 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const warningTitle = warningContainer.createEl('strong');
     warningTitle.setText(
       includesCreated
-        ? "The file's creation date is unreliable on some platforms"
-        : 'Platform note',
+        ? strings.modals.populate.warningTitleCreatedUnreliable
+        : strings.modals.populate.warningTitlePlatformNote,
     );
     warningContainer.createEl('br');
 
     const platforms = [
       {
-        name: 'macOS / Windows',
+        name: strings.modals.populate.platformMacWin,
         reliable: true,
-        note: 'real file creation date',
+        note: strings.modals.populate.platformMacWinNote,
         isCurrent: Platform.isMacOS || Platform.isWin,
       },
       {
-        name: 'Linux',
+        name: strings.modals.populate.platformLinux,
         reliable: false,
-        note: 'system reports a later date, not the real creation date',
+        note: strings.modals.populate.platformLinuxNote,
         isCurrent:
           Platform.isLinux && !Platform.isAndroidApp && !Platform.isMobileApp,
       },
       {
-        name: 'Android',
+        name: strings.modals.populate.platformAndroid,
         reliable: false,
-        note: 'depends on the device, often unreliable',
+        note: strings.modals.populate.platformAndroidNote,
         isCurrent: Platform.isAndroidApp,
       },
       {
-        name: 'iOS',
+        name: strings.modals.populate.platformIos,
         reliable: true,
-        note: 'generally reliable',
+        note: strings.modals.populate.platformIosNote,
         isCurrent: Platform.isIosApp,
       },
     ];
@@ -198,36 +196,39 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       if (p.isCurrent) {
         li.addClass('frontmatter-date-manager-current-platform');
       }
-      const prefix = p.reliable ? 'Reliable' : 'UNRELIABLE';
-      li.appendText(`${p.name}: ${prefix}`);
+      const prefix = p.reliable
+        ? strings.modals.populate.platformReliable
+        : strings.modals.populate.platformUnreliable;
+      li.appendText(
+        format(strings.modals.populate.platformLineName, {
+          name: p.name,
+          prefix,
+        }),
+      );
       li.createEl('br');
-      li.appendText(`${p.note}${p.isCurrent ? ' (your platform)' : ''}`);
+      li.appendText(
+        `${p.note}${p.isCurrent ? strings.modals.populate.platformYourPlatformSuffix : ''}`,
+      );
     }
 
     const syncNote = warningContainer.createEl('p');
-    syncNote.appendText(
-      'Synced vaults: file dates may be reset by sync services',
-    );
+    syncNote.appendText(strings.modals.populate.syncNoteLine1);
     syncNote.createEl('br');
-    syncNote.appendText('(Obsidian Sync, iCloud, Dropbox, Git).');
+    syncNote.appendText(strings.modals.populate.syncNoteLine2);
     syncNote.createEl('br');
-    syncNote.appendText(
-      'The last-edited date is usually more reliable than the creation date.',
-    );
+    syncNote.appendText(strings.modals.populate.syncNoteLine3);
 
     if (includesCreated) {
       const recommendation = warningContainer.createEl('p');
       recommendation.createEl('strong', {
-        text: 'Recommendation: review results after running. Make a backup first.',
+        text: strings.modals.populate.recommendation,
       });
     }
 
     // Overwrite warning
     overwriteWarning.empty();
     if (this.overrideMode === 'overwrite-all') {
-      overwriteWarning.setText(
-        'This will replace existing dates in your notes. This cannot be undone. Make a backup first.',
-      );
+      overwriteWarning.setText(strings.modals.populate.overwriteWarning);
     }
   }
 
@@ -321,12 +322,14 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       if (includeCreated && !createdKey) missing.push('created');
       if (includeUpdated && !updatedKey) missing.push('updated');
       new Notice(
-        `No property name configured for: ${missing.join(', ')}. Check plugin settings.`,
+        format(strings.modals.populate.noPropertyConfigured, {
+          missing: missing.join(', '),
+        }),
       );
       return;
     }
 
-    renderHeader(contentEl, 'Scanning files…');
+    renderHeader(contentEl, strings.common.scanningFiles);
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
       skipHashCheck: true,
     });
@@ -347,11 +350,11 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const willChange = this.previewEntries.filter((e) => e.willChange);
     const skipped = this.previewEntries.filter((e) => !e.willChange);
 
-    renderHeader(contentEl, 'Preview: set dates');
+    renderHeader(contentEl, strings.modals.populate.previewTitle);
 
     if (willChange.length === 0) {
       contentEl.createEl('p', {
-        text: 'No files need updating. All eligible files already have the requested dates.',
+        text: strings.modals.populate.noFilesNeedUpdating,
         cls: 'frontmatter-date-manager-bulk-summary',
       });
       renderButtonBar(contentEl, {
@@ -370,9 +373,11 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       skipped: skipped.length,
     });
 
-    const columns = ['File'];
-    if (includeCreated && createdKey) columns.push(`Created (${createdKey})`);
-    if (includeUpdated && updatedKey) columns.push(`Updated (${updatedKey})`);
+    const columns = [strings.common.file];
+    if (includeCreated && createdKey)
+      columns.push(format(strings.common.createdKeyed, { key: createdKey }));
+    if (includeUpdated && updatedKey)
+      columns.push(format(strings.common.updatedKeyed, { key: updatedKey }));
 
     const rows = willChange.map((entry) => {
       const row = [entry.file.path];
@@ -393,10 +398,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     const isOverwrite = this.overrideMode === 'overwrite-all';
     if (isOverwrite) {
-      renderWarning(
-        contentEl,
-        'Overwrite mode: existing dates will be replaced. This cannot be undone. Make a backup first.',
-      );
+      renderWarning(contentEl, strings.modals.populate.previewOverwriteWarning);
     }
 
     renderDownloadPreviewButton(contentEl, () => {
@@ -405,7 +407,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Run',
+        label: strings.common.run,
         destructive: isOverwrite,
         onClick: () => {
           void this.renderExecutePhase();
@@ -439,7 +441,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Setting dates…');
+    renderHeader(contentEl, strings.modals.populate.settingDates);
 
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
@@ -455,7 +457,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       labelFor: (entry) => entry.file.path,
     });
     if (!this.isOpenState()) {
-      new Notice('Stopped.', 2000);
+      new Notice(strings.modals.populate.stopped, 2000);
       return;
     }
 
@@ -463,12 +465,15 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     if (errors > 0) {
       renderHeader(
         contentEl,
-        `Done with ${errors} error(s).`,
-        `${processed} file(s) updated.`,
+        format(strings.common.doneWithErrors, { errors }),
+        format(strings.modals.populate.doneWithErrorsSubtitle, { processed }),
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
-      renderHeader(contentEl, `Done! ${processed} file(s) updated.`);
+      renderHeader(
+        contentEl,
+        format(strings.modals.populate.doneTitle, { processed }),
+      );
     }
     renderButtonBar(contentEl, {
       footer: {

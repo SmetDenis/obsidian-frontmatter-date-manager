@@ -1,5 +1,6 @@
 import { App, Notice, Setting, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
+import { strings, format } from './i18n';
 import { PhaseModal } from './bulk/PhaseModal';
 import { applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
@@ -56,8 +57,8 @@ export class RenameKeyModal extends PhaseModal {
 
     renderHeader(
       contentEl,
-      'Rename a property',
-      'Move values from one property name to another across all notes.',
+      strings.modals.rename.configureTitle,
+      strings.modals.rename.configureSubtitle,
     );
 
     const validationEl = contentEl.createDiv({
@@ -75,17 +76,17 @@ export class RenameKeyModal extends PhaseModal {
       const newTrimmed = this.newKeyName.trim();
 
       if (!oldTrimmed) {
-        validationEl.setText('Enter the old property name to proceed.');
+        validationEl.setText(strings.modals.rename.validationEnterOld);
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
       if (!newTrimmed) {
-        validationEl.setText('Enter the new property name to proceed.');
+        validationEl.setText(strings.modals.rename.validationEnterNew);
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
       if (oldTrimmed === newTrimmed) {
-        validationEl.setText('Old and new property names must be different.');
+        validationEl.setText(strings.modals.rename.validationMustDiffer);
         barRef.current?.setPrimaryDisabled(true);
         return;
       }
@@ -95,12 +96,12 @@ export class RenameKeyModal extends PhaseModal {
     };
 
     new Setting(contentEl)
-      .setName('Old property name')
-      .setDesc('The property name currently used in your notes.')
+      .setName(strings.modals.rename.oldKeyName)
+      .setDesc(strings.modals.rename.oldKeyDesc)
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-rename-old');
         text
-          .setPlaceholder('Date_created')
+          .setPlaceholder(strings.modals.rename.oldKeyPlaceholder)
           .setValue(this.oldKeyName)
           .onChange((val) => {
             this.oldKeyName = val;
@@ -109,12 +110,12 @@ export class RenameKeyModal extends PhaseModal {
       });
 
     new Setting(contentEl)
-      .setName('New property name')
-      .setDesc('The new property name to use.')
+      .setName(strings.modals.rename.newKeyName)
+      .setDesc(strings.modals.rename.newKeyDesc)
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-rename-new');
         text
-          .setPlaceholder('Created')
+          .setPlaceholder(strings.modals.rename.newKeyPlaceholder)
           .setValue(this.newKeyName)
           .onChange((val) => {
             this.newKeyName = val;
@@ -123,10 +124,8 @@ export class RenameKeyModal extends PhaseModal {
       });
 
     new Setting(contentEl)
-      .setName('Delete the old property after renaming')
-      .setDesc(
-        'Remove the old property after copying its value to the new one.',
-      )
+      .setName(strings.modals.rename.deleteOldName)
+      .setDesc(strings.modals.rename.deleteOldDesc)
       .addToggle((toggle) => {
         toggle.toggleEl.addClass('frontmatter-date-manager-rename-delete');
         toggle.setValue(this.deleteOldKey).onChange((val) => {
@@ -136,7 +135,7 @@ export class RenameKeyModal extends PhaseModal {
 
     barRef.current = renderButtonBar(contentEl, {
       primary: {
-        label: 'Scan & preview',
+        label: strings.common.scanAndPreview,
         destructive: false,
         disabled: true,
         onClick: () => {
@@ -188,11 +187,11 @@ export class RenameKeyModal extends PhaseModal {
     const oldKey = this.oldKeyName.trim();
     const newKey = this.newKeyName.trim();
     if (!oldKey || !newKey) {
-      new Notice('Property names cannot be empty.');
+      new Notice(strings.modals.rename.namesCannotBeEmpty);
       return;
     }
 
-    renderHeader(contentEl, 'Scanning files…');
+    renderHeader(contentEl, strings.common.scanningFiles);
     const allFiles = this.app.vault.getMarkdownFiles();
     const progress = renderProgress(contentEl, allFiles.length);
 
@@ -212,11 +211,11 @@ export class RenameKeyModal extends PhaseModal {
     const skippedCount = computed.length - this.previewEntries.length;
 
     contentEl.empty();
-    renderHeader(contentEl, 'Preview: rename property');
+    renderHeader(contentEl, strings.modals.rename.previewTitle);
 
     if (this.previewEntries.length === 0) {
       contentEl.createEl('p', {
-        text: `No notes use the property "${oldKey}".`,
+        text: format(strings.modals.rename.noNotesUseProperty, { oldKey }),
         cls: 'frontmatter-date-manager-bulk-summary',
       });
       renderButtonBar(contentEl, {
@@ -239,11 +238,18 @@ export class RenameKeyModal extends PhaseModal {
     if (conflicts.length > 0) {
       renderWarning(
         contentEl,
-        `${conflicts.length} note(s) already have the property "${newKey}". The existing value will be overwritten.`,
+        format(strings.modals.rename.conflictWarning, {
+          conflicts: conflicts.length,
+          newKey,
+        }),
       );
     }
 
-    const columns = ['File', oldKey, `→ ${newKey}`];
+    const columns = [
+      strings.common.file,
+      oldKey,
+      format(strings.modals.rename.columnArrowNew, { newKey }),
+    ];
     const rows = this.previewEntries.map((e) => [
       e.file.path,
       String(e.existingValue),
@@ -261,10 +267,7 @@ export class RenameKeyModal extends PhaseModal {
 
     const isDestructive = this.deleteOldKey || conflicts.length > 0;
     if (this.deleteOldKey) {
-      renderWarning(
-        contentEl,
-        'The old property will be deleted after copying. This cannot be undone. Make a backup first.',
-      );
+      renderWarning(contentEl, strings.modals.rename.deleteWarning);
     }
 
     renderDownloadPreviewButton(contentEl, () => {
@@ -273,7 +276,7 @@ export class RenameKeyModal extends PhaseModal {
 
     renderButtonBar(contentEl, {
       primary: {
-        label: 'Run',
+        label: strings.common.run,
         destructive: isDestructive,
         onClick: () => {
           void this.renderExecutePhase();
@@ -296,7 +299,7 @@ export class RenameKeyModal extends PhaseModal {
   private async renderExecutePhase() {
     const { contentEl } = this;
     contentEl.empty();
-    renderHeader(contentEl, 'Renaming property…');
+    renderHeader(contentEl, strings.modals.rename.renamingProperty);
 
     const progress = renderProgress(contentEl, this.previewEntries.length);
 
@@ -317,7 +320,7 @@ export class RenameKeyModal extends PhaseModal {
       labelFor: (entry) => entry.file.path,
     });
     if (!this.isOpenState()) {
-      new Notice('Rename stopped.', 2000);
+      new Notice(strings.modals.rename.renameStopped, 2000);
       return;
     }
 
@@ -325,12 +328,15 @@ export class RenameKeyModal extends PhaseModal {
     if (errors > 0) {
       renderHeader(
         contentEl,
-        `Done with ${errors} error(s).`,
-        `${processed} file(s) updated.`,
+        format(strings.common.doneWithErrors, { errors }),
+        format(strings.modals.rename.doneWithErrorsSubtitle, { processed }),
       );
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
-      renderHeader(contentEl, `Done! ${processed} file(s) updated.`);
+      renderHeader(
+        contentEl,
+        format(strings.modals.rename.doneTitle, { processed }),
+      );
     }
     renderButtonBar(contentEl, {
       footer: {

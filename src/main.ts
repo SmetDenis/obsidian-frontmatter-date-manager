@@ -14,6 +14,7 @@ import {
 } from './utils';
 import { sha256 } from 'js-sha256';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
+import { strings, format as t } from './i18n';
 import {
   applyInversionFix,
   isInversion,
@@ -72,10 +73,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   private showInversionNoticeOnce(): void {
     if (this._sessionInversionNoticeShown) return;
     this._sessionInversionNoticeShown = true;
-    this._noticeFactory(
-      'Frontmatter Date Manager: out-of-order dates were detected and fixed. Use "Find out-of-order dates" in settings to review.',
-      8000,
-    );
+    this._noticeFactory(strings.notices.inversionDetectedAndFixed, 8000);
   }
 
   parseDate(input: number | string): Date | undefined {
@@ -192,9 +190,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   updateStatusBar() {
     if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) {
       const remaining = Math.ceil((this._pausedUntil - Date.now()) / 60000);
-      this.statusBarEl.setText(`Paused (${remaining}m)`);
+      this.statusBarEl.setText(
+        t(strings.statusBar.pausedWithMinutes, { remaining }),
+      );
     } else if (!this.settings.enableAutoUpdate) {
-      this.statusBarEl.setText('Paused');
+      this.statusBarEl.setText(strings.statusBar.paused);
     } else {
       this.statusBarEl.setText('');
     }
@@ -203,7 +203,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   setupCommands() {
     this.addCommand({
       id: 'update-timestamps-current-file',
-      name: 'Update timestamps for current file',
+      name: strings.commands.updateCurrentFile,
       checkCallback: (checking: boolean) => {
         const file = this.app.workspace.getActiveFile();
         if (file) {
@@ -211,9 +211,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             this.handleFileChange(file)
               .then((result) => {
                 if (result.status === 'ok') {
-                  new Notice('Timestamps updated.');
+                  new Notice(strings.notices.timestampsUpdated);
                 } else if (result.status === 'ignored') {
-                  new Notice('File is ignored by plugin settings.');
+                  new Notice(strings.notices.fileIgnored);
                 } else {
                   // handleFileChange already shows a detailed Notice for
                   // malformed YAML; for any other failure surface the real
@@ -224,13 +224,15 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
                     !(err instanceof Error && err.name === 'YAMLParseError')
                   ) {
                     new Notice(
-                      `Failed to update timestamps: ${errorToMessage(err)}`,
+                      t(strings.notices.failedToUpdateWithReason, {
+                        reason: errorToMessage(err),
+                      }),
                     );
                   }
                 }
               })
               .catch(() => {
-                new Notice('Failed to update timestamps.');
+                new Notice(strings.notices.failedToUpdate);
               });
           }
           return true;
@@ -241,26 +243,30 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     this.addCommand({
       id: 'toggle-auto-update',
-      name: 'Toggle auto-update on/off',
+      name: strings.commands.toggleAutoUpdate,
       callback: () => {
         this.settings.enableAutoUpdate = !this.settings.enableAutoUpdate;
         void this.saveSettings();
         this.updateStatusBar();
         new Notice(
-          `Auto-update ${this.settings.enableAutoUpdate ? 'enabled' : 'disabled'}`,
+          this.settings.enableAutoUpdate
+            ? strings.notices.autoUpdateEnabled
+            : strings.notices.autoUpdateDisabled,
         );
       },
     });
 
     this.addCommand({
       id: 'pause-auto-update',
-      name: 'Pause auto-update for 5 minutes',
+      name: strings.commands.pauseAutoUpdate,
       callback: () => {
         const PAUSE_MINUTES = 5;
         this._pausedUntil = Date.now() + PAUSE_MINUTES * 60 * 1000;
         this.updateStatusBar();
         new Notice(
-          `Auto-update paused for ${PAUSE_MINUTES} minutes. Will resume automatically.`,
+          t(strings.notices.autoUpdatePausedForMinutes, {
+            minutes: PAUSE_MINUTES,
+          }),
         );
 
         if (this._pauseResumeTimer) window.clearTimeout(this._pauseResumeTimer);
@@ -282,7 +288,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
               this._pauseCountdownTimer = null;
             }
             this.updateStatusBar();
-            new Notice('Auto-update resumed.');
+            new Notice(strings.notices.autoUpdateResumed);
           },
           PAUSE_MINUTES * 60 * 1000,
         );
@@ -740,10 +746,10 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'YAMLParseError') {
-        const errorMessage = `Frontmatter Date Manager failed
-Malformed frontmatter on this file: ${file.path}
-
-${e.message}`;
+        const errorMessage = t(strings.notices.malformedFrontmatter, {
+          filePath: file.path,
+          message: e.message,
+        });
         new Notice(errorMessage, 4000);
         this.logError(errorMessage);
       } else {

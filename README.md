@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.4.11+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.11.0+-7C3AED)](https://obsidian.md)
 [![Obsidian downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%22frontmatter-date-manager%22%5D.downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json)](https://community.obsidian.md/plugins/frontmatter-date-manager)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
@@ -40,6 +40,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Every bulk preview is paginated (Prev/Next), shows all affected files (no row cap), and can download the full diff as a TSV file on desktop (saved to your system downloads, never written into your vault)
 - Toggle auto-update via command palette or status bar
 - Pause auto-update for 5 minutes with automatic resume
+- Multilingual UI following Obsidian's app language - English and Russian hand-checked, plus 19 baseline translations, all with per-key fallback to English
 - Works on desktop and mobile
 
 ## Screenshots
@@ -239,6 +240,10 @@ This plugin is fully local. It has no backend, makes no network requests, and co
 - **Writes only the configured date properties.** All changes go through Obsidian's `processFrontMatter()`, which touches only the `created` / `updated` / `viewed` properties you configure and leaves the note body, key order, comments, and unrelated properties untouched.
 - **Writes one sidecar file in its own plugin folder.** The SHA-256 change-detection cache (`hash-cache.json`) is written inside `.obsidian/plugins/frontmatter-date-manager/`, never into your notes.
 - **Local export only.** The "Download full preview" button saves the diff as a local `.tsv` file via the browser and writes no file into your vault. File download is desktop only - on mobile the full diff stays readable in the on-screen table.
+
+## Languages
+
+The plugin's interface follows Obsidian's own language setting automatically - there is no separate language option to set. It ships translations for 21 languages (Arabic, German, English, Spanish, Persian, French, Indonesian, Italian, Japanese, Korean, Dutch, Polish, Portuguese, Brazilian Portuguese, Russian, Thai, Turkish, Ukrainian, Vietnamese, and Simplified/Traditional Chinese), and any text a translation has not covered falls back to English, so the UI is never left blank. English and Russian are hand-checked; the rest are baseline translations and **improvements are very welcome** - see "Translations" in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Development
 

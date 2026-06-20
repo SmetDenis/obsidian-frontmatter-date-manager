@@ -29,7 +29,7 @@ The user's notes are irreplaceable. Every change to a vault file must be the sma
 
 ## Community-store constraints (will block a merge)
 
-- Do **not** bump `obsidian` types past `~1.12.3` or adopt 1.13+ APIs (`getSettingDefinitions()`, `ButtonComponent.setDestructive()`) - it breaks every public install. Target is `minAppVersion` 1.4.11.
+- Do **not** bump `obsidian` types past `~1.12.3` or adopt 1.13+ APIs (`getSettingDefinitions()`, `ButtonComponent.setDestructive()`) - it breaks every public install. Target is `minAppVersion` 1.11.0 (raised from 1.4.11 for the i18n `getLanguage()` floor).
 - Do **not** disable any `obsidianmd/*` ESLint rule - the review scanner forbids `eslint-disable` of its rules and `make lint` mirrors that. Fix the code instead.
 - Keep the linter pin current - the bot always runs the latest `eslint-plugin-obsidianmd`.
 

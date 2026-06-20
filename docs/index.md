@@ -7,7 +7,7 @@
 - **Type:** Obsidian plugin (editor extension) - monolith, single part
 - **Primary language:** TypeScript (strict)
 - **Architecture:** event-driven plugin with a hash-gated write pipeline + opt-in dry-run-gated bulk subsystem
-- **Version:** 1.1.1 - **Min Obsidian:** 1.4.11 - **Mobile:** supported
+- **Version:** 1.1.1 - **Min Obsidian:** 1.11.0 - **Mobile:** supported
 
 ## Quick reference
 
