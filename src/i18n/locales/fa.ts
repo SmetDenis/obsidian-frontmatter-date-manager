@@ -1,7 +1,7 @@
 // Persian. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_FA: DeepPartial<Strings> = {
+export const STRINGS_FA: Strings = {
   common: {
     run: 'اجرا',
     back: 'بازگشت',
@@ -18,18 +18,15 @@ export const STRINGS_FA: DeepPartial<Strings> = {
     scanningFiles: 'در حال پویش پرونده‌ها…',
     doneWithErrors: 'انجام شد. تعداد خطاها: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'به‌روزرسانی تاریخ‌ها در پرونده فعلی',
     toggleAutoUpdate: 'روشن/خاموش کردن به‌روزرسانی خودکار',
     pauseAutoUpdate: 'مکث به‌روزرسانی خودکار به مدت 5 دقیقه',
   },
-
   statusBar: {
     paused: 'متوقف‌شده',
     pausedWithMinutes: 'متوقف‌شده ({remaining} دقیقه)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: تاریخ‌های نامرتب شناسایی و اصلاح شدند. برای بررسی از «یافتن تاریخ‌های نامرتب» در تنظیمات استفاده کنید.',
@@ -45,7 +42,6 @@ export const STRINGS_FA: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager ناموفق بود\nویژگی‌های نادرست در این پرونده: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'تعداد پرونده‌هایی که تغییر می‌کنند: {changed}',
     summarySkipped: 'رد شده: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_FA: DeepPartial<Strings> = {
     failureColumnError: 'خطا',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -77,6 +72,7 @@ export const STRINGS_FA: DeepPartial<Strings> = {
         enableDesc: 'افزودن تاریخ ایجاد به یادداشت‌هایی که هنوز آن را ندارند.',
         propertyName: 'ویژگی تاریخ ایجاد',
         propertyDesc: 'نام ویژگی‌ای که تاریخ ایجاد در آن ذخیره می‌شود.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'ردیابی تاریخ آخرین ویرایش',
@@ -84,6 +80,7 @@ export const STRINGS_FA: DeepPartial<Strings> = {
           'هر بار که یادداشت را ویرایش می‌کنید این تاریخ را به‌روز کن.',
         propertyName: 'ویژگی به‌روزرسانی',
         propertyDesc: 'نام ویژگی‌ای که تاریخ آخرین ویرایش در آن ذخیره می‌شود.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'شمارش ویرایش‌ها',
@@ -97,6 +94,7 @@ export const STRINGS_FA: DeepPartial<Strings> = {
         enableDesc: 'ذخیره تاریخ هر بار که یادداشت را باز می‌کنید.',
         propertyName: 'ویژگی مشاهده',
         propertyDesc: 'نام ویژگی‌ای که تاریخ آخرین بازکردن در آن ذخیره می‌شود.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -295,7 +293,6 @@ export const STRINGS_FA: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'تنظیم تاریخ‌ها از تاریخ‌های خود پرونده',
@@ -318,16 +315,22 @@ export const STRINGS_FA: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'تاریخ ایجاد پرونده در برخی سکوها قابل اعتماد نیست',
       warningTitlePlatformNote: 'یادداشت درباره سکو',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'تاریخ ایجاد واقعی پرونده',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'سیستم تاریخی دیرتر را گزارش می‌کند، نه تاریخ ایجاد واقعی را',
+      platformAndroid: 'Android',
       platformAndroidNote: 'به دستگاه بستگی دارد، اغلب قابل اعتماد نیست',
+      platformIos: 'iOS',
       platformIosNote: 'به‌طور کلی قابل اعتماد است',
       platformReliable: 'قابل اعتماد',
       platformUnreliable: 'غیرقابل اعتماد',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (سکوی شما)',
       syncNoteLine1:
         'خزانه‌های همگام‌شده: تاریخ‌های پرونده ممکن است توسط سرویس‌های همگام‌سازی بازنشانی شوند',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'تاریخ آخرین ویرایش معمولاً از تاریخ ایجاد قابل اعتمادتر است.',
       recommendation:
@@ -355,8 +358,10 @@ export const STRINGS_FA: DeepPartial<Strings> = {
       validationMustDiffer: 'نام ویژگی قدیمی و جدید باید متفاوت باشند.',
       oldKeyName: 'نام ویژگی قدیمی',
       oldKeyDesc: 'نام ویژگی‌ای که اکنون در یادداشت‌های شما استفاده می‌شود.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'نام ویژگی جدید',
       newKeyDesc: 'نام ویژگی جدیدی که باید استفاده شود.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'حذف ویژگی قدیمی پس از تغییر نام',
       deleteOldDesc: 'حذف ویژگی قدیمی پس از کپی مقدار آن به ویژگی جدید.',
       namesCannotBeEmpty: 'نام ویژگی‌ها نمی‌توانند خالی باشند.',
@@ -378,6 +383,7 @@ export const STRINGS_FA: DeepPartial<Strings> = {
         'تجزیه مقادیر تاریخ موجود و بازنویسی آن‌ها با استفاده از قالب فعلی در تنظیمات.',
       invalidFormat: 'قالب نامعتبر',
       targetFormatName: 'قالب هدف',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'کدام فیلدها قالب‌بندی دوباره شوند',
       scopeDesc: 'انتخاب کنید کدام تاریخ‌ها یکسان‌سازی شوند.',
       scopeOptionAll: 'همه تاریخ‌ها',
@@ -434,6 +440,7 @@ export const STRINGS_FA: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'هر دو را روی تازه‌ترین تاریخ قرار بده',
       toleranceNote:
         'تفاوت‌های کمتر از {tolerance} ثانیه نادیده گرفته می‌شوند (در تنظیمات تعیین شده است).',
+      columnDelta: 'Δ',
       fixWarning:
         'این کار {count} یادداشت را تغییر می‌دهد. قابل بازگشت نیست. ابتدا یک پشتیبان بگیرید.',
       fixingDates: 'در حال اصلاح تاریخ‌ها…',

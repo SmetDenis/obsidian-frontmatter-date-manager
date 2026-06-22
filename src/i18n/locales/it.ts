@@ -1,7 +1,7 @@
 // Italian. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_IT: DeepPartial<Strings> = {
+export const STRINGS_IT: Strings = {
   common: {
     run: 'Esegui',
     back: 'Indietro',
@@ -18,18 +18,15 @@ export const STRINGS_IT: DeepPartial<Strings> = {
     scanningFiles: 'Scansione dei file…',
     doneWithErrors: 'Completato con {errors} errore/i.',
   },
-
   commands: {
     updateCurrentFile: 'Aggiorna le date del file corrente',
     toggleAutoUpdate: 'Attiva/disattiva aggiornamento automatico',
     pauseAutoUpdate: 'Sospendi aggiornamento automatico per 5 minuti',
   },
-
   statusBar: {
     paused: 'In pausa',
     pausedWithMinutes: 'In pausa ({remaining}m)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: sono state rilevate e corrette date in ordine errato. Usa "Trova date in ordine errato" nelle impostazioni per verificarle.',
@@ -45,7 +42,6 @@ export const STRINGS_IT: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager non è riuscito\nProprietà non valide in questo file: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'File che verranno modificati: {changed}',
     summarySkipped: 'Saltati: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_IT: DeepPartial<Strings> = {
     failureColumnError: 'Errore',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -79,6 +74,7 @@ export const STRINGS_IT: DeepPartial<Strings> = {
         propertyName: 'Proprietà di creazione',
         propertyDesc:
           'Nome della proprietà in cui viene salvata la data di creazione.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Traccia la data di ultima modifica',
@@ -86,6 +82,7 @@ export const STRINGS_IT: DeepPartial<Strings> = {
         propertyName: 'Proprietà di aggiornamento',
         propertyDesc:
           'Nome della proprietà in cui viene salvata la data di ultima modifica.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Conta le modifiche',
@@ -101,6 +98,7 @@ export const STRINGS_IT: DeepPartial<Strings> = {
         propertyName: 'Proprietà di visualizzazione',
         propertyDesc:
           'Nome della proprietà in cui viene salvata la data di ultima apertura.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -302,7 +300,6 @@ export const STRINGS_IT: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Imposta le date dalle date proprie del file',
@@ -327,16 +324,22 @@ export const STRINGS_IT: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'La data di creazione del file è inaffidabile su alcune piattaforme',
       warningTitlePlatformNote: 'Nota sulla piattaforma',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'data di creazione reale del file',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'il sistema riporta una data più recente, non la data di creazione reale',
+      platformAndroid: 'Android',
       platformAndroidNote: 'dipende dal dispositivo, spesso inaffidabile',
+      platformIos: 'iOS',
       platformIosNote: 'generalmente affidabile',
       platformReliable: 'Affidabile',
       platformUnreliable: 'INAFFIDABILE',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (la tua piattaforma)',
       syncNoteLine1:
         'Vault sincronizzati: le date dei file possono essere azzerate dai servizi di sincronizzazione',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'La data di ultima modifica è di solito più affidabile della data di creazione.',
       recommendation:
@@ -367,8 +370,10 @@ export const STRINGS_IT: DeepPartial<Strings> = {
         'Il vecchio e il nuovo nome della proprietà devono essere diversi.',
       oldKeyName: 'Vecchio nome della proprietà',
       oldKeyDesc: 'Il nome della proprietà attualmente usato nelle tue note.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Nuovo nome della proprietà',
       newKeyDesc: 'Il nuovo nome di proprietà da usare.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Elimina la vecchia proprietà dopo la rinomina',
       deleteOldDesc:
         'Rimuovi la vecchia proprietà dopo aver copiato il suo valore in quella nuova.',
@@ -391,6 +396,7 @@ export const STRINGS_IT: DeepPartial<Strings> = {
         'Analizza i valori di data esistenti e riscrivili usando il formato attuale dalle impostazioni.',
       invalidFormat: 'Formato non valido',
       targetFormatName: 'Formato di destinazione',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Quali campi riformattare',
       scopeDesc: 'Scegli quali date standardizzare.',
       scopeOptionAll: 'Tutte le date',
@@ -447,6 +453,7 @@ export const STRINGS_IT: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Imposta entrambe alla data più recente',
       toleranceNote:
         'Vengono ignorate le differenze inferiori a {tolerance} secondi (impostato nelle impostazioni).',
+      columnDelta: 'Δ',
       fixWarning:
         'Questo modificherà {count} note. Non si può annullare. Fai prima un backup.',
       fixingDates: 'Correzione delle date…',

@@ -1,7 +1,7 @@
 // Turkish. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_TR: DeepPartial<Strings> = {
+export const STRINGS_TR: Strings = {
   common: {
     run: 'Çalıştır',
     back: 'Geri',
@@ -18,18 +18,15 @@ export const STRINGS_TR: DeepPartial<Strings> = {
     scanningFiles: 'Dosyalar taranıyor…',
     doneWithErrors: 'Tamamlandı. Hata sayısı: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'Geçerli dosyadaki tarihleri güncelle',
     toggleAutoUpdate: 'Otomatik güncellemeyi aç/kapat',
     pauseAutoUpdate: 'Otomatik güncellemeyi 5 dakika duraklat',
   },
-
   statusBar: {
     paused: 'Duraklatıldı',
     pausedWithMinutes: 'Duraklatıldı ({remaining}d)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: sıralaması yanlış tarihler bulundu ve düzeltildi. İncelemek için ayarlardaki "Sıralaması yanlış tarihleri bul" seçeneğini kullanın.',
@@ -45,7 +42,6 @@ export const STRINGS_TR: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager başarısız oldu\nBu dosyada bozuk özellikler var: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'Değişecek dosya sayısı: {changed}',
     summarySkipped: 'Atlandı: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_TR: DeepPartial<Strings> = {
     failureColumnError: 'Hata',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -77,12 +72,14 @@ export const STRINGS_TR: DeepPartial<Strings> = {
         enableDesc: 'Henüz oluşturma tarihi olmayan notlara bir tarih ekle.',
         propertyName: 'Oluşturma özelliği',
         propertyDesc: 'Oluşturma tarihinin kaydedildiği özellik adı.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Son düzenleme tarihini izle',
         enableDesc: 'Notu her düzenlediğinizde bu tarihi güncelle.',
         propertyName: 'Güncelleme özelliği',
         propertyDesc: 'Son düzenleme tarihinin kaydedildiği özellik adı.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Düzenlemeleri say',
@@ -96,6 +93,7 @@ export const STRINGS_TR: DeepPartial<Strings> = {
         enableDesc: 'Notu her açtığınızda tarihi kaydet.',
         propertyName: 'Görüntüleme özelliği',
         propertyDesc: 'Son açılma tarihinin kaydedildiği özellik adı.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -295,7 +293,6 @@ export const STRINGS_TR: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Tarihleri dosyanın kendi tarihlerinden ayarla',
@@ -319,16 +316,22 @@ export const STRINGS_TR: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Dosyanın oluşturma tarihi bazı platformlarda güvenilir değil',
       warningTitlePlatformNote: 'Platform notu',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'gerçek dosya oluşturma tarihi',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'sistem gerçek oluşturma tarihini değil, daha geç bir tarih bildirir',
+      platformAndroid: 'Android',
       platformAndroidNote: 'cihaza bağlıdır, çoğu zaman güvenilir değildir',
+      platformIos: 'iOS',
       platformIosNote: 'genellikle güvenilirdir',
       platformReliable: 'Güvenilir',
       platformUnreliable: 'GÜVENİLİR DEĞİL',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (sizin platformunuz)',
       syncNoteLine1:
         'Eşitlenen kasalar: dosya tarihleri eşitleme hizmetlerince sıfırlanabilir',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'Son düzenleme tarihi genellikle oluşturma tarihinden daha güvenilirdir.',
       recommendation:
@@ -356,8 +359,10 @@ export const STRINGS_TR: DeepPartial<Strings> = {
       validationMustDiffer: 'Eski ve yeni özellik adları farklı olmalıdır.',
       oldKeyName: 'Eski özellik adı',
       oldKeyDesc: 'Notlarınızda şu anda kullanılan özellik adı.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Yeni özellik adı',
       newKeyDesc: 'Kullanılacak yeni özellik adı.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Yeniden adlandırdıktan sonra eski özelliği sil',
       deleteOldDesc:
         'Değerini yenisine kopyaladıktan sonra eski özelliği kaldır.',
@@ -380,6 +385,7 @@ export const STRINGS_TR: DeepPartial<Strings> = {
         'Mevcut tarih değerlerini ayrıştır ve onları ayarlardaki geçerli biçimi kullanarak yeniden yaz.',
       invalidFormat: 'Geçersiz biçim',
       targetFormatName: 'Hedef biçim',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Hangi alanlar yeniden biçimlendirilsin',
       scopeDesc: 'Hangi tarihlerin standartlaştırılacağını seçin.',
       scopeOptionAll: 'Tüm tarihler',
@@ -436,6 +442,7 @@ export const STRINGS_TR: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'İkisini de en son tarihe ayarla',
       toleranceNote:
         '{tolerance} saniyeden küçük farklar yok sayılıyor (ayarlarda belirlenir).',
+      columnDelta: 'Δ',
       fixWarning:
         'Bu, {count} notu değiştirecek. Bu geri alınamaz. Önce bir yedek alın.',
       fixingDates: 'Tarihler düzeltiliyor…',

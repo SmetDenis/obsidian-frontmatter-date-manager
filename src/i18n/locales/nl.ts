@@ -1,7 +1,7 @@
 // Dutch. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_NL: DeepPartial<Strings> = {
+export const STRINGS_NL: Strings = {
   common: {
     run: 'Uitvoeren',
     back: 'Terug',
@@ -18,18 +18,15 @@ export const STRINGS_NL: DeepPartial<Strings> = {
     scanningFiles: 'Bestanden scannen…',
     doneWithErrors: 'Klaar met {errors} fout(en).',
   },
-
   commands: {
     updateCurrentFile: 'Datums in huidig bestand bijwerken',
     toggleAutoUpdate: 'Automatisch bijwerken aan/uit',
     pauseAutoUpdate: 'Automatisch bijwerken 5 minuten pauzeren',
   },
-
   statusBar: {
     paused: 'Gepauzeerd',
     pausedWithMinutes: 'Gepauzeerd ({remaining}m)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: datums in verkeerde volgorde zijn gevonden en hersteld. Gebruik "Datums in verkeerde volgorde zoeken" in de instellingen om te controleren.',
@@ -45,7 +42,6 @@ export const STRINGS_NL: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager: mislukt\nOnjuiste eigenschappen in dit bestand: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '{changed} bestand(en) worden gewijzigd',
     summarySkipped: '{skipped} overgeslagen',
@@ -60,7 +56,6 @@ export const STRINGS_NL: DeepPartial<Strings> = {
     failureColumnError: 'Fout',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -79,6 +74,7 @@ export const STRINGS_NL: DeepPartial<Strings> = {
         propertyName: 'Eigenschap voor aanmaakdatum',
         propertyDesc:
           'Naam van de eigenschap waarin de aanmaakdatum wordt opgeslagen.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Laatst-bewerkt-datum bijhouden',
@@ -86,6 +82,7 @@ export const STRINGS_NL: DeepPartial<Strings> = {
         propertyName: 'Eigenschap voor laatst-bewerkt-datum',
         propertyDesc:
           'Naam van de eigenschap waarin de laatst-bewerkt-datum wordt opgeslagen.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Bewerkingen tellen',
@@ -101,6 +98,7 @@ export const STRINGS_NL: DeepPartial<Strings> = {
         propertyName: 'Eigenschap voor laatst-geopend-datum',
         propertyDesc:
           'Naam van de eigenschap waarin de laatst-geopend-datum wordt opgeslagen.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -302,7 +300,6 @@ export const STRINGS_NL: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Datums instellen vanuit de eigen datums van het bestand',
@@ -325,16 +322,22 @@ export const STRINGS_NL: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'De aanmaakdatum van het bestand is onbetrouwbaar op sommige platforms',
       warningTitlePlatformNote: 'Platformopmerking',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'echte aanmaakdatum van het bestand',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'systeem meldt een latere datum, niet de echte aanmaakdatum',
+      platformAndroid: 'Android',
       platformAndroidNote: 'hangt af van het apparaat, vaak onbetrouwbaar',
+      platformIos: 'iOS',
       platformIosNote: 'doorgaans betrouwbaar',
       platformReliable: 'Betrouwbaar',
       platformUnreliable: 'ONBETROUWBAAR',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (uw platform)',
       syncNoteLine1:
         'Gesynchroniseerde kluizen: bestandsdatums kunnen worden gereset door synchronisatiediensten',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'De laatst-bewerkt-datum is doorgaans betrouwbaarder dan de aanmaakdatum.',
       recommendation:
@@ -364,8 +367,10 @@ export const STRINGS_NL: DeepPartial<Strings> = {
       oldKeyName: 'Oude eigenschapsnaam',
       oldKeyDesc:
         'De eigenschapsnaam die momenteel in uw notities wordt gebruikt.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Nieuwe eigenschapsnaam',
       newKeyDesc: 'De nieuwe eigenschapsnaam om te gebruiken.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Oude eigenschap verwijderen na hernoemen',
       deleteOldDesc:
         'Verwijder de oude eigenschap na het kopiëren van de waarde naar de nieuwe.',
@@ -389,6 +394,7 @@ export const STRINGS_NL: DeepPartial<Strings> = {
         'Lees bestaande datumwaarden en herschrijf ze met het huidige formaat uit de instellingen.',
       invalidFormat: 'Ongeldig formaat',
       targetFormatName: 'Doelformaat',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Welke velden opnieuw opmaken',
       scopeDesc: 'Kies welke datums u wilt standaardiseren.',
       scopeOptionAll: 'Alle datums',
@@ -445,6 +451,7 @@ export const STRINGS_NL: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Stel beide in op de meest recente datum',
       toleranceNote:
         'Verschillen onder {tolerance} seconden worden genegeerd (ingesteld in de instellingen).',
+      columnDelta: 'Δ',
       fixWarning:
         'Dit wijzigt {count} notities. Dit kan niet ongedaan worden gemaakt. Maak eerst een back-up.',
       fixingDates: 'Datums herstellen…',

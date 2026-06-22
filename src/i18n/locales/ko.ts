@@ -1,7 +1,7 @@
 // Korean. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_KO: DeepPartial<Strings> = {
+export const STRINGS_KO: Strings = {
   common: {
     run: '실행',
     back: '뒤로',
@@ -18,18 +18,15 @@ export const STRINGS_KO: DeepPartial<Strings> = {
     scanningFiles: '파일 검사 중…',
     doneWithErrors: '완료. 오류 {errors}건.',
   },
-
   commands: {
     updateCurrentFile: '현재 파일의 날짜 업데이트',
     toggleAutoUpdate: '자동 업데이트 켜기/끄기',
     pauseAutoUpdate: '자동 업데이트 5분간 일시 중지',
   },
-
   statusBar: {
     paused: '일시 중지됨',
     pausedWithMinutes: '일시 중지됨 ({remaining}분)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: 순서가 잘못된 날짜를 감지하여 수정했습니다. 확인하려면 설정에서 "순서가 잘못된 날짜 찾기"를 사용하세요.',
@@ -45,7 +42,6 @@ export const STRINGS_KO: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager 실패\n이 파일의 속성 형식이 잘못되었습니다: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '변경될 파일: {changed}개',
     summarySkipped: '건너뜀: {skipped}개',
@@ -60,7 +56,6 @@ export const STRINGS_KO: DeepPartial<Strings> = {
     failureColumnError: '오류',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -76,12 +71,14 @@ export const STRINGS_KO: DeepPartial<Strings> = {
         enableDesc: '아직 생성 날짜가 없는 노트에 생성 날짜를 추가합니다.',
         propertyName: '생성 날짜 속성',
         propertyDesc: '생성 날짜가 저장되는 속성 이름.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '마지막 편집 날짜 추적',
         enableDesc: '노트를 편집할 때마다 이 날짜를 업데이트합니다.',
         propertyName: '수정 날짜 속성',
         propertyDesc: '마지막 편집 날짜가 저장되는 속성 이름.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: '편집 횟수 세기',
@@ -95,6 +92,7 @@ export const STRINGS_KO: DeepPartial<Strings> = {
         enableDesc: '노트를 열 때마다 날짜를 저장합니다.',
         propertyName: '열람 날짜 속성',
         propertyDesc: '마지막 열람 날짜가 저장되는 속성 이름.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -287,7 +285,6 @@ export const STRINGS_KO: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: '파일 자체 날짜로 날짜 설정',
@@ -309,16 +306,22 @@ export const STRINGS_KO: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         '파일 생성 날짜는 일부 플랫폼에서 신뢰할 수 없습니다',
       warningTitlePlatformNote: '플랫폼 참고',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: '실제 파일 생성 날짜',
+      platformLinux: 'Linux',
       platformLinuxNote:
         '시스템이 실제 생성 날짜가 아니라 더 늦은 날짜를 보고합니다',
+      platformAndroid: 'Android',
       platformAndroidNote: '기기에 따라 다르며, 종종 신뢰할 수 없습니다',
+      platformIos: 'iOS',
       platformIosNote: '대체로 신뢰할 수 있습니다',
       platformReliable: '신뢰할 수 있음',
       platformUnreliable: '신뢰할 수 없음',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (현재 플랫폼)',
       syncNoteLine1:
         '동기화된 보관함: 파일 날짜가 동기화 서비스에 의해 초기화될 수 있습니다',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         '마지막 편집 날짜는 보통 생성 날짜보다 더 신뢰할 수 있습니다.',
       recommendation: '권장: 실행 후 결과를 확인하세요. 먼저 백업하세요.',
@@ -345,8 +348,10 @@ export const STRINGS_KO: DeepPartial<Strings> = {
       validationMustDiffer: '이전 속성 이름과 새 속성 이름은 달라야 합니다.',
       oldKeyName: '이전 속성 이름',
       oldKeyDesc: '현재 노트에서 사용 중인 속성 이름.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: '새 속성 이름',
       newKeyDesc: '사용할 새 속성 이름.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: '이름을 바꾼 후 이전 속성 삭제',
       deleteOldDesc: '값을 새 속성으로 복사한 후 이전 속성을 제거합니다.',
       namesCannotBeEmpty: '속성 이름은 비워 둘 수 없습니다.',
@@ -368,6 +373,7 @@ export const STRINGS_KO: DeepPartial<Strings> = {
         '기존 날짜 값을 해석하여 설정의 현재 형식으로 다시 씁니다.',
       invalidFormat: '잘못된 형식',
       targetFormatName: '대상 형식',
+      targetFormatDesc: '{currentFormat}',
       scopeName: '다시 형식화할 필드',
       scopeDesc: '표준화할 날짜를 선택하세요.',
       scopeOptionAll: '모든 날짜',
@@ -421,6 +427,7 @@ export const STRINGS_KO: DeepPartial<Strings> = {
       strategyOptionUpdatedToCreated: '마지막 편집 날짜를 생성 날짜로 설정',
       strategyOptionMaxAll: '둘 다 가장 최근 날짜로 설정',
       toleranceNote: '{tolerance}초 미만의 차이는 무시합니다(설정에서 지정).',
+      columnDelta: 'Δ',
       fixWarning:
         '이 작업은 {count}개 노트를 수정합니다. 되돌릴 수 없습니다. 먼저 백업하세요.',
       fixingDates: '날짜 고치는 중…',

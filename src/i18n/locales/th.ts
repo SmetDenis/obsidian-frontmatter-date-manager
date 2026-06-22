@@ -1,7 +1,7 @@
 // Thai. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_TH: DeepPartial<Strings> = {
+export const STRINGS_TH: Strings = {
   common: {
     run: 'เรียกใช้',
     back: 'ย้อนกลับ',
@@ -18,18 +18,15 @@ export const STRINGS_TH: DeepPartial<Strings> = {
     scanningFiles: 'กำลังสแกนไฟล์…',
     doneWithErrors: 'เสร็จสิ้น มีข้อผิดพลาด {errors} รายการ',
   },
-
   commands: {
     updateCurrentFile: 'อัปเดตวันที่ในไฟล์ปัจจุบัน',
     toggleAutoUpdate: 'เปิด/ปิดการอัปเดตอัตโนมัติ',
     pauseAutoUpdate: 'หยุดการอัปเดตอัตโนมัติชั่วคราว 5 นาที',
   },
-
   statusBar: {
     paused: 'หยุดชั่วคราว',
     pausedWithMinutes: 'หยุดชั่วคราว ({remaining} นาที)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: ตรวจพบและแก้ไขวันที่ที่เรียงผิดลำดับแล้ว ใช้ "ค้นหาวันที่ที่เรียงผิดลำดับ" ในการตั้งค่าเพื่อตรวจสอบ',
@@ -45,7 +42,6 @@ export const STRINGS_TH: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager ทำงานไม่สำเร็จ\nคุณสมบัติในไฟล์นี้ไม่ถูกต้อง: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'จะเปลี่ยนแปลง {changed} ไฟล์',
     summarySkipped: 'ข้าม {skipped} รายการ',
@@ -60,7 +56,6 @@ export const STRINGS_TH: DeepPartial<Strings> = {
     failureColumnError: 'ข้อผิดพลาด',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -77,12 +72,14 @@ export const STRINGS_TH: DeepPartial<Strings> = {
         enableDesc: 'เพิ่มวันที่สร้างให้กับโน้ตที่ยังไม่มี',
         propertyName: 'คุณสมบัติวันที่สร้าง',
         propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่สร้าง',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'ติดตามวันที่แก้ไขล่าสุด',
         enableDesc: 'อัปเดตวันที่นี้ทุกครั้งที่คุณแก้ไขโน้ต',
         propertyName: 'คุณสมบัติวันที่แก้ไข',
         propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่แก้ไขล่าสุด',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'นับจำนวนการแก้ไข',
@@ -96,6 +93,7 @@ export const STRINGS_TH: DeepPartial<Strings> = {
         enableDesc: 'บันทึกวันที่ทุกครั้งที่คุณเปิดโน้ต',
         propertyName: 'คุณสมบัติวันที่เปิด',
         propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่เปิดล่าสุด',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -290,7 +288,6 @@ export const STRINGS_TH: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'ตั้งวันที่จากวันที่ของไฟล์เอง',
@@ -311,15 +308,21 @@ export const STRINGS_TH: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'วันที่สร้างไฟล์ไม่น่าเชื่อถือบนบางแพลตฟอร์ม',
       warningTitlePlatformNote: 'หมายเหตุเกี่ยวกับแพลตฟอร์ม',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'วันที่สร้างไฟล์จริง',
+      platformLinux: 'Linux',
       platformLinuxNote: 'ระบบรายงานวันที่ที่ช้ากว่า ไม่ใช่วันที่สร้างจริง',
+      platformAndroid: 'Android',
       platformAndroidNote: 'ขึ้นอยู่กับอุปกรณ์ มักไม่น่าเชื่อถือ',
+      platformIos: 'iOS',
       platformIosNote: 'โดยทั่วไปน่าเชื่อถือ',
       platformReliable: 'น่าเชื่อถือ',
       platformUnreliable: 'ไม่น่าเชื่อถือ',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (แพลตฟอร์มของคุณ)',
       syncNoteLine1:
         'ห้องนิรภัยที่ซิงค์: วันที่ของไฟล์อาจถูกรีเซ็ตโดยบริการซิงค์',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: 'วันที่แก้ไขล่าสุดมักน่าเชื่อถือกว่าวันที่สร้าง',
       recommendation: 'คำแนะนำ: ตรวจสอบผลลัพธ์หลังเรียกใช้ สำรองข้อมูลก่อน',
       overwriteWarning:
@@ -345,8 +348,10 @@ export const STRINGS_TH: DeepPartial<Strings> = {
       validationMustDiffer: 'ชื่อคุณสมบัติเดิมและใหม่ต้องแตกต่างกัน',
       oldKeyName: 'ชื่อคุณสมบัติเดิม',
       oldKeyDesc: 'ชื่อคุณสมบัติที่ใช้อยู่ในโน้ตของคุณตอนนี้',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'ชื่อคุณสมบัติใหม่',
       newKeyDesc: 'ชื่อคุณสมบัติใหม่ที่จะใช้',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'ลบคุณสมบัติเดิมหลังเปลี่ยนชื่อ',
       deleteOldDesc: 'ลบคุณสมบัติเดิมหลังคัดลอกค่าไปยังคุณสมบัติใหม่',
       namesCannotBeEmpty: 'ชื่อคุณสมบัติว่างไม่ได้',
@@ -368,6 +373,7 @@ export const STRINGS_TH: DeepPartial<Strings> = {
         'แยกวิเคราะห์ค่าวันที่ที่มีอยู่และเขียนใหม่โดยใช้รูปแบบปัจจุบันจากการตั้งค่า',
       invalidFormat: 'รูปแบบไม่ถูกต้อง',
       targetFormatName: 'รูปแบบเป้าหมาย',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'ฟิลด์ใดที่จะจัดรูปแบบใหม่',
       scopeDesc: 'เลือกวันที่ที่จะทำให้เป็นมาตรฐาน',
       scopeOptionAll: 'วันที่ทั้งหมด',
@@ -424,6 +430,7 @@ export const STRINGS_TH: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'ตั้งทั้งสองให้เป็นวันที่ล่าสุดที่สุด',
       toleranceNote:
         'กำลังละเว้นความต่างที่น้อยกว่า {tolerance} วินาที (ตั้งในการตั้งค่า)',
+      columnDelta: 'Δ',
       fixWarning:
         'การกระทำนี้จะแก้ไข {count} โน้ต ไม่สามารถยกเลิกได้ สำรองข้อมูลก่อน',
       fixingDates: 'กำลังแก้ไขวันที่…',

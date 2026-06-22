@@ -1,7 +1,7 @@
 // Polish. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_PL: DeepPartial<Strings> = {
+export const STRINGS_PL: Strings = {
   common: {
     run: 'Uruchom',
     back: 'Wstecz',
@@ -18,18 +18,15 @@ export const STRINGS_PL: DeepPartial<Strings> = {
     scanningFiles: 'Skanowanie plików…',
     doneWithErrors: 'Gotowe. Liczba błędów: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'Zaktualizuj daty w bieżącym pliku',
     toggleAutoUpdate: 'Włącz/wyłącz automatyczną aktualizację',
     pauseAutoUpdate: 'Wstrzymaj automatyczną aktualizację na 5 minut',
   },
-
   statusBar: {
     paused: 'Wstrzymano',
     pausedWithMinutes: 'Wstrzymano ({remaining}m)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: wykryto i poprawiono daty w złej kolejności. Otwórz "Znajdź daty w złej kolejności" w ustawieniach, aby je przejrzeć.',
@@ -45,7 +42,6 @@ export const STRINGS_PL: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager: niepowodzenie\nNieprawidłowe właściwości w pliku: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'Plików do zmiany: {changed}',
     summarySkipped: 'Pominięto: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_PL: DeepPartial<Strings> = {
     failureColumnError: 'Błąd',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -79,6 +74,7 @@ export const STRINGS_PL: DeepPartial<Strings> = {
         propertyName: 'Właściwość daty utworzenia',
         propertyDesc:
           'Nazwa właściwości, w której zapisywana jest data utworzenia.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Śledź datę ostatniej edycji',
@@ -86,6 +82,7 @@ export const STRINGS_PL: DeepPartial<Strings> = {
         propertyName: 'Właściwość daty edycji',
         propertyDesc:
           'Nazwa właściwości, w której zapisywana jest data ostatniej edycji.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Licz edycje',
@@ -101,6 +98,7 @@ export const STRINGS_PL: DeepPartial<Strings> = {
         propertyName: 'Właściwość daty otwarcia',
         propertyDesc:
           'Nazwa właściwości, w której zapisywana jest data ostatniego otwarcia.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -303,7 +301,6 @@ export const STRINGS_PL: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Ustaw daty z własnych dat pliku',
@@ -325,16 +322,22 @@ export const STRINGS_PL: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Data utworzenia pliku jest niewiarygodna na niektórych platformach',
       warningTitlePlatformNote: 'Uwaga o platformie',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'prawdziwa data utworzenia pliku',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'system zgłasza późniejszą datę, a nie prawdziwą datę utworzenia',
+      platformAndroid: 'Android',
       platformAndroidNote: 'zależy od urządzenia, często niewiarygodna',
+      platformIos: 'iOS',
       platformIosNote: 'zwykle wiarygodna',
       platformReliable: 'Wiarygodna',
       platformUnreliable: 'NIEWIARYGODNA',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (twoja platforma)',
       syncNoteLine1:
         'Synchronizowane skarbce: daty plików mogą być resetowane przez usługi synchronizacji',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'Data ostatniej edycji jest zwykle bardziej wiarygodna niż data utworzenia.',
       recommendation:
@@ -362,8 +365,10 @@ export const STRINGS_PL: DeepPartial<Strings> = {
       validationMustDiffer: 'Stara i nowa nazwa właściwości muszą się różnić.',
       oldKeyName: 'Stara nazwa właściwości',
       oldKeyDesc: 'Nazwa właściwości obecnie używana w twoich notatkach.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Nowa nazwa właściwości',
       newKeyDesc: 'Nowa nazwa właściwości do użycia.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Usuń starą właściwość po zmianie nazwy',
       deleteOldDesc:
         'Usuń starą właściwość po skopiowaniu jej wartości do nowej.',
@@ -386,6 +391,7 @@ export const STRINGS_PL: DeepPartial<Strings> = {
         'Odczytaj istniejące wartości dat i przepisz je w aktualnym formacie z ustawień.',
       invalidFormat: 'Nieprawidłowy format',
       targetFormatName: 'Format docelowy',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Które pola przeformatować',
       scopeDesc: 'Wybierz, które daty ujednolicić.',
       scopeOptionAll: 'Wszystkie daty',
@@ -442,6 +448,7 @@ export const STRINGS_PL: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Ustaw obie na najnowszą datę',
       toleranceNote:
         'Ignorowane są różnice mniejsze niż {tolerance} sekund (ustawione w ustawieniach).',
+      columnDelta: 'Δ',
       fixWarning:
         'To zmieni {count} notatek. Nie można tego cofnąć. Najpierw zrób kopię zapasową.',
       fixingDates: 'Poprawianie dat…',

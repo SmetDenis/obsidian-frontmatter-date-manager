@@ -1,12 +1,12 @@
 // src/i18n/locales/ja.ts
 // Japanese. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
 // Keep {token} placeholders byte-identical to English. No em/en dashes.
-// Pure-identifier / proper-noun / symbol leaves (property-key placeholders, OS
-// names, the Delta glyph, '{currentFormat}', '{name}: {prefix}') are intentionally
-// omitted so they fall back to the English source unchanged.
-import type { Strings, DeepPartial } from '../index';
+// Every key is declared (completeness is enforced by the Strings type and by
+// i18n.test.ts). Pure-identifier / symbol leaves (OS names, the Delta glyph,
+// '{currentFormat}') intentionally mirror the English value verbatim.
+import type { Strings } from '../index';
 
-export const STRINGS_JA: DeepPartial<Strings> = {
+export const STRINGS_JA: Strings = {
   common: {
     run: '実行',
     back: '戻る',
@@ -23,18 +23,15 @@ export const STRINGS_JA: DeepPartial<Strings> = {
     scanningFiles: 'ファイルをスキャン中…',
     doneWithErrors: '完了しました。エラー: {errors} 件。',
   },
-
   commands: {
     updateCurrentFile: '現在のファイルの日付を更新',
     toggleAutoUpdate: '自動更新のオン/オフを切り替え',
     pauseAutoUpdate: '自動更新を5分間停止',
   },
-
   statusBar: {
     paused: '停止中',
     pausedWithMinutes: '停止中 ({remaining}分)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: 順序が逆の日付を検出して修正しました。設定の「順序が逆の日付を検索」で確認してください。',
@@ -50,7 +47,6 @@ export const STRINGS_JA: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager: 失敗しました\nこのファイルのプロパティが不正です: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '変更されるファイル: {changed} 件',
     summarySkipped: 'スキップ: {skipped} 件',
@@ -65,7 +61,6 @@ export const STRINGS_JA: DeepPartial<Strings> = {
     failureColumnError: 'エラー',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -82,12 +77,14 @@ export const STRINGS_JA: DeepPartial<Strings> = {
         enableDesc: 'まだ作成日のないノートに作成日を追加します。',
         propertyName: '作成日のプロパティ',
         propertyDesc: '作成日を保存するプロパティ名。',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '最終編集日を追跡',
         enableDesc: 'ノートを編集するたびにこの日付を更新します。',
         propertyName: '更新日のプロパティ',
         propertyDesc: '最終編集日を保存するプロパティ名。',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: '編集回数をカウント',
@@ -101,6 +98,7 @@ export const STRINGS_JA: DeepPartial<Strings> = {
         enableDesc: 'ノートを開くたびに日付を保存します。',
         propertyName: '閲覧日のプロパティ',
         propertyDesc: '最終閲覧日を保存するプロパティ名。',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -296,7 +294,6 @@ export const STRINGS_JA: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'ファイル自身の日付から設定',
@@ -319,16 +316,22 @@ export const STRINGS_JA: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         '一部のプラットフォームではファイルの作成日は信頼できません',
       warningTitlePlatformNote: 'プラットフォームに関する注意',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: '本当のファイル作成日',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'システムは本当の作成日ではなく、より後の日付を報告します',
+      platformAndroid: 'Android',
       platformAndroidNote: 'デバイスに依存し、信頼できないことが多い',
+      platformIos: 'iOS',
       platformIosNote: '通常は信頼できる',
       platformReliable: '信頼できる',
       platformUnreliable: '信頼できない',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (お使いのプラットフォーム)',
       syncNoteLine1:
         '同期される保管庫: ファイルの日付は同期サービスによってリセットされることがあります',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: '最終編集日は通常、作成日より信頼できます。',
       recommendation:
         '推奨: 実行後に結果を確認してください。先にバックアップを取ってください。',
@@ -356,8 +359,10 @@ export const STRINGS_JA: DeepPartial<Strings> = {
         '古いプロパティ名と新しいプロパティ名は異なる必要があります。',
       oldKeyName: '古いプロパティ名',
       oldKeyDesc: '現在ノートで使われているプロパティ名。',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: '新しいプロパティ名',
       newKeyDesc: '使用する新しいプロパティ名。',
+      newKeyPlaceholder: 'Created',
       deleteOldName: '名前変更後に古いプロパティを削除',
       deleteOldDesc:
         '値を新しいプロパティにコピーしたあと、古いプロパティを削除します。',
@@ -381,6 +386,7 @@ export const STRINGS_JA: DeepPartial<Strings> = {
         '既存の日付の値を解釈し、設定の現在の書式で書き直します。',
       invalidFormat: '無効な書式',
       targetFormatName: '対象の書式',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'どのフィールドを再フォーマットするか',
       scopeDesc: '統一する日付を選んでください。',
       scopeOptionAll: 'すべての日付',
@@ -434,6 +440,7 @@ export const STRINGS_JA: DeepPartial<Strings> = {
       strategyOptionUpdatedToCreated: '最終編集日を作成日に合わせる',
       strategyOptionMaxAll: '両方を最も新しい日付に設定',
       toleranceNote: '{tolerance} 秒未満の差は無視します (設定で指定)。',
+      columnDelta: 'Δ',
       fixWarning:
         'これは {count} 件のノートを変更します。元に戻せません。先にバックアップを取ってください。',
       fixingDates: '日付を修正中…',

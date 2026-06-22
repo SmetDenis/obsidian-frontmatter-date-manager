@@ -1,12 +1,12 @@
 // src/i18n/locales/zh_cn.ts
 // Chinese (Simplified). Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
 // Keep {token} placeholders byte-identical to English. No em/en dashes.
-// Pure-identifier / proper-noun / symbol leaves (property-key placeholders, OS
-// names, the Delta glyph, '{currentFormat}', '{name}: {prefix}') are intentionally
-// omitted so they fall back to the English source unchanged.
-import type { Strings, DeepPartial } from '../index';
+// Every key is declared (completeness is enforced by the Strings type and by
+// i18n.test.ts). Pure-identifier / symbol leaves (OS names, the Delta glyph,
+// '{currentFormat}') intentionally mirror the English value verbatim.
+import type { Strings } from '../index';
 
-export const STRINGS_ZH_CN: DeepPartial<Strings> = {
+export const STRINGS_ZH_CN: Strings = {
   common: {
     run: '运行',
     back: '返回',
@@ -23,18 +23,15 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
     scanningFiles: '正在扫描文件…',
     doneWithErrors: '完成，出现 {errors} 个错误。',
   },
-
   commands: {
     updateCurrentFile: '更新当前文件的日期',
     toggleAutoUpdate: '开启/关闭自动更新',
     pauseAutoUpdate: '暂停自动更新 5 分钟',
   },
-
   statusBar: {
     paused: '已暂停',
     pausedWithMinutes: '已暂停（{remaining} 分钟）',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager：检测到并已修复顺序错误的日期。请在设置中使用“查找顺序错误的日期”进行核查。',
@@ -49,7 +46,6 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager 失败\n该文件的属性格式有误：{filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '将更改 {changed} 个文件',
     summarySkipped: '已跳过 {skipped} 个',
@@ -63,7 +59,6 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
     failureColumnError: '错误',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -79,12 +74,14 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
         enableDesc: '为还没有创建日期的笔记添加创建日期。',
         propertyName: '创建日期属性',
         propertyDesc: '保存创建日期的属性名。',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '跟踪最后编辑日期',
         enableDesc: '每次编辑笔记时更新此日期。',
         propertyName: '修改日期属性',
         propertyDesc: '保存最后编辑日期的属性名。',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: '统计编辑次数',
@@ -98,6 +95,7 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
         enableDesc: '每次打开笔记时保存日期。',
         propertyName: '查看日期属性',
         propertyDesc: '保存最后打开日期的属性名。',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -287,7 +285,6 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: '根据文件自身的日期设置日期',
@@ -307,14 +304,20 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
         '如果自动更新一直处于活动状态，文件在磁盘上自身的日期可能已经反映的是插件自己的编辑，而非原始日期。为获得最佳效果，请在开启自动更新之前，或安装插件后立即使用此功能。',
       warningTitleCreatedUnreliable: '文件的创建日期在某些平台上不可靠',
       warningTitlePlatformNote: '平台说明',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: '真实的文件创建日期',
+      platformLinux: 'Linux',
       platformLinuxNote: '系统报告的是较晚的日期，而非真实的创建日期',
+      platformAndroid: 'Android',
       platformAndroidNote: '取决于设备，往往不可靠',
+      platformIos: 'iOS',
       platformIosNote: '通常可靠',
       platformReliable: '可靠',
       platformUnreliable: '不可靠',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: '（你的平台）',
       syncNoteLine1: '已同步的仓库：文件日期可能被同步服务重置',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: '最后编辑日期通常比创建日期更可靠。',
       recommendation: '建议：运行后核查结果。请先做好备份。',
       overwriteWarning:
@@ -338,8 +341,10 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
       validationMustDiffer: '旧属性名和新属性名必须不同。',
       oldKeyName: '旧属性名',
       oldKeyDesc: '当前在你笔记中使用的属性名。',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: '新属性名',
       newKeyDesc: '要使用的新属性名。',
+      newKeyPlaceholder: 'Created',
       deleteOldName: '重命名后删除旧属性',
       deleteOldDesc: '把值复制到新属性后删除旧属性。',
       namesCannotBeEmpty: '属性名不能为空。',
@@ -359,6 +364,7 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
       configureSubtitle: '解析现有的日期值，并用设置中的当前格式重写它们。',
       invalidFormat: '格式无效',
       targetFormatName: '目标格式',
+      targetFormatDesc: '{currentFormat}',
       scopeName: '重新格式化哪些字段',
       scopeDesc: '选择要统一哪些日期。',
       scopeOptionAll: '所有日期',
@@ -409,6 +415,7 @@ export const STRINGS_ZH_CN: DeepPartial<Strings> = {
       strategyOptionUpdatedToCreated: '将最后编辑日期设为创建日期',
       strategyOptionMaxAll: '将两者都设为最近的日期',
       toleranceNote: '忽略小于 {tolerance} 秒的差异（在设置中配置）。',
+      columnDelta: 'Δ',
       fixWarning: '这将修改 {count} 条笔记。此操作无法撤销。请先做好备份。',
       fixingDates: '正在修复日期…',
       stopped: '批量操作已停止。',

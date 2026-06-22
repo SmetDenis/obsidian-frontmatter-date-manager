@@ -1,12 +1,12 @@
 // src/i18n/locales/ru.ts
 // Russian. Hand-verified by the maintainer (native speaker).
 // Keep {token} placeholders byte-identical to English. No em/en dashes - use '-'.
-// Pure-identifier / proper-noun / symbol leaves (property-key placeholders, OS
-// names, the Delta glyph, '{currentFormat}', '{name}: {prefix}') are intentionally
-// omitted so they fall back to the English source unchanged.
-import type { Strings, DeepPartial } from '../index';
+// Every key is declared (completeness is enforced by the Strings type and by
+// i18n.test.ts). Pure-identifier / symbol leaves (OS names, the Delta glyph,
+// '{currentFormat}') intentionally mirror the English value verbatim.
+import type { Strings } from '../index';
 
-export const STRINGS_RU: DeepPartial<Strings> = {
+export const STRINGS_RU: Strings = {
   common: {
     run: 'Запустить',
     back: 'Назад',
@@ -23,18 +23,15 @@ export const STRINGS_RU: DeepPartial<Strings> = {
     scanningFiles: 'Сканирование файлов…',
     doneWithErrors: 'Готово. Ошибок: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'Обновить даты в текущем файле',
     toggleAutoUpdate: 'Включить/выключить автообновление',
     pauseAutoUpdate: 'Приостановить автообновление на 5 минут',
   },
-
   statusBar: {
     paused: 'Приостановлено',
     pausedWithMinutes: 'Приостановлено ({remaining}м)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: обнаружены и исправлены даты в неправильном порядке. Откройте "Найти даты в неправильном порядке" в настройках для проверки.',
@@ -50,7 +47,6 @@ export const STRINGS_RU: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager: сбой\nНекорректные свойства в файле: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'Будет изменено файлов: {changed}',
     summarySkipped: 'Пропущено: {skipped}',
@@ -65,7 +61,6 @@ export const STRINGS_RU: DeepPartial<Strings> = {
     failureColumnError: 'Ошибка',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -82,6 +77,7 @@ export const STRINGS_RU: DeepPartial<Strings> = {
         enableDesc: 'Добавлять дату создания заметкам, у которых её ещё нет.',
         propertyName: 'Свойство для даты создания',
         propertyDesc: 'Имя свойства, в которое сохраняется дата создания.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Отслеживать дату изменения',
@@ -89,6 +85,7 @@ export const STRINGS_RU: DeepPartial<Strings> = {
         propertyName: 'Свойство для даты изменения',
         propertyDesc:
           'Имя свойства, в которое сохраняется дата последнего изменения.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Считать правки',
@@ -103,6 +100,7 @@ export const STRINGS_RU: DeepPartial<Strings> = {
         propertyName: 'Свойство для даты открытия',
         propertyDesc:
           'Имя свойства, в которое сохраняется дата последнего открытия.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -302,7 +300,6 @@ export const STRINGS_RU: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Задать даты из собственных дат файла',
@@ -325,16 +322,22 @@ export const STRINGS_RU: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Дата создания файла ненадёжна на некоторых платформах',
       warningTitlePlatformNote: 'Примечание о платформе',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'настоящая дата создания файла',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'система сообщает более позднюю дату, а не настоящую дату создания',
+      platformAndroid: 'Android',
       platformAndroidNote: 'зависит от устройства, часто ненадёжна',
+      platformIos: 'iOS',
       platformIosNote: 'обычно надёжна',
       platformReliable: 'Надёжно',
       platformUnreliable: 'НЕНАДЁЖНО',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (ваша платформа)',
       syncNoteLine1:
         'Синхронизируемые хранилища: даты файлов могут сбрасываться службами синхронизации',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: 'Дата последнего изменения обычно надёжнее даты создания.',
       recommendation:
         'Рекомендация: проверьте результаты после запуска. Сначала сделайте резервную копию.',
@@ -361,8 +364,10 @@ export const STRINGS_RU: DeepPartial<Strings> = {
       validationMustDiffer: 'Старое и новое имена свойства должны отличаться.',
       oldKeyName: 'Старое имя свойства',
       oldKeyDesc: 'Имя свойства, которое сейчас используется в ваших заметках.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Новое имя свойства',
       newKeyDesc: 'Новое имя свойства для использования.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Удалить старое свойство после переименования',
       deleteOldDesc:
         'Удалить старое свойство после копирования его значения в новое.',
@@ -385,6 +390,7 @@ export const STRINGS_RU: DeepPartial<Strings> = {
         'Разобрать существующие значения дат и переписать их в текущем формате из настроек.',
       invalidFormat: 'Неверный формат',
       targetFormatName: 'Целевой формат',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Какие поля переформатировать',
       scopeDesc: 'Выберите, какие даты стандартизировать.',
       scopeOptionAll: 'Все даты',
@@ -441,6 +447,7 @@ export const STRINGS_RU: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Установить обе на самую позднюю дату',
       toleranceNote:
         'Игнорируются различия меньше {tolerance} секунд (задано в настройках).',
+      columnDelta: 'Δ',
       fixWarning:
         'Это изменит {count} заметок. Это нельзя отменить. Сначала сделайте резервную копию.',
       fixingDates: 'Исправление дат…',

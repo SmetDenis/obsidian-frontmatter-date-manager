@@ -1,7 +1,7 @@
 // German. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_DE: DeepPartial<Strings> = {
+export const STRINGS_DE: Strings = {
   common: {
     run: 'Ausführen',
     back: 'Zurück',
@@ -18,18 +18,15 @@ export const STRINGS_DE: DeepPartial<Strings> = {
     scanningFiles: 'Dateien werden gescannt…',
     doneWithErrors: 'Fertig mit {errors} Fehler(n).',
   },
-
   commands: {
     updateCurrentFile: 'Daten der aktuellen Datei aktualisieren',
     toggleAutoUpdate: 'Automatische Aktualisierung ein-/ausschalten',
     pauseAutoUpdate: 'Automatische Aktualisierung für 5 Minuten pausieren',
   },
-
   statusBar: {
     paused: 'Pausiert',
     pausedWithMinutes: 'Pausiert ({remaining}m)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: Daten in falscher Reihenfolge wurden erkannt und korrigiert. Verwenden Sie "Daten in falscher Reihenfolge finden" in den Einstellungen, um sie zu prüfen.',
@@ -46,7 +43,6 @@ export const STRINGS_DE: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager fehlgeschlagen\nFehlerhafte Eigenschaften in dieser Datei: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'Geänderte Dateien: {changed}',
     summarySkipped: 'Übersprungen: {skipped}',
@@ -61,7 +57,6 @@ export const STRINGS_DE: DeepPartial<Strings> = {
     failureColumnError: 'Fehler',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -80,6 +75,7 @@ export const STRINGS_DE: DeepPartial<Strings> = {
         propertyName: 'Eigenschaft für Erstellungsdatum',
         propertyDesc:
           'Name der Eigenschaft, in der das Erstellungsdatum gespeichert wird.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Letztes Bearbeitungsdatum verfolgen',
@@ -88,6 +84,7 @@ export const STRINGS_DE: DeepPartial<Strings> = {
         propertyName: 'Eigenschaft für Bearbeitungsdatum',
         propertyDesc:
           'Name der Eigenschaft, in der das letzte Bearbeitungsdatum gespeichert wird.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Bearbeitungen zählen',
@@ -103,6 +100,7 @@ export const STRINGS_DE: DeepPartial<Strings> = {
         propertyName: 'Eigenschaft für Öffnungsdatum',
         propertyDesc:
           'Name der Eigenschaft, in der das Datum des letzten Öffnens gespeichert wird.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -310,7 +308,6 @@ export const STRINGS_DE: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Daten aus den eigenen Daten der Datei setzen',
@@ -334,16 +331,22 @@ export const STRINGS_DE: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Das Erstellungsdatum der Datei ist auf einigen Plattformen unzuverlässig',
       warningTitlePlatformNote: 'Plattformhinweis',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'echtes Datei-Erstellungsdatum',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'das System meldet ein späteres Datum, nicht das echte Erstellungsdatum',
+      platformAndroid: 'Android',
       platformAndroidNote: 'hängt vom Gerät ab, oft unzuverlässig',
+      platformIos: 'iOS',
       platformIosNote: 'in der Regel zuverlässig',
       platformReliable: 'Zuverlässig',
       platformUnreliable: 'UNZUVERLÄSSIG',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (Ihre Plattform)',
       syncNoteLine1:
         'Synchronisierte Vaults: Dateidaten können durch Synchronisierungsdienste zurückgesetzt werden',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'Das letzte Bearbeitungsdatum ist in der Regel zuverlässiger als das Erstellungsdatum.',
       recommendation:
@@ -375,8 +378,10 @@ export const STRINGS_DE: DeepPartial<Strings> = {
       oldKeyName: 'Alter Eigenschaftsname',
       oldKeyDesc:
         'Der Eigenschaftsname, der derzeit in Ihren Notizen verwendet wird.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Neuer Eigenschaftsname',
       newKeyDesc: 'Der neue zu verwendende Eigenschaftsname.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Die alte Eigenschaft nach dem Umbenennen löschen',
       deleteOldDesc:
         'Die alte Eigenschaft entfernen, nachdem ihr Wert in die neue kopiert wurde.',
@@ -399,6 +404,7 @@ export const STRINGS_DE: DeepPartial<Strings> = {
         'Vorhandene Datumswerte einlesen und mit dem aktuellen Format aus den Einstellungen neu schreiben.',
       invalidFormat: 'Ungültiges Format',
       targetFormatName: 'Zielformat',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Welche Felder neu formatieren',
       scopeDesc: 'Wählen Sie, welche Daten vereinheitlicht werden sollen.',
       scopeOptionAll: 'Alle Daten',
@@ -455,6 +461,7 @@ export const STRINGS_DE: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Beide auf das neueste Datum setzen',
       toleranceNote:
         'Unterschiede unter {tolerance} Sekunden werden ignoriert (in den Einstellungen festgelegt).',
+      columnDelta: 'Δ',
       fixWarning:
         'Dies ändert {count} Notizen. Das kann nicht rückgängig gemacht werden. Erstellen Sie zuerst ein Backup.',
       fixingDates: 'Daten werden korrigiert…',

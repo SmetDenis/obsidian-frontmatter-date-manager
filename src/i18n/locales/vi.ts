@@ -1,7 +1,7 @@
 // Vietnamese. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_VI: DeepPartial<Strings> = {
+export const STRINGS_VI: Strings = {
   common: {
     run: 'Chạy',
     back: 'Quay lại',
@@ -18,18 +18,15 @@ export const STRINGS_VI: DeepPartial<Strings> = {
     scanningFiles: 'Đang quét tệp…',
     doneWithErrors: 'Xong với {errors} lỗi.',
   },
-
   commands: {
     updateCurrentFile: 'Cập nhật ngày cho tệp hiện tại',
     toggleAutoUpdate: 'Bật/tắt tự động cập nhật',
     pauseAutoUpdate: 'Tạm dừng tự động cập nhật trong 5 phút',
   },
-
   statusBar: {
     paused: 'Đã tạm dừng',
     pausedWithMinutes: 'Đã tạm dừng ({remaining} phút)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: đã phát hiện và sửa các ngày sai thứ tự. Dùng "Tìm các ngày sai thứ tự" trong cài đặt để xem lại.',
@@ -45,7 +42,6 @@ export const STRINGS_VI: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager thất bại\nThuộc tính bị lỗi định dạng trong tệp này: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '{changed} tệp sẽ thay đổi',
     summarySkipped: 'Bỏ qua {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_VI: DeepPartial<Strings> = {
     failureColumnError: 'Lỗi',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -76,12 +71,14 @@ export const STRINGS_VI: DeepPartial<Strings> = {
         enableDesc: 'Thêm ngày tạo cho các ghi chú chưa có.',
         propertyName: 'Thuộc tính ngày tạo',
         propertyDesc: 'Tên thuộc tính nơi lưu ngày tạo.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Theo dõi ngày chỉnh sửa cuối',
         enableDesc: 'Cập nhật ngày này mỗi khi bạn chỉnh sửa ghi chú.',
         propertyName: 'Thuộc tính ngày cập nhật',
         propertyDesc: 'Tên thuộc tính nơi lưu ngày chỉnh sửa cuối.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Đếm số lần chỉnh sửa',
@@ -95,6 +92,7 @@ export const STRINGS_VI: DeepPartial<Strings> = {
         enableDesc: 'Lưu ngày mỗi khi bạn mở ghi chú.',
         propertyName: 'Thuộc tính ngày xem',
         propertyDesc: 'Tên thuộc tính nơi lưu ngày mở cuối.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -291,7 +289,6 @@ export const STRINGS_VI: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Đặt ngày từ ngày của chính tệp',
@@ -314,16 +311,22 @@ export const STRINGS_VI: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Ngày tạo của tệp không đáng tin cậy trên một số nền tảng',
       warningTitlePlatformNote: 'Lưu ý về nền tảng',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'ngày tạo tệp thật',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'hệ thống báo cáo ngày muộn hơn, không phải ngày tạo thật',
+      platformAndroid: 'Android',
       platformAndroidNote: 'tùy theo thiết bị, thường không đáng tin cậy',
+      platformIos: 'iOS',
       platformIosNote: 'thường đáng tin cậy',
       platformReliable: 'Đáng tin cậy',
       platformUnreliable: 'KHÔNG ĐÁNG TIN CẬY',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (nền tảng của bạn)',
       syncNoteLine1:
         'Kho lưu trữ được đồng bộ: ngày tệp có thể bị đặt lại bởi các dịch vụ đồng bộ',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: 'Ngày chỉnh sửa cuối thường đáng tin cậy hơn ngày tạo.',
       recommendation:
         'Khuyến nghị: xem lại kết quả sau khi chạy. Hãy sao lưu trước.',
@@ -350,8 +353,10 @@ export const STRINGS_VI: DeepPartial<Strings> = {
       validationMustDiffer: 'Tên thuộc tính cũ và mới phải khác nhau.',
       oldKeyName: 'Tên thuộc tính cũ',
       oldKeyDesc: 'Tên thuộc tính hiện đang dùng trong ghi chú của bạn.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Tên thuộc tính mới',
       newKeyDesc: 'Tên thuộc tính mới để dùng.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Xóa thuộc tính cũ sau khi đổi tên',
       deleteOldDesc:
         'Xóa thuộc tính cũ sau khi sao chép giá trị của nó sang thuộc tính mới.',
@@ -374,6 +379,7 @@ export const STRINGS_VI: DeepPartial<Strings> = {
         'Phân tích các giá trị ngày hiện có và ghi lại chúng bằng định dạng hiện tại từ cài đặt.',
       invalidFormat: 'Định dạng không hợp lệ',
       targetFormatName: 'Định dạng đích',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Định dạng lại những trường nào',
       scopeDesc: 'Chọn những ngày cần chuẩn hóa.',
       scopeOptionAll: 'Tất cả ngày',
@@ -427,6 +433,7 @@ export const STRINGS_VI: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Đặt cả hai về ngày gần đây nhất',
       toleranceNote:
         'Bỏ qua các khác biệt dưới {tolerance} giây (đặt trong cài đặt).',
+      columnDelta: 'Δ',
       fixWarning:
         'Việc này sẽ sửa đổi {count} ghi chú. Không thể hoàn tác. Hãy sao lưu trước.',
       fixingDates: 'Đang sửa ngày…',

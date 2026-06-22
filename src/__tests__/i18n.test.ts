@@ -44,11 +44,12 @@ describe('strings', () => {
 
 describe('locale resolution over real data', () => {
   // Exercises the deep-merge with a REAL locale object (not the toy fixture
-  // above): a translated leaf must win, and a leaf the locale omits must fall
-  // back to the English value - never undefined or blank. This guards the
-  // per-key fallback contract that 20/21 languages rely on at runtime (the
-  // module-load resolver itself only ever runs the 'en' short-circuit under the
-  // test mock, so without this the non-English merge path is untested).
+  // above): a translated leaf must win, and an English-seeded identifier leaf
+  // (ru now declares every key - completeness is enforced) must resolve to the
+  // English value - never undefined or blank. This guards the non-English merge
+  // path that 20/21 languages run at runtime (the module-load resolver itself
+  // only ever runs the 'en' short-circuit under the test mock, so without this
+  // the non-English merge path is untested).
   const ruLocale = LANGUAGE_MAP.ru;
   const merged = mergeTranslationValues(
     STRINGS_EN,
@@ -61,8 +62,8 @@ describe('locale resolution over real data', () => {
       'Обновить даты в текущем файле',
     );
   });
-  it('falls back to English for keys the locale omits (no blank/undefined)', () => {
-    // ru intentionally omits these identifier/symbol leaves.
+  it('resolves English-seeded identifier leaves to the English value (no blank/undefined)', () => {
+    // ru declares these identifier/symbol leaves verbatim from English.
     expect(merged.modals.populate.platformMacWin).toBe('macOS / Windows');
     expect(merged.modals.inversions.columnDelta).toBe('Δ');
     expect(merged.modals.reformat.targetFormatDesc).toBe('{currentFormat}');
@@ -128,6 +129,22 @@ describe('locale value integrity', () => {
         return en !== undefined && tokenSet(v) !== tokenSet(en);
       });
       expect(drift.map(([p]) => p)).toEqual([]);
+    });
+  }
+});
+
+describe('locale completeness (strict - no reliance on fallback)', () => {
+  const enKeyList = collectKeyPaths(STRINGS_EN);
+  if (NON_EN_LOCALES.length === 0) {
+    it('no non-English locales registered yet (nothing to check)', () => {
+      expect(NON_EN_LOCALES).toEqual([]);
+    });
+  }
+  for (const [code, locale] of NON_EN_LOCALES) {
+    it(`${code}: declares every English key`, () => {
+      const have = new Set(collectKeyPaths(locale));
+      const missing = enKeyList.filter((k) => !have.has(k));
+      expect(missing, `missing keys in ${code}`).toEqual([]);
     });
   }
 });

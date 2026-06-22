@@ -1,7 +1,7 @@
 // Ukrainian. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_UK: DeepPartial<Strings> = {
+export const STRINGS_UK: Strings = {
   common: {
     run: 'Запустити',
     back: 'Назад',
@@ -18,18 +18,15 @@ export const STRINGS_UK: DeepPartial<Strings> = {
     scanningFiles: 'Сканування файлів…',
     doneWithErrors: 'Готово. Помилок: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'Оновити дати в поточному файлі',
     toggleAutoUpdate: 'Увімкнути/вимкнути автооновлення',
     pauseAutoUpdate: 'Призупинити автооновлення на 5 хвилин',
   },
-
   statusBar: {
     paused: 'Призупинено',
     pausedWithMinutes: 'Призупинено ({remaining}хв)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: виявлено та виправлено дати в неправильному порядку. Відкрийте "Знайти дати в неправильному порядку" в налаштуваннях для перевірки.',
@@ -45,7 +42,6 @@ export const STRINGS_UK: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager: збій\nНекоректні властивості у файлі: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'Буде змінено файлів: {changed}',
     summarySkipped: 'Пропущено: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_UK: DeepPartial<Strings> = {
     failureColumnError: 'Помилка',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -77,6 +72,7 @@ export const STRINGS_UK: DeepPartial<Strings> = {
         enableDesc: 'Додавати дату створення нотаткам, у яких її ще немає.',
         propertyName: 'Властивість для дати створення',
         propertyDesc: "Ім'я властивості, у яку зберігається дата створення.",
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Відстежувати дату редагування',
@@ -84,6 +80,7 @@ export const STRINGS_UK: DeepPartial<Strings> = {
         propertyName: 'Властивість для дати редагування',
         propertyDesc:
           "Ім'я властивості, у яку зберігається дата останнього редагування.",
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Рахувати правки',
@@ -98,6 +95,7 @@ export const STRINGS_UK: DeepPartial<Strings> = {
         propertyName: 'Властивість для дати відкриття',
         propertyDesc:
           "Ім'я властивості, у яку зберігається дата останнього відкриття.",
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -297,7 +295,6 @@ export const STRINGS_UK: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Задати дати з власних дат файлу',
@@ -320,16 +317,22 @@ export const STRINGS_UK: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Дата створення файлу ненадійна на деяких платформах',
       warningTitlePlatformNote: 'Примітка про платформу',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'справжня дата створення файлу',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'система повідомляє пізнішу дату, а не справжню дату створення',
+      platformAndroid: 'Android',
       platformAndroidNote: 'залежить від пристрою, часто ненадійна',
+      platformIos: 'iOS',
       platformIosNote: 'зазвичай надійна',
       platformReliable: 'Надійно',
       platformUnreliable: 'НЕНАДІЙНО',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (ваша платформа)',
       syncNoteLine1:
         'Синхронізовані сховища: дати файлів можуть скидатися службами синхронізації',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'Дата останнього редагування зазвичай надійніша за дату створення.',
       recommendation:
@@ -359,8 +362,10 @@ export const STRINGS_UK: DeepPartial<Strings> = {
       oldKeyName: "Старе ім'я властивості",
       oldKeyDesc:
         "Ім'я властивості, яке зараз використовується у ваших нотатках.",
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: "Нове ім'я властивості",
       newKeyDesc: "Нове ім'я властивості для використання.",
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Видалити стару властивість після перейменування',
       deleteOldDesc:
         'Видалити стару властивість після копіювання її значення в нову.',
@@ -384,6 +389,7 @@ export const STRINGS_UK: DeepPartial<Strings> = {
         'Розібрати наявні значення дат і переписати їх у поточному форматі з налаштувань.',
       invalidFormat: 'Неправильний формат',
       targetFormatName: 'Цільовий формат',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Які поля переформатувати',
       scopeDesc: 'Виберіть, які дати стандартизувати.',
       scopeOptionAll: 'Усі дати',
@@ -440,6 +446,7 @@ export const STRINGS_UK: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Установити обидві на найпізнішу дату',
       toleranceNote:
         'Ігноруються різниці менші за {tolerance} секунд (задано в налаштуваннях).',
+      columnDelta: 'Δ',
       fixWarning:
         'Це змінить {count} нотаток. Це не можна скасувати. Спочатку зробіть резервну копію.',
       fixingDates: 'Виправлення дат…',

@@ -1,7 +1,7 @@
 // Arabic. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_AR: DeepPartial<Strings> = {
+export const STRINGS_AR: Strings = {
   common: {
     run: 'تشغيل',
     back: 'رجوع',
@@ -18,18 +18,15 @@ export const STRINGS_AR: DeepPartial<Strings> = {
     scanningFiles: 'جارٍ فحص الملفات…',
     doneWithErrors: 'تم. عدد الأخطاء: {errors}.',
   },
-
   commands: {
     updateCurrentFile: 'تحديث التواريخ في الملف الحالي',
     toggleAutoUpdate: 'تشغيل/إيقاف التحديث التلقائي',
     pauseAutoUpdate: 'إيقاف التحديث التلقائي مؤقتًا لمدة 5 دقائق',
   },
-
   statusBar: {
     paused: 'متوقف مؤقتًا',
     pausedWithMinutes: 'متوقف مؤقتًا ({remaining}د)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: تم اكتشاف تواريخ بترتيب غير صحيح وإصلاحها. استخدم "البحث عن التواريخ ذات الترتيب غير الصحيح" في الإعدادات للمراجعة.',
@@ -45,7 +42,6 @@ export const STRINGS_AR: DeepPartial<Strings> = {
     malformedFrontmatter:
       'فشل Frontmatter Date Manager\nخصائص غير صالحة في هذا الملف: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: 'عدد الملفات التي ستتغيّر: {changed}',
     summarySkipped: 'تم التخطّي: {skipped}',
@@ -60,7 +56,6 @@ export const STRINGS_AR: DeepPartial<Strings> = {
     failureColumnError: 'خطأ',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -76,12 +71,14 @@ export const STRINGS_AR: DeepPartial<Strings> = {
         enableDesc: 'إضافة تاريخ إنشاء للملاحظات التي ليس لها واحد بعد.',
         propertyName: 'خاصية تاريخ الإنشاء',
         propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ الإنشاء.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'تتبّع تاريخ آخر تعديل',
         enableDesc: 'تحديث هذا التاريخ في كل مرة تعدّل فيها الملاحظة.',
         propertyName: 'خاصية تاريخ التعديل',
         propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ آخر تعديل.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'عدّ التعديلات',
@@ -95,6 +92,7 @@ export const STRINGS_AR: DeepPartial<Strings> = {
         enableDesc: 'حفظ التاريخ في كل مرة تفتح فيها الملاحظة.',
         propertyName: 'خاصية تاريخ الفتح',
         propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ آخر فتح.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -290,7 +288,6 @@ export const STRINGS_AR: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'تعيين التواريخ من تواريخ الملف نفسه',
@@ -311,15 +308,21 @@ export const STRINGS_AR: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'تاريخ إنشاء الملف غير موثوق على بعض المنصّات',
       warningTitlePlatformNote: 'ملاحظة حول المنصّة',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'تاريخ إنشاء الملف الحقيقي',
+      platformLinux: 'Linux',
       platformLinuxNote: 'يبلّغ النظام عن تاريخ لاحق لا تاريخ الإنشاء الحقيقي',
+      platformAndroid: 'Android',
       platformAndroidNote: 'يعتمد على الجهاز، وغالبًا غير موثوق',
+      platformIos: 'iOS',
       platformIosNote: 'موثوق عمومًا',
       platformReliable: 'موثوق',
       platformUnreliable: 'غير موثوق',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (منصّتك)',
       syncNoteLine1:
         'القباب المتزامنة: قد تُعاد ضبط تواريخ الملفات بواسطة خدمات المزامنة',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: 'تاريخ آخر تعديل عادةً أكثر موثوقية من تاريخ الإنشاء.',
       recommendation:
         'توصية: راجع النتائج بعد التشغيل. اعمل نسخة احتياطية أولًا.',
@@ -345,8 +348,10 @@ export const STRINGS_AR: DeepPartial<Strings> = {
       validationMustDiffer: 'يجب أن يختلف اسما الخاصية القديم والجديد.',
       oldKeyName: 'اسم الخاصية القديم',
       oldKeyDesc: 'اسم الخاصية المستخدم حاليًا في ملاحظاتك.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'اسم الخاصية الجديد',
       newKeyDesc: 'اسم الخاصية الجديد المراد استخدامه.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'حذف الخاصية القديمة بعد إعادة التسمية',
       deleteOldDesc: 'إزالة الخاصية القديمة بعد نسخ قيمتها إلى الجديدة.',
       namesCannotBeEmpty: 'لا يمكن أن تكون أسماء الخصائص فارغة.',
@@ -368,6 +373,7 @@ export const STRINGS_AR: DeepPartial<Strings> = {
         'تحليل قيم التواريخ الموجودة وإعادة كتابتها بالتنسيق الحالي من الإعدادات.',
       invalidFormat: 'تنسيق غير صالح',
       targetFormatName: 'التنسيق المستهدف',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'أي الحقول يُعاد تنسيقها',
       scopeDesc: 'اختر التواريخ المراد توحيدها.',
       scopeOptionAll: 'جميع التواريخ',
@@ -423,6 +429,7 @@ export const STRINGS_AR: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'تعيين كليهما إلى أحدث تاريخ',
       toleranceNote:
         'يتم تجاهل الفروق الأقل من {tolerance} ثانية (مضبوطة في الإعدادات).',
+      columnDelta: 'Δ',
       fixWarning:
         'سيؤدي هذا إلى تعديل {count} ملاحظة. لا يمكن التراجع عن هذا. اعمل نسخة احتياطية أولًا.',
       fixingDates: 'جارٍ إصلاح التواريخ…',

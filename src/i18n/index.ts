@@ -28,15 +28,12 @@ export { format } from './format';
 
 export type Strings = typeof STRINGS_EN;
 
-export type DeepPartial<T> = T extends readonly unknown[]
-  ? T
-  : T extends object
-    ? { [K in keyof T]?: DeepPartial<T[K]> }
-    : T;
-
-// Locales are registered here. English is implicit (the base); others are added
-// as their files land. Aliases (e.g. zh / zh-CN) map to the same object.
-export const LANGUAGE_MAP: Record<string, DeepPartial<Strings>> = {
+// Locales are registered here. English is implicit (the base); each locale is a
+// COMPLETE `Strings` object (every key declared - enforced by the type and by
+// i18n.test.ts "locale completeness"). Aliases (e.g. zh / zh-CN) map to the same
+// object. The deep-merge + `?? STRINGS_EN` fallback below is kept as runtime
+// defense-in-depth even though completeness is guaranteed at build time.
+export const LANGUAGE_MAP: Record<string, Strings> = {
   'en': STRINGS_EN,
   'ru': STRINGS_RU,
   'ar': STRINGS_AR,

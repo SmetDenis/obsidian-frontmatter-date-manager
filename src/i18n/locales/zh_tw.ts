@@ -1,7 +1,7 @@
 // Chinese (Traditional). Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_ZH_TW: DeepPartial<Strings> = {
+export const STRINGS_ZH_TW: Strings = {
   common: {
     run: '執行',
     back: '返回',
@@ -18,18 +18,15 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
     scanningFiles: '正在掃描檔案…',
     doneWithErrors: '完成，有 {errors} 個錯誤。',
   },
-
   commands: {
     updateCurrentFile: '更新目前檔案的日期',
     toggleAutoUpdate: '開啟／關閉自動更新',
     pauseAutoUpdate: '暫停自動更新 5 分鐘',
   },
-
   statusBar: {
     paused: '已暫停',
     pausedWithMinutes: '已暫停（{remaining} 分鐘）',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager：偵測到並已修正順序錯誤的日期。請在設定中使用「尋找順序錯誤的日期」進行檢查。',
@@ -44,7 +41,6 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager 失敗\n此檔案的屬性格式不正確：{filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '將變更 {changed} 個檔案',
     summarySkipped: '已略過 {skipped} 個',
@@ -58,7 +54,6 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
     failureColumnError: '錯誤',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -74,12 +69,14 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
         enableDesc: '為尚未擁有建立日期的筆記新增建立日期。',
         propertyName: '建立日期屬性',
         propertyDesc: '儲存建立日期的屬性名稱。',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '追蹤上次編輯日期',
         enableDesc: '每當您編輯筆記時更新此日期。',
         propertyName: '更新日期屬性',
         propertyDesc: '儲存上次編輯日期的屬性名稱。',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: '計算編輯次數',
@@ -93,6 +90,7 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
         enableDesc: '每次開啟筆記時儲存日期。',
         propertyName: '檢視日期屬性',
         propertyDesc: '儲存上次開啟日期的屬性名稱。',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -282,7 +280,6 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: '依檔案自身的日期設定日期',
@@ -302,14 +299,20 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
         '若自動更新一直處於開啟狀態，檔案在磁碟上自身的日期可能已反映外掛自己的編輯，而非原始日期。為求最佳結果，請在開啟自動更新前，或剛安裝外掛後使用此功能。',
       warningTitleCreatedUnreliable: '檔案的建立日期在某些平台上並不可靠',
       warningTitlePlatformNote: '平台注意事項',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: '真正的檔案建立日期',
+      platformLinux: 'Linux',
       platformLinuxNote: '系統回報的是較晚的日期，而非真正的建立日期',
+      platformAndroid: 'Android',
       platformAndroidNote: '視裝置而定，通常不可靠',
+      platformIos: 'iOS',
       platformIosNote: '一般而言可靠',
       platformReliable: '可靠',
       platformUnreliable: '不可靠',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: '（您的平台）',
       syncNoteLine1: '已同步的儲存庫：檔案日期可能被同步服務重設',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3: '上次編輯日期通常比建立日期更可靠。',
       recommendation: '建議：執行後檢查結果。請先做好備份。',
       overwriteWarning:
@@ -334,8 +337,10 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
       validationMustDiffer: '舊屬性名稱與新屬性名稱必須不同。',
       oldKeyName: '舊屬性名稱',
       oldKeyDesc: '您筆記中目前使用的屬性名稱。',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: '新屬性名稱',
       newKeyDesc: '要使用的新屬性名稱。',
+      newKeyPlaceholder: 'Created',
       deleteOldName: '重新命名後刪除舊屬性',
       deleteOldDesc: '將值複製到新屬性後，移除舊屬性。',
       namesCannotBeEmpty: '屬性名稱不可為空。',
@@ -355,6 +360,7 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
       configureSubtitle: '解析現有的日期值，並以設定中的目前格式重寫。',
       invalidFormat: '格式無效',
       targetFormatName: '目標格式',
+      targetFormatDesc: '{currentFormat}',
       scopeName: '要重新格式化哪些欄位',
       scopeDesc: '選擇要統一哪些日期。',
       scopeOptionAll: '所有日期',
@@ -405,6 +411,7 @@ export const STRINGS_ZH_TW: DeepPartial<Strings> = {
       strategyOptionUpdatedToCreated: '將上次編輯日期設為建立日期',
       strategyOptionMaxAll: '兩者都設為最近的日期',
       toleranceNote: '忽略小於 {tolerance} 秒的差異（於設定中設定）。',
+      columnDelta: 'Δ',
       fixWarning: '這會修改 {count} 篇筆記。此操作無法復原。請先做好備份。',
       fixingDates: '正在修正日期…',
       stopped: '大量操作已停止。',

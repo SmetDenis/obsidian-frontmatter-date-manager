@@ -1,7 +1,7 @@
 // Indonesian. Machine-generated baseline. Improvements welcome - see CONTRIBUTING.md.
-import type { Strings, DeepPartial } from '../index';
+import type { Strings } from '../index';
 
-export const STRINGS_ID: DeepPartial<Strings> = {
+export const STRINGS_ID: Strings = {
   common: {
     run: 'Jalankan',
     back: 'Kembali',
@@ -18,18 +18,15 @@ export const STRINGS_ID: DeepPartial<Strings> = {
     scanningFiles: 'Memindai berkas…',
     doneWithErrors: 'Selesai dengan {errors} kesalahan.',
   },
-
   commands: {
     updateCurrentFile: 'Perbarui tanggal untuk berkas saat ini',
     toggleAutoUpdate: 'Aktifkan/nonaktifkan pembaruan otomatis',
     pauseAutoUpdate: 'Jeda pembaruan otomatis selama 5 menit',
   },
-
   statusBar: {
     paused: 'Dijeda',
     pausedWithMinutes: 'Dijeda ({remaining}m)',
   },
-
   notices: {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: tanggal yang tidak urut terdeteksi dan diperbaiki. Gunakan "Cari tanggal yang tidak urut" di pengaturan untuk meninjau.',
@@ -45,7 +42,6 @@ export const STRINGS_ID: DeepPartial<Strings> = {
     malformedFrontmatter:
       'Frontmatter Date Manager gagal\nProperti rusak pada berkas ini: {filePath}\n\n{message}',
   },
-
   bulkChrome: {
     summaryWillChange: '{changed} berkas akan berubah',
     summarySkipped: '{skipped} dilewati',
@@ -60,7 +56,6 @@ export const STRINGS_ID: DeepPartial<Strings> = {
     failureColumnError: 'Kesalahan',
     progressCounter: '{count}/{max}',
   },
-
   settings: {
     description: {
       syncIntro:
@@ -78,12 +73,14 @@ export const STRINGS_ID: DeepPartial<Strings> = {
           'Tambahkan tanggal pembuatan ke catatan yang belum memilikinya.',
         propertyName: 'Properti dibuat',
         propertyDesc: 'Nama properti tempat tanggal pembuatan disimpan.',
+        propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Lacak tanggal terakhir diedit',
         enableDesc: 'Perbarui tanggal ini setiap kali Anda mengedit catatan.',
         propertyName: 'Properti diperbarui',
         propertyDesc: 'Nama properti tempat tanggal terakhir diedit disimpan.',
+        propertyPlaceholder: 'Updated',
       },
       updateCount: {
         enableName: 'Hitung suntingan',
@@ -97,6 +94,7 @@ export const STRINGS_ID: DeepPartial<Strings> = {
         enableDesc: 'Simpan tanggal setiap kali Anda membuka catatan.',
         propertyName: 'Properti dilihat',
         propertyDesc: 'Nama properti tempat tanggal terakhir dibuka disimpan.',
+        propertyPlaceholder: 'Viewed',
       },
     },
     formatting: {
@@ -297,7 +295,6 @@ export const STRINGS_ID: DeepPartial<Strings> = {
       },
     },
   },
-
   modals: {
     populate: {
       configureTitle: 'Atur tanggal dari tanggal milik berkas itu sendiri',
@@ -319,16 +316,22 @@ export const STRINGS_ID: DeepPartial<Strings> = {
       warningTitleCreatedUnreliable:
         'Tanggal pembuatan berkas tidak andal pada beberapa platform',
       warningTitlePlatformNote: 'Catatan platform',
+      platformMacWin: 'macOS / Windows',
       platformMacWinNote: 'tanggal pembuatan berkas yang sebenarnya',
+      platformLinux: 'Linux',
       platformLinuxNote:
         'sistem melaporkan tanggal yang lebih baru, bukan tanggal pembuatan yang sebenarnya',
+      platformAndroid: 'Android',
       platformAndroidNote: 'bergantung pada perangkat, sering tidak andal',
+      platformIos: 'iOS',
       platformIosNote: 'umumnya andal',
       platformReliable: 'Andal',
       platformUnreliable: 'TIDAK ANDAL',
+      platformLineName: '{name}: {prefix}',
       platformYourPlatformSuffix: ' (platform Anda)',
       syncNoteLine1:
         'Lemari tersinkron: tanggal berkas mungkin diatur ulang oleh layanan sinkronisasi',
+      syncNoteLine2: '(Obsidian Sync, iCloud, Dropbox, Git).',
       syncNoteLine3:
         'Tanggal terakhir diedit biasanya lebih andal daripada tanggal pembuatan.',
       recommendation:
@@ -356,8 +359,10 @@ export const STRINGS_ID: DeepPartial<Strings> = {
       validationMustDiffer: 'Nama properti lama dan baru harus berbeda.',
       oldKeyName: 'Nama properti lama',
       oldKeyDesc: 'Nama properti yang saat ini dipakai di catatan Anda.',
+      oldKeyPlaceholder: 'Date_created',
       newKeyName: 'Nama properti baru',
       newKeyDesc: 'Nama properti baru yang akan dipakai.',
+      newKeyPlaceholder: 'Created',
       deleteOldName: 'Hapus properti lama setelah penggantian nama',
       deleteOldDesc:
         'Hapus properti lama setelah menyalin nilainya ke yang baru.',
@@ -380,6 +385,7 @@ export const STRINGS_ID: DeepPartial<Strings> = {
         'Uraikan nilai tanggal yang ada dan tulis ulang menggunakan format saat ini dari pengaturan.',
       invalidFormat: 'Format tidak valid',
       targetFormatName: 'Format target',
+      targetFormatDesc: '{currentFormat}',
       scopeName: 'Bidang mana yang diformat ulang',
       scopeDesc: 'Pilih tanggal mana yang akan distandarkan.',
       scopeOptionAll: 'Semua tanggal',
@@ -436,6 +442,7 @@ export const STRINGS_ID: DeepPartial<Strings> = {
       strategyOptionMaxAll: 'Atur keduanya ke tanggal paling baru',
       toleranceNote:
         'Mengabaikan selisih di bawah {tolerance} detik (diatur di pengaturan).',
+      columnDelta: 'Δ',
       fixWarning:
         'Ini akan mengubah {count} catatan. Ini tidak dapat dibatalkan. Buat cadangan terlebih dahulu.',
       fixingDates: 'Memperbaiki tanggal…',
