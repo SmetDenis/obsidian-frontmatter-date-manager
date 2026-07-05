@@ -31,6 +31,8 @@ export const STRINGS_FA: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: تاریخ‌های نامرتب شناسایی و اصلاح شدند. برای بررسی از «یافتن تاریخ‌های نامرتب» در تنظیمات استفاده کنید.',
     timestampsUpdated: 'تاریخ‌ها به‌روزرسانی شدند.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'این پرونده بر اساس تنظیمات افزونه نادیده گرفته شده است.',
     failedToUpdateWithReason: 'به‌روزرسانی تاریخ‌ها ناموفق بود: {reason}',
     failedToUpdate: 'به‌روزرسانی تاریخ‌ها ناموفق بود.',

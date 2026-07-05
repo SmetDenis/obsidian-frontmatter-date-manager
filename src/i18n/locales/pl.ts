@@ -31,6 +31,8 @@ export const STRINGS_PL: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: wykryto i poprawiono daty w złej kolejności. Otwórz "Znajdź daty w złej kolejności" w ustawieniach, aby je przejrzeć.',
     timestampsUpdated: 'Daty zaktualizowane.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Plik jest pomijany przez ustawienia wtyczki.',
     failedToUpdateWithReason: 'Nie udało się zaktualizować dat: {reason}',
     failedToUpdate: 'Nie udało się zaktualizować dat.',

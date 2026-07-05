@@ -81,3 +81,18 @@ describe('handleFileOpen - viewed stamping respects shouldFileBeIgnored', () => 
     });
   });
 });
+
+describe('handleFileOpen - viewed no-op-write guard', () => {
+  it('does not rewrite viewed when the formatted value is unchanged [coarse format]', async () => {
+    const s = { headerLastViewed: 'viewed', dateFormat: 'yyyy-MM-dd' };
+    const { plugin, processFrontMatter } = setupOpenPlugin(s);
+    // Under a coarse format, "now" formats to the same value already stored, so
+    // re-opening the note the same day would otherwise rewrite the same value.
+    const today = plugin.formatDate(new Date()); // e.g. '2026-06-14'
+    (plugin as any).app.metadataCache = {
+      getFileCache: () => ({ frontmatter: { viewed: today } }),
+    };
+    await (plugin as any).handleFileOpen(createTFile('notes/daily.md'));
+    expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+});

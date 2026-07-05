@@ -31,6 +31,8 @@ export const STRINGS_FR: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager : des dates dans le désordre ont été détectées et corrigées. Utilisez "Trouver les dates dans le désordre" dans les paramètres pour vérifier.',
     timestampsUpdated: 'Dates mises à jour.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Le fichier est ignoré par les paramètres du module.',
     failedToUpdateWithReason: 'Échec de la mise à jour des dates : {reason}',
     failedToUpdate: 'Échec de la mise à jour des dates.',

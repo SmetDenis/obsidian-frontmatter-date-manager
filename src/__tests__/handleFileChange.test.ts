@@ -130,7 +130,7 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(file);
 
-      expect(result).toEqual({ status: 'ok' });
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
       // Nothing is written now - the rate-limited update is not partially applied.
       expect(processFrontMatter).not.toHaveBeenCalled();
       // A retry is scheduled so the deferred update lands once the limit expires.
@@ -162,7 +162,7 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(file);
 
-      expect(result).toEqual({ status: 'ok' });
+      expect(result).toEqual({ status: 'ok', wrote: true });
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
       expect(writes[0]).toHaveProperty('created');
       expect(writes[0]).toHaveProperty('updated');
@@ -178,7 +178,7 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(file);
 
-      expect(result).toEqual({ status: 'ok' });
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
       expect(processFrontMatter).not.toHaveBeenCalled();
       expect(timers.has(file.path)).toBe(true);
     });
@@ -195,7 +195,7 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(file);
 
-      expect(result).toEqual({ status: 'ok' });
+      expect(result).toEqual({ status: 'ok', wrote: false });
       expect(processFrontMatter).not.toHaveBeenCalled();
       // The token is one-shot: consumed whether or not it matched.
       expect(lastWrite.has(file.path)).toBe(false);
@@ -448,7 +448,7 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(file);
 
-      expect(result).toEqual({ status: 'ok' });
+      expect(result).toEqual({ status: 'ok', wrote: false });
       expect(writes).toHaveLength(0); // no write at all -> no second increment
     });
 
@@ -594,6 +594,16 @@ describe('handleFileChange', () => {
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
       expect(writes[0]!.created).toBeDefined();
       expect(writes[0]!.updated).toEqual(val); // unchanged
+    });
+
+    it('reports wrote:false when the freshness guard skips the write', async () => {
+      const probe = setup();
+      const val = probe.plugin.formatDate(new Date(probe.file.stat.mtime));
+      const { plugin, file } = setup({
+        frontmatter: { created: 'x', updated: val },
+      });
+      const result = await plugin.handleFileChange(file);
+      expect(result).toEqual({ status: 'ok', wrote: false });
     });
   });
 });

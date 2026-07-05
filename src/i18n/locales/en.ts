@@ -35,6 +35,8 @@ export const STRINGS_EN = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: out-of-order dates were detected and fixed. Use "Find out-of-order dates" in settings to review.',
     timestampsUpdated: 'Timestamps updated.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'File is ignored by plugin settings.',
     failedToUpdateWithReason: 'Failed to update timestamps: {reason}',
     failedToUpdate: 'Failed to update timestamps.',

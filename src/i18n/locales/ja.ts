@@ -36,6 +36,8 @@ export const STRINGS_JA: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: 順序が逆の日付を検出して修正しました。設定の「順序が逆の日付を検索」で確認してください。',
     timestampsUpdated: '日付を更新しました。',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'このファイルはプラグインの設定により除外されています。',
     failedToUpdateWithReason: '日付の更新に失敗しました: {reason}',
     failedToUpdate: '日付の更新に失敗しました。',

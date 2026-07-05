@@ -31,6 +31,8 @@ export const STRINGS_TR: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: sıralaması yanlış tarihler bulundu ve düzeltildi. İncelemek için ayarlardaki "Sıralaması yanlış tarihleri bul" seçeneğini kullanın.',
     timestampsUpdated: 'Tarihler güncellendi.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Dosya, eklenti ayarlarınca yok sayılıyor.',
     failedToUpdateWithReason: 'Tarihler güncellenemedi: {reason}',
     failedToUpdate: 'Tarihler güncellenemedi.',

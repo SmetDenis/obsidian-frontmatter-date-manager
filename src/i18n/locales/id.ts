@@ -31,6 +31,8 @@ export const STRINGS_ID: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: tanggal yang tidak urut terdeteksi dan diperbaiki. Gunakan "Cari tanggal yang tidak urut" di pengaturan untuk meninjau.',
     timestampsUpdated: 'Tanggal diperbarui.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Berkas diabaikan oleh pengaturan plugin.',
     failedToUpdateWithReason: 'Gagal memperbarui tanggal: {reason}',
     failedToUpdate: 'Gagal memperbarui tanggal.',

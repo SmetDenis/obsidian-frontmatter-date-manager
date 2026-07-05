@@ -31,6 +31,8 @@ export const STRINGS_AR: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: تم اكتشاف تواريخ بترتيب غير صحيح وإصلاحها. استخدم "البحث عن التواريخ ذات الترتيب غير الصحيح" في الإعدادات للمراجعة.',
     timestampsUpdated: 'تم تحديث التواريخ.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'تم تجاهل الملف بناءً على إعدادات الإضافة.',
     failedToUpdateWithReason: 'تعذّر تحديث التواريخ: {reason}',
     failedToUpdate: 'تعذّر تحديث التواريخ.',

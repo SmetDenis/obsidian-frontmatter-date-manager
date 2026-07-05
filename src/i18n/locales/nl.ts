@@ -31,6 +31,8 @@ export const STRINGS_NL: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: datums in verkeerde volgorde zijn gevonden en hersteld. Gebruik "Datums in verkeerde volgorde zoeken" in de instellingen om te controleren.',
     timestampsUpdated: 'Datums bijgewerkt.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Bestand wordt genegeerd door de plug-in-instellingen.',
     failedToUpdateWithReason: 'Datums bijwerken mislukt: {reason}',
     failedToUpdate: 'Datums bijwerken mislukt.',

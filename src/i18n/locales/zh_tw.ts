@@ -31,6 +31,8 @@ export const STRINGS_ZH_TW: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager：偵測到並已修正順序錯誤的日期。請在設定中使用「尋找順序錯誤的日期」進行檢查。',
     timestampsUpdated: '日期已更新。',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: '此檔案已被外掛設定略過。',
     failedToUpdateWithReason: '更新日期失敗：{reason}',
     failedToUpdate: '更新日期失敗。',

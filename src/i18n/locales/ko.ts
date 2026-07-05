@@ -31,6 +31,8 @@ export const STRINGS_KO: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: 순서가 잘못된 날짜를 감지하여 수정했습니다. 확인하려면 설정에서 "순서가 잘못된 날짜 찾기"를 사용하세요.',
     timestampsUpdated: '날짜가 업데이트되었습니다.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: '플러그인 설정에 의해 무시되는 파일입니다.',
     failedToUpdateWithReason: '날짜를 업데이트하지 못했습니다: {reason}',
     failedToUpdate: '날짜를 업데이트하지 못했습니다.',

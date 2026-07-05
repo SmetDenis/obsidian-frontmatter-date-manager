@@ -31,6 +31,8 @@ export const STRINGS_DE: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: Daten in falscher Reihenfolge wurden erkannt und korrigiert. Verwenden Sie "Daten in falscher Reihenfolge finden" in den Einstellungen, um sie zu prüfen.',
     timestampsUpdated: 'Daten aktualisiert.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Datei wird durch die Plugin-Einstellungen ignoriert.',
     failedToUpdateWithReason:
       'Daten konnten nicht aktualisiert werden: {reason}',

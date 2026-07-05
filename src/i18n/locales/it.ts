@@ -31,6 +31,8 @@ export const STRINGS_IT: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: sono state rilevate e corrette date in ordine errato. Usa "Trova date in ordine errato" nelle impostazioni per verificarle.',
     timestampsUpdated: 'Date aggiornate.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Il file viene ignorato dalle impostazioni del plugin.',
     failedToUpdateWithReason: 'Impossibile aggiornare le date: {reason}',
     failedToUpdate: 'Impossibile aggiornare le date.',

@@ -31,6 +31,8 @@ export const STRINGS_TH: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: ตรวจพบและแก้ไขวันที่ที่เรียงผิดลำดับแล้ว ใช้ "ค้นหาวันที่ที่เรียงผิดลำดับ" ในการตั้งค่าเพื่อตรวจสอบ',
     timestampsUpdated: 'อัปเดตวันที่แล้ว',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'ไฟล์ถูกข้ามตามการตั้งค่าปลั๊กอิน',
     failedToUpdateWithReason: 'อัปเดตวันที่ไม่สำเร็จ: {reason}',
     failedToUpdate: 'อัปเดตวันที่ไม่สำเร็จ',

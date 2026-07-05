@@ -45,6 +45,14 @@ here.
   - UC3 - R11 stale-base: an externally-set `updated_count: 45` is read from disk
     and increments to `46` (native number), not clobbered from a stale cache.
   - UC4 - with the counter OFF an edit never writes `updated_count`.
+- `specs/external-fresh-updated.e2e.ts`
+  - F1 - freshness / no-op-write guard: an external write that changes the body
+    **and** carries a fresh, correctly-formatted `updated` is preserved
+    byte-for-byte - FDM detects the change (a `modify` probe proves the event
+    fired) but does not re-stamp; `mtime` is unchanged (no redundant write).
+  - F2 - control: an external body-only edit that leaves a **stale** `updated`
+    is re-stamped to a current value **exactly once** (no self-trigger loop);
+    `created` and the new body survive.
 
 **Group B - bulk operations (full UI-driven, all five modals):**
 

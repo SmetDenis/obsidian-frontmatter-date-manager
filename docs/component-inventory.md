@@ -30,6 +30,7 @@
 | `parsePropertyKeys` / `parseCacheMaxSize` / `errorToMessage` | `src/utils.ts` | Comma-split property keys; parse cache size; error-to-message. |
 | `isTFile` / `onlyUniqueArray` / `isGlobPattern` / `matchesPathPattern` | `src/utils.ts` | Type guard, dedup, glob detect, path match (picomatch for globs, prefix for plain folders). |
 | `MODIFY_DEBOUNCE_MS` | `src/constants.ts` | The per-file modify debounce (2000ms). |
+| `FRESHNESS_SEC` | `src/constants.ts` | Freshness margin (5s) for the automatic `updated`/`viewed` no-op-write guard. |
 
 ## Bulk subsystem - shared blocks (`src/bulk/`)
 

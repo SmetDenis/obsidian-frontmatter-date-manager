@@ -14,7 +14,7 @@ obsidian-frontmatter-date-manager/
 │   │                                 #   + FrontmatterDateManagerSettingsTab (the whole settings UI).
 │   ├── utils.ts                      # Pure helpers: date parsing/formatting, epoch units,
 │   │                                 #   slash-date ambiguity, locale order, property-key parsing.
-│   ├── constants.ts                  # Obsidian-free constants (MODIFY_DEBOUNCE_MS).
+│   ├── constants.ts                  # Obsidian-free constants (MODIFY_DEBOUNCE_MS, FRESHNESS_SEC).
 │   ├── filterRules.ts                # Gitignore-style filter engine (pure, no Obsidian dep).
 │   ├── inversionDetection.ts         # Pure isInversion() + applyInversionFix() strategies.
 │   ├── picomatch.d.ts                # Type decls for picomatch/posix.

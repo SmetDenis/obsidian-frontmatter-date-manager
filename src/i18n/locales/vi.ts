@@ -31,6 +31,8 @@ export const STRINGS_VI: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: đã phát hiện và sửa các ngày sai thứ tự. Dùng "Tìm các ngày sai thứ tự" trong cài đặt để xem lại.',
     timestampsUpdated: 'Đã cập nhật ngày.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Tệp bị bỏ qua bởi cài đặt của plugin.',
     failedToUpdateWithReason: 'Không thể cập nhật ngày: {reason}',
     failedToUpdate: 'Không thể cập nhật ngày.',

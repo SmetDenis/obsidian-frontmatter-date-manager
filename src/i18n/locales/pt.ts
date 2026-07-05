@@ -31,6 +31,8 @@ export const STRINGS_PT: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: foram detetadas e corrigidas datas fora de ordem. Use "Encontrar datas fora de ordem" nas definições para rever.',
     timestampsUpdated: 'Datas atualizadas.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'O ficheiro é ignorado pelas definições do plugin.',
     failedToUpdateWithReason: 'Falha ao atualizar as datas: {reason}',
     failedToUpdate: 'Falha ao atualizar as datas.',

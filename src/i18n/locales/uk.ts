@@ -31,6 +31,8 @@ export const STRINGS_UK: Strings = {
     inversionDetectedAndFixed:
       'Frontmatter Date Manager: виявлено та виправлено дати в неправильному порядку. Відкрийте "Знайти дати в неправильному порядку" в налаштуваннях для перевірки.',
     timestampsUpdated: 'Дати оновлено.',
+    timestampsAlreadyCurrent: 'Timestamps are already up to date.',
+    timestampsUpdateScheduled: 'Timestamps will update shortly.',
     fileIgnored: 'Файл виключено налаштуваннями плагіна.',
     failedToUpdateWithReason: 'Не вдалося оновити дати: {reason}',
     failedToUpdate: 'Не вдалося оновити дати.',

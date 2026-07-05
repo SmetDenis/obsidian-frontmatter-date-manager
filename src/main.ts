@@ -218,7 +218,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             this.handleFileChange(file)
               .then((result) => {
                 if (result.status === 'ok') {
-                  new Notice(strings.notices.timestampsUpdated);
+                  new Notice(
+                    result.wrote
+                      ? strings.notices.timestampsUpdated
+                      : result.deferred
+                        ? strings.notices.timestampsUpdateScheduled
+                        : strings.notices.timestampsAlreadyCurrent,
+                  );
                 } else if (result.status === 'ignored') {
                   new Notice(strings.notices.fileIgnored);
                 } else {
@@ -619,7 +625,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       const candidate = this.formatDate(mTime);
 
       if (!existingUpdated) {
-        // No prior value: write `updated` for this edit.
+        // No prior value: write `updated` for this edit. Falsy 0/'' are treated
+        // as "no value" too (pre-existing semantics; both are degenerate as a
+        // stored date and converge to a write via the paths below regardless).
         result.updatedValue = candidate;
         result.countedEdit = true;
       } else if (
@@ -700,7 +708,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   async handleFileChange(
     file: TAbstractFile,
   ): Promise<
-    | { status: 'ok' }
+    | { status: 'ok'; wrote: boolean; deferred?: boolean }
     | { status: 'error'; error: unknown }
     | { status: 'ignored' }
   > {
@@ -715,7 +723,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     if (lastMtime !== undefined) {
       this.lastPluginWriteMtime.delete(file.path);
       if (lastMtime === file.stat.mtime) {
-        return { status: 'ok' };
+        return { status: 'ok', wrote: false };
       }
     }
 
@@ -746,7 +754,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         }, updates.retryAfterMs);
         this.modifyTimers.set(file.path, timer);
       }
-      return { status: 'ok' };
+      // deferred: a real change IS pending - it will be written on the retry once
+      // the rate limit expires. Distinct from a guard-skip no-op (wrote:false with
+      // no `deferred`) so the manual command can report it honestly rather than a
+      // false "already up to date".
+      return { status: 'ok', wrote: false, deferred: true };
     }
 
     const hasChanges =
@@ -758,7 +770,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       if (checkResult.fileContent) {
         await this.populateCacheForFile(file, checkResult.fileContent);
       }
-      return { status: 'ok' };
+      return { status: 'ok', wrote: false };
     }
 
     try {
@@ -835,6 +847,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     }
     return {
       status: 'ok',
+      wrote: true,
     };
   }
 
@@ -907,6 +920,17 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       const now = new Date();
       const formattedNow = this.formatDate(now);
       if (formattedNow === undefined) return;
+
+      // Skip a no-op `viewed` write: under a coarse format (e.g. yyyy-MM-dd),
+      // re-opening the same note the same day would otherwise rewrite the same
+      // value. Compared raw for the same parse-agnostic reason as the `updated`
+      // guard in computeFrontmatterUpdates.
+      if (
+        existingViewed != null &&
+        String(formattedNow) === String(existingViewed)
+      ) {
+        return;
+      }
 
       await this.app.fileManager.processFrontMatter(
         file,
