@@ -59,13 +59,19 @@ vault 'modify' event
           empty file, then SHA-256 hash vs cache
        -> computeFrontmatterUpdates(): decide created/updated values
        -> processFrontMatter() writes ONLY changed keys
+          (pins { ctime, mtime } via editorSafeWriteOptions when the note is
+           open in an editor, so the write does not reload it and jump the cursor)
        -> store lastPluginWriteMtime, re-hash file, mark cache dirty
        -> debounced flush to hash-cache.json
 ```
 
 ### 5.1 Self-triggered modify suppression
 
-`processFrontMatter()` is **never** called with `{ ctime, mtime }` (preserving mtime stops an open editor from re-rendering and leaves the hash cache stale). Instead, after every automated write the code stores `file.stat.mtime` in `lastPluginWriteMtime`, and `handleFileChange` skips the next event whose mtime matches. This breaks the write -> modify -> write loop. The rule applies to `handleFileChange`, `handleFileOpen`, **and every bulk write** (all bulk writes funnel through `applyFrontmatterWrite`, `src/bulk/write.ts`).
+After every automated write the code stores `file.stat.mtime` in `lastPluginWriteMtime`, and `handleFileChange` skips the next event whose mtime matches. This breaks the write -> modify -> write loop and applies to `handleFileChange`, `handleFileOpen`, **and every bulk write**. The guard holds whether or not mtime was preserved on the write - it stores whatever `file.stat.mtime` is post-write, which is exactly what the self-triggered event carries.
+
+### 5.1a Editor-safe mtime preservation (automatic single-file writes)
+
+The automatic single-file writes (`handleFileChange`, `handleFileOpen`) pass `editorSafeWriteOptions(file)` to `processFrontMatter`. When the note is **open in a Markdown editor leaf** (`isFileOpenInEditor`), the write pins `{ ctime, mtime }` so Obsidian does not treat it as an external change and reload the note - a reload resets the user's cursor, selection, and scroll while they type. A note not open in any editor gets no options, so its metadata refreshes immediately. Tradeoff: the open note's live Properties value of `updated`/`viewed` catches up on the next real edit or reopen (on disk it is already correct). **Bulk writes never preserve mtime** (`applyFrontmatterWrite`, `src/bulk/write.ts`): doing so would leave the hash cache stale and let a self-triggered event escaping the `bulkRunning` window spuriously re-stamp `updated`.
 
 ### 5.2 Change detection (content hashing)
 

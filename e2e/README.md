@@ -30,6 +30,13 @@ here.
   - A4 - with auto-update OFF an edit must not stamp, but the
     "Update timestamps for current file" command does; `created` and body
     preserved.
+- `specs/editor-safe-write.e2e.ts`
+  - E1 - stamping a note **open** in the editor preserves its `mtime`
+    byte-for-byte (the write pins `{ ctime, mtime }` so Obsidian does not reload
+    the editor and jump the cursor/scroll); the stamp still lands and `created` +
+    body survive.
+  - E2 - stamping a note **not open** in any editor advances its `mtime` (the
+    conditional branch: no live editor to disturb, so metadata refreshes at once).
 - `specs/update-count.e2e.ts`
   - UC1 - first counted edit writes `updated_count: 1` as a **native unquoted
     number**, co-located with the bumped `updated`; `created`, an unrelated key,

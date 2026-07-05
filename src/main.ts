@@ -1,4 +1,11 @@
-import { Notice, Plugin, TAbstractFile, TFile, normalizePath } from 'obsidian';
+import {
+  MarkdownView,
+  Notice,
+  Plugin,
+  TAbstractFile,
+  TFile,
+  normalizePath,
+} from 'obsidian';
 import { format, parse, add, isAfter } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import {
@@ -522,6 +529,43 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return key;
   }
 
+  // True when the file is currently loaded in a Markdown editor leaf (not a
+  // deferred/unloaded leaf). Used to decide whether an automatic frontmatter
+  // write must preserve the file's mtime - see editorSafeWriteOptions.
+  private isFileOpenInEditor(file: TFile): boolean {
+    return this.app.workspace
+      .getLeavesOfType('markdown')
+      .some(
+        (leaf) =>
+          leaf.view instanceof MarkdownView &&
+          leaf.view.file?.path === file.path,
+      );
+  }
+
+  // Write options for an automatic (single-file) frontmatter write. When the
+  // target note is open in an editor we pin its ctime/mtime so Obsidian does NOT
+  // treat the write as an external change: otherwise it reloads the note into the
+  // editor and the user's cursor, selection, and scroll jump while they are still
+  // typing (the reported "storm"). A note not open in any editor is written with
+  // no options (undefined) - there is no live editor to disturb, so its metadata
+  // (Properties view, Dataview) refreshes immediately, which is preferable.
+  //
+  // The tradeoff for the open note: its `updated`/`viewed` value in the live
+  // Properties view only catches up on the next real edit or reopen (on disk it
+  // is already correct). This intentionally reverses the earlier "always
+  // re-render" choice - stability while typing outranks live-reflecting a
+  // timestamp the user is not looking at.
+  //
+  // Bulk operations must NEVER use this (they write via src/bulk/write.ts):
+  // preserving mtime there leaves the hash cache stale and lets a self-triggered
+  // modify event escaping the bulkRunning window spuriously re-stamp `updated`.
+  private editorSafeWriteOptions(
+    file: TFile,
+  ): { ctime: number; mtime: number } | undefined {
+    if (!this.isFileOpenInEditor(file)) return undefined;
+    return { ctime: file.stat.ctime, mtime: file.stat.mtime };
+  }
+
   private computeFrontmatterUpdates(file: TFile): {
     createdValue?: string | number;
     updatedValue?: string | number;
@@ -720,9 +764,14 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             frontmatter[counterKey] = coerceCount(frontmatter[counterKey]) + 1;
           }
         },
+        // Preserve mtime when the note is open in an editor so the write does not
+        // reload it and jump the user's cursor/scroll while they type.
+        this.editorSafeWriteOptions(file),
       );
-      // After write, Obsidian updates file.stat.mtime. Store it so the
-      // self-triggered modify event is detected and skipped.
+      // After write, Obsidian updates file.stat.mtime (unchanged when we pinned
+      // it above). Store it so the self-triggered modify event is detected and
+      // skipped - the guard compares the stored value to the event's mtime and
+      // holds either way.
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
       // Re-read after processFrontMatter modified the file
       await this.populateCacheForFile(file);
@@ -840,9 +889,14 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         (frontmatter: Record<string, unknown>) => {
           frontmatter[viewedKey] = formattedNow;
         },
+        // The just-opened note is loaded in an editor, so pin its mtime: merely
+        // viewing a file must not reload the editor nor falsely bump its
+        // modified time.
+        this.editorSafeWriteOptions(file),
       );
-      // After write, Obsidian updates file.stat.mtime. Store it so the
-      // self-triggered modify event is detected and skipped.
+      // After write, Obsidian updates file.stat.mtime (unchanged when we pinned
+      // it above). Store it so the self-triggered modify event is detected and
+      // skipped.
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
 
       // Update hash cache so subsequent modify event finds matching hash

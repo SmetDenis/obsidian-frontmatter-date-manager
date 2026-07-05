@@ -26,6 +26,13 @@ export class App {
   workspace: any = {};
 }
 
+// Minimal stand-in so `leaf.view instanceof MarkdownView` (used by
+// isFileOpenInEditor in main.ts) resolves in unit tests. Tests construct one and
+// assign `.file` to simulate an open editor leaf.
+export class MarkdownView {
+  file: any = null;
+}
+
 export class Plugin {
   app: any = {};
   manifest: any = { dir: '' };

@@ -27,9 +27,13 @@ interface SetupOpts {
   settings?: Partial<FrontmatterDateManagerSettings>;
   frontmatter?: Record<string, unknown>;
   fileContent?: string;
+  // When true, the workspace reports the file as open in a Markdown editor leaf,
+  // so the write path pins ctime/mtime to avoid reloading the live editor.
+  openInEditor?: boolean;
   processFrontMatterImpl?: (
     file: TFile,
     cb: (fm: Record<string, unknown>) => void,
+    options?: unknown,
   ) => Promise<void>;
 }
 
@@ -55,6 +59,7 @@ function setup(opts: SetupOpts = {}) {
   const defaultImpl = (
     _file: TFile,
     cb: (fm: Record<string, unknown>) => void,
+    _options?: unknown,
   ) => {
     const fm = { ...frontmatter };
     cb(fm);
@@ -62,6 +67,13 @@ function setup(opts: SetupOpts = {}) {
     return Promise.resolve();
   };
   const processFrontMatter = vi.fn(opts.processFrontMatterImpl ?? defaultImpl);
+
+  // Simulate the workspace: getLeavesOfType('markdown') reports the file as open
+  // only when openInEditor is set, so isFileOpenInEditor drives the write-options
+  // branch (pin mtime for an open note; no options otherwise).
+  const openLeaves = opts.openInEditor
+    ? [{ view: Object.assign(new obsidian.MarkdownView(), { file }) }]
+    : [];
 
   plugin.app = {
     vault: {
@@ -71,6 +83,7 @@ function setup(opts: SetupOpts = {}) {
     },
     fileManager: { processFrontMatter },
     metadataCache: { getFileCache: () => ({ frontmatter }) },
+    workspace: { getLeavesOfType: vi.fn(() => openLeaves) },
   } as unknown as FrontmatterDateManagerPlugin['app'];
 
   // Avoid real hash-cache I/O; these tests do not assert cache contents.
@@ -200,6 +213,41 @@ describe('handleFileChange', () => {
       // write then re-arms lastPluginWriteMtime for the next self-trigger, so
       // the token's presence afterwards is a write artifact, not the guard's.)
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // Editor-safe write options: when the note is open in an editor, the automatic
+  // write must pin ctime/mtime so Obsidian does not treat it as an external change
+  // and reload the note - which would reset the user's cursor, selection, and
+  // scroll mid-typing (the "storm"). A note not open in any editor is written with
+  // no options so its metadata refreshes immediately (no visible editor to
+  // disturb). Bulk writes never use this path.
+  describe('editor-safe mtime preservation', () => {
+    it('pins ctime/mtime when the note is open in an editor', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        frontmatter: {},
+        openInEditor: true,
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(processFrontMatter.mock.calls[0]?.[2]).toEqual({
+        ctime: file.stat.ctime,
+        mtime: file.stat.mtime,
+      });
+    });
+
+    it('omits write options when the note is not open in any editor', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        frontmatter: {},
+        openInEditor: false,
+      });
+
+      await plugin.handleFileChange(file);
+
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(processFrontMatter.mock.calls[0]?.[2]).toBeUndefined();
     });
   });
 
