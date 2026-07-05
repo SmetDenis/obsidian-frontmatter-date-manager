@@ -281,7 +281,7 @@ export function renderProgress(
   });
   const bar = wrapper.createEl('progress');
   bar.setAttr('max', max);
-  const counter = wrapper.createEl('span');
+  const counter = wrapper.createSpan();
   return {
     update(count: number) {
       bar.setAttr('value', count);

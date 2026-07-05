@@ -197,7 +197,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     // --- Plugin description ---
-    const descEl = containerEl.createEl('div', {
+    const descEl = containerEl.createDiv({
       cls: 'frontmatter-date-manager-plugin-description',
     });
     descEl.createEl('p', {
@@ -229,7 +229,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       !modifiedEnabled &&
       !viewedEnabled
     ) {
-      containerEl.createEl('div', {
+      containerEl.createDiv({
         cls: 'frontmatter-date-manager-hint-message',
         text: strings.settings.dates.enableNoneHint,
       });
@@ -617,18 +617,18 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .setDesc(descr);
     setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
 
-    const warnEl = this.containerEl.createEl('div', {
+    const warnEl = this.containerEl.createDiv({
       cls: 'frontmatter-date-manager-filter-warn',
       text: strings.settings.filterRules.noRulesWarning,
     });
 
-    const errorsEl = this.containerEl.createEl('div', {
+    const errorsEl = this.containerEl.createDiv({
       cls: 'frontmatter-date-manager-filter-errors',
     });
 
     this.addFilterRulesReference();
 
-    const previewEl = this.containerEl.createEl('div', {
+    const previewEl = this.containerEl.createDiv({
       cls: 'frontmatter-date-manager-filter-preview',
     });
 
@@ -642,7 +642,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       if (trimmed.length > 0) {
         const { errors } = parseFilterRules(trimmed);
         for (const err of errors) {
-          errorsEl.createEl('div', {
+          errorsEl.createDiv({
             text: t(strings.settings.filterRules.parseError, {
               lineNumber: err.lineNumber,
               message: err.message,
@@ -695,7 +695,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           }
         }
 
-        previewEl.createEl('div', {
+        previewEl.createDiv({
           text: t(strings.settings.filterRules.previewSummary, {
             tracked: tracked.length,
             excluded: excluded.length,
@@ -736,7 +736,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     });
 
     const addSection = (title: string, rows: [string, string][]): void => {
-      refEl.createEl('div', {
+      refEl.createDiv({
         text: title,
         cls: 'frontmatter-date-manager-ref-section-title',
       });

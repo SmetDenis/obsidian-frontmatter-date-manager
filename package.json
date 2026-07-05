@@ -32,7 +32,7 @@
     "esbuild-copy-static-files": "^0.1.0",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-replace": "^1.4.0",
-    "eslint-plugin-obsidianmd": "0.3.0",
+    "eslint-plugin-obsidianmd": "^0.4.1",
     "fs-jetpack": "^5.1.0",
     "globals": "14.0.0",
     "jiti": "2.7.0",
