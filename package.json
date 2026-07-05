@@ -50,7 +50,7 @@
     "@date-fns/tz": "^1.5.0",
     "date-fns": "4.4.0",
     "js-sha256": "^0.11.1",
-    "picomatch": "^4.0.4"
+    "picomatch": "^4.0.5"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5"
