@@ -119,8 +119,9 @@ describe('handleFileChange', () => {
     function bugSetup() {
       return setup({
         settings: { minSecondsBetweenSaves: 30 },
-        // created absent -> createdValue set; updated present & fresh -> rate-limited.
-        frontmatter: { updated: T - 5000 },
+        // created absent -> createdValue set; updated present, >FRESHNESS_SEC behind
+        // mtime but within the 30s throttle -> rate-limited (not the freshness skip).
+        frontmatter: { updated: T - 20000 },
       });
     }
 
@@ -168,10 +169,11 @@ describe('handleFileChange', () => {
     });
 
     it('schedules a retry without writing when only updated is rate-limited', async () => {
-      // created present + updated present & fresh -> retryAfterMs only, no write.
+      // created present + updated >FRESHNESS_SEC behind mtime, within the 30s
+      // throttle -> retryAfterMs only, no write.
       const { plugin, processFrontMatter, file, timers } = setup({
         settings: { minSecondsBetweenSaves: 30 },
-        frontmatter: { created: T - 86_400_000, updated: T - 5000 },
+        frontmatter: { created: T - 86_400_000, updated: T - 20000 },
       });
 
       const result = await plugin.handleFileChange(file);
@@ -417,7 +419,7 @@ describe('handleFileChange', () => {
         settings: { ...ENABLED, minSecondsBetweenSaves: 30 },
         frontmatter: {
           created: T - 86_400_000,
-          updated: T - 5000,
+          updated: T - 20000,
           updated_count: 7,
         },
       });
@@ -462,6 +464,136 @@ describe('handleFileChange', () => {
       // the date is written, never a clobbering double-write.
       expect(writes[0]).toHaveProperty('updated');
       expect(writes[0]!.updated).not.toBe(1);
+    });
+  });
+
+  describe('updated freshness / no-op-write guard', () => {
+    // A probe run tells us exactly what FDM would write for this file's mtime
+    // (T - 1000), host-timezone-independently, so we can pre-seed that value.
+    function mtimeValue(settings?: Partial<FrontmatterDateManagerSettings>) {
+      const probe = setup({ settings });
+      return probe.plugin.formatDate(new Date(probe.file.stat.mtime));
+    }
+
+    // The "no write" cases advance the clock 60s past the file's mtime so the
+    // pre-existing rate-limiter (now vs updated + minSecondsBetweenSaves = 30s)
+    // would OTHERWISE fire a write - which isolates the new guard: without it
+    // these scenarios write (or defer with a retry timer); with it they resolve
+    // on the first pass, so processFrontMatter is never called AND no retry timer
+    // is scheduled (timers stays empty).
+    const NOW_PAST_LIMIT = T + 60_000;
+
+    it('does not write when updated already equals formatDate(mtime) [raw identity]', async () => {
+      vi.setSystemTime(NOW_PAST_LIMIT);
+      const val = mtimeValue();
+      const { plugin, processFrontMatter, file, timers } = setup({
+        frontmatter: { created: 'x', updated: val },
+      });
+      const result = await plugin.handleFileChange(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.size).toBe(0);
+      expect(result.status).toBe('ok');
+    });
+
+    it('does not write for a numeric non-epoch format (yyyyMMdd) [H2]', async () => {
+      vi.setSystemTime(NOW_PAST_LIMIT);
+      const s = { enableNumberProperties: true, dateFormat: 'yyyyMMdd' };
+      const val = mtimeValue(s); // a number like 20260614
+      expect(typeof val).toBe('number');
+      const { plugin, processFrontMatter, file, timers } = setup({
+        settings: s,
+        frontmatter: { created: 'x', updated: val },
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.size).toBe(0);
+    });
+
+    it('does not write when updated is 2s behind mtime [freshness / script drift]', async () => {
+      vi.setSystemTime(NOW_PAST_LIMIT);
+      const probe = setup();
+      const behind = probe.plugin.formatDate(
+        new Date(probe.file.stat.mtime - 2000),
+      );
+      const { plugin, processFrontMatter, file, timers } = setup({
+        frontmatter: { created: 'x', updated: behind },
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.size).toBe(0);
+    });
+
+    it('does not clobber an updated dated in the future [freshness asymmetry]', async () => {
+      vi.setSystemTime(NOW_PAST_LIMIT);
+      const probe = setup();
+      const future = probe.plugin.formatDate(
+        new Date(probe.file.stat.mtime + 3_600_000),
+      );
+      const { plugin, processFrontMatter, file, timers } = setup({
+        frontmatter: { created: 'x', updated: future },
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      // A future-dated value is inherently rate-limited too, so the write signal
+      // alone would pass without the guard; the empty timer set proves the guard
+      // resolved it immediately instead of scheduling a retry.
+      expect(timers.size).toBe(0);
+    });
+
+    it('absorbs a genuine edit 3s after the last stamp within the window [H1, documented]', async () => {
+      vi.setSystemTime(NOW_PAST_LIMIT);
+      const probe = setup();
+      const threeAgo = probe.plugin.formatDate(
+        new Date(probe.file.stat.mtime - 3000),
+      );
+      const { plugin, processFrontMatter, file, timers } = setup({
+        settings: {
+          countUpdatesEnabled: true,
+          headerUpdateCount: 'updated_count',
+        },
+        frontmatter: { created: 'x', updated: threeAgo, updated_count: 4 },
+      });
+      await plugin.handleFileChange(file);
+      // Accepted precision loss: no write, so the counter is not bumped either.
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.size).toBe(0);
+    });
+
+    it('re-stamps when mtime is far ahead of updated [genuinely stale]', async () => {
+      const probe = setup();
+      const stale = probe.plugin.formatDate(
+        new Date(probe.file.stat.mtime - 60_000),
+      );
+      const expected = probe.plugin.formatDate(new Date(probe.file.stat.mtime));
+      const { plugin, processFrontMatter, file, writes } = setup({
+        frontmatter: { created: 'x', updated: stale },
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]!.updated).toEqual(expected);
+    });
+
+    it('makes one legitimate re-stamp across a coarse-format day boundary [M1]', async () => {
+      const s = { dateFormat: 'yyyy-MM-dd' };
+      const expected = mtimeValue(s); // e.g. '2026-06-14'
+      const { plugin, processFrontMatter, file, writes } = setup({
+        settings: s,
+        frontmatter: { created: 'x', updated: '2026-06-13' },
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]!.updated).toEqual(expected);
+    });
+
+    it('fills a missing created while leaving a fresh updated untouched', async () => {
+      const val = mtimeValue();
+      const { plugin, processFrontMatter, file, writes } = setup({
+        frontmatter: { updated: val }, // created missing
+      });
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]!.created).toBeDefined();
+      expect(writes[0]!.updated).toEqual(val); // unchanged
     });
   });
 });

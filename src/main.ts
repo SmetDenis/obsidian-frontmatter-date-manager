@@ -27,7 +27,7 @@ import {
   isInversion,
   InversionFixStrategy,
 } from './inversionDetection';
-import { MODIFY_DEBOUNCE_MS } from './constants';
+import { FRESHNESS_SEC, MODIFY_DEBOUNCE_MS } from './constants';
 
 export interface HashCacheEntry {
   hash: string;
@@ -616,23 +616,47 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         | string
         | number
         | undefined;
-      const currentMTimeOnFile = existingUpdated
-        ? this.parseDate(existingUpdated)
-        : undefined;
-      if (!existingUpdated || !currentMTimeOnFile) {
-        // No prior value (or an unparseable one): write `updated` for this edit.
-        result.updatedValue = this.formatDate(mTime);
+      const candidate = this.formatDate(mTime);
+
+      if (!existingUpdated) {
+        // No prior value: write `updated` for this edit.
+        result.updatedValue = candidate;
         result.countedEdit = true;
-      } else if (this.shouldUpdateValue(new Date(), currentMTimeOnFile)) {
-        result.updatedValue = this.formatDate(mTime);
-        result.countedEdit = true;
+      } else if (
+        candidate !== undefined &&
+        String(candidate) === String(existingUpdated)
+      ) {
+        // (a) Raw value-identity: the value we would write already equals the
+        // on-disk value -> a no-op write. Compared raw (NOT through parseDate) on
+        // purpose so all-digit non-epoch formats (e.g. yyyyMMdd) that parseDate
+        // misreads as an epoch are still covered. No updatedValue/retryAfterMs/
+        // countedEdit -> handleFileChange refreshes the hash and stops.
       } else {
-        // Rate-limited: signal the caller to retry after the limit expires
-        const nextUpdate = add(currentMTimeOnFile, {
-          seconds: this.settings.minSecondsBetweenSaves,
-        });
-        result.retryAfterMs =
-          Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
+        const currentMTimeOnFile = this.parseDate(existingUpdated);
+        if (!currentMTimeOnFile) {
+          // Unparseable prior value: overwrite it (never leave garbage).
+          result.updatedValue = candidate;
+          result.countedEdit = true;
+        } else if (
+          (mTime.getTime() - currentMTimeOnFile.getTime()) / 1000 <=
+          FRESHNESS_SEC
+        ) {
+          // (b) Freshness (asymmetric/signed): `updated` already covers mtime, or
+          // is ahead of it. Preserve the existing value - never clobber a
+          // deliberately future-dated value, and absorb sub-FRESHNESS_SEC drift
+          // (an accepted precision loss; the value stays at most FRESHNESS_SEC
+          // stale, well inside the plugin's tolerance).
+        } else if (this.shouldUpdateValue(new Date(), currentMTimeOnFile)) {
+          result.updatedValue = candidate;
+          result.countedEdit = true;
+        } else {
+          // Rate-limited: signal the caller to retry after the limit expires
+          const nextUpdate = add(currentMTimeOnFile, {
+            seconds: this.settings.minSecondsBetweenSaves,
+          });
+          result.retryAfterMs =
+            Math.max(0, nextUpdate.getTime() - Date.now()) + 200;
+        }
       }
     }
 
