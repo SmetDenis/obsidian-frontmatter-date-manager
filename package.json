@@ -49,7 +49,7 @@
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
     "date-fns": "4.4.0",
-    "js-sha256": "^0.11.1",
+    "js-sha256": "^0.12.0",
     "picomatch": "^4.0.5"
   },
   "overrides": {
