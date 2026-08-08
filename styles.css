@@ -92,6 +92,9 @@
 
 /* Filter rules: collapsible syntax reference */
 .frontmatter-date-manager-filter-reference {
+    /* The parent row is a flex column with align-items: flex-start - without
+       an explicit width the details shrinks to its content. */
+    width: 100%;
     margin: 0.5rem 0;
     font-size: var(--font-smaller);
     line-height: 1.5;

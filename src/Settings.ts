@@ -888,6 +888,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   }
 
   private renderFilterReference(setting: Setting): () => void {
+    // Column layout, like the editor/preview rows: without it the row's empty
+    // .setting-item-info flex child eats the left half and squeezes the
+    // reference into the right column.
+    setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
     const refEl = setting.settingEl.createEl('details', {
       cls: 'frontmatter-date-manager-filter-reference',
     });
