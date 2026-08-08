@@ -30,5 +30,9 @@ jobs:
       - run: make install
       - run: make format-check
       - run: make lint
+      # Type-checks e2e specs/PO without launching Obsidian. The e2e RUN itself
+      # is manual (needs a real Obsidian + a display), but its types must not
+      # rot unnoticed between releases.
+      - run: make typecheck-e2e
       - run: make test
       - run: make build

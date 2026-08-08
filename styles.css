@@ -4,6 +4,11 @@
 
 /* Plugin description block at the top of settings */
 .frontmatter-date-manager-plugin-description {
+    /* Rendered as a child of a .setting-item, which is a flex row - without an
+       explicit width the block shrinks to its content and is pushed to the
+       right by the row's empty .setting-item-info. Same fix as the filter
+       reference below. */
+    width: 100%;
     color: var(--text-muted);
     font-size: var(--font-smaller);
     line-height: 1.6;
@@ -24,6 +29,9 @@
 
 /* Hint when both timestamp toggles are off */
 .frontmatter-date-manager-hint-message {
+    /* Full width for the same reason as the description block above: the
+       parent .setting-item is a flex row with an empty info column. */
+    width: 100%;
     color: var(--text-muted);
     font-size: var(--font-smaller);
     font-style: italic;

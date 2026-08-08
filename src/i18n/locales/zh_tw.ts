@@ -154,6 +154,7 @@ export const STRINGS_ZH_TW: Strings = {
         desc: '編輯這些屬性不會更新日期。您可以一次新增多個，以逗號分隔。created、updated 和 viewed 屬性永遠會自動略過。',
         placeholder: '屬性名稱，例如 tags',
         addTooltip: '新增屬性',
+        listHeading: '忽略的屬性',
         emptyState: '沒有被忽略的屬性。',
       },
     },

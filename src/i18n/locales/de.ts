@@ -166,6 +166,7 @@ export const STRINGS_DE: Strings = {
         desc: 'Das Bearbeiten dieser Eigenschaften aktualisiert das Datum nicht. Sie können mehrere auf einmal hinzufügen, durch Kommas getrennt. Die Eigenschaften created, updated und viewed werden immer automatisch ignoriert.',
         placeholder: 'Eigenschaftsname wie tags',
         addTooltip: 'Eigenschaft hinzufügen',
+        listHeading: 'Ignorierte Eigenschaften',
         emptyState: 'Keine ignorierten Eigenschaften.',
       },
     },

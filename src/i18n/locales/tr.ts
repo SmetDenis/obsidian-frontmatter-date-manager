@@ -158,6 +158,7 @@ export const STRINGS_TR: Strings = {
         desc: 'Bu özellikleri düzenlemek tarihi güncellemez. Birden fazlasını virgülle ayırarak aynı anda ekleyebilirsiniz. created, updated ve viewed özellikleri her zaman otomatik olarak yok sayılır.',
         placeholder: 'tags gibi bir özellik adı',
         addTooltip: 'Özellik ekle',
+        listHeading: 'Yok sayılan özellikler',
         emptyState: 'Yok sayılan özellik yok.',
       },
     },

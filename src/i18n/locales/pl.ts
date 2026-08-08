@@ -163,6 +163,7 @@ export const STRINGS_PL: Strings = {
         desc: 'Edycja tych właściwości nie zaktualizuje daty. Możesz dodać kilka naraz, oddzielając je przecinkami. Właściwości created, updated i viewed są zawsze ignorowane automatycznie.',
         placeholder: 'Nazwa właściwości, np. tags',
         addTooltip: 'Dodaj właściwość',
+        listHeading: 'Ignorowane właściwości',
         emptyState: 'Brak ignorowanych właściwości.',
       },
     },

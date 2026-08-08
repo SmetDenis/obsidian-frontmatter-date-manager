@@ -164,6 +164,7 @@ export const STRINGS_JA: Strings = {
         desc: 'これらのプロパティを編集しても日付は更新されません。カンマで区切って一度に複数追加できます。created、updated、viewed のプロパティは常に自動的に無視されます。',
         placeholder: 'プロパティ名 (例: tags)',
         addTooltip: 'プロパティを追加',
+        listHeading: '無視するプロパティ',
         emptyState: '無視しているプロパティはありません。',
       },
     },

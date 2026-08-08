@@ -156,6 +156,7 @@ export const STRINGS_KO: Strings = {
         desc: '이 속성을 편집해도 날짜가 업데이트되지 않습니다. 쉼표로 구분해 한 번에 여러 개를 추가할 수 있습니다. created, updated, viewed 속성은 항상 자동으로 무시됩니다.',
         placeholder: 'tags 같은 속성 이름',
         addTooltip: '속성 추가',
+        listHeading: '무시된 속성',
         emptyState: '무시된 속성이 없습니다.',
       },
     },

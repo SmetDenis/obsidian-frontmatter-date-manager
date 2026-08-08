@@ -163,6 +163,10 @@ export const STRINGS_EN = {
         desc: 'Editing these properties will not update the date. You can add several at once, separated by commas. The created, updated, and viewed properties are always ignored automatically.',
         placeholder: 'Property name like tags',
         addTooltip: 'Add property',
+        // Heading above the native list. The list cannot nest inside the
+        // behavior group, so without it the entries render as an unlabeled
+        // card with no visible tie to the input row above.
+        listHeading: 'Ignored properties',
         emptyState: 'No ignored properties.',
       },
     },
