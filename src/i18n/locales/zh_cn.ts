@@ -59,6 +59,10 @@ export const STRINGS_ZH_CN: Strings = {
     downloadSuccess: '已下载 {count} 行，文件 {filename} 已保存到下载文件夹。',
     downloadFailed: '无法下载预览文件。',
     failureColumnError: '错误',
+    skippedColumnReason: '原因',
+    skippedTableIntro: '{count} 个笔记已跳过且未被更改:',
+    skippedUnsavedChanges:
+      '该笔记在打开的编辑器中有未保存的更改。请保存或关闭它，然后运行新的预览。',
     progressCounter: '{count}/{max}',
   },
   settings: {

@@ -57,6 +57,11 @@ export const STRINGS_PT: Strings = {
     downloadFailed:
       'Não foi possível transferir o ficheiro de pré-visualização.',
     failureColumnError: 'Erro',
+    skippedColumnReason: 'Motivo',
+    skippedTableIntro:
+      '{count} nota(s) foram ignoradas e deixadas sem alterações:',
+    skippedUnsavedChanges:
+      'A nota tem alterações não guardadas num editor aberto. Guarde-a ou feche-a e execute uma nova pré-visualização.',
     progressCounter: '{count}/{max}',
   },
   settings: {

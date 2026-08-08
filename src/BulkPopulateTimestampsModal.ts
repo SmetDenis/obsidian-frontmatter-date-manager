@@ -15,6 +15,7 @@ import {
   renderDownloadPreviewButton,
   renderProgress,
   renderFailureTable,
+  renderSkippedTable,
 } from './bulk/chrome';
 
 export type PopulateMode = 'created' | 'updated' | 'both';
@@ -446,7 +447,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
 
-    const { processed, errors, failures } = await runExecutePhase({
+    const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
       items,
       isOpen: () => this.isOpenState(),
@@ -474,6 +475,9 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
         contentEl,
         format(strings.modals.populate.doneTitle, { processed }),
       );
+    }
+    if (skipped.length > 0) {
+      renderSkippedTable(contentEl, this.plugin, skipped);
     }
     renderButtonBar(contentEl, {
       footer: {

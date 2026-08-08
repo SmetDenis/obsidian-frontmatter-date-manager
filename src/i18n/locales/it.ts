@@ -56,6 +56,10 @@ export const STRINGS_IT: Strings = {
       'Scaricate {count} riga/righe come {filename} nella cartella dei download.',
     downloadFailed: 'Impossibile scaricare il file di anteprima.',
     failureColumnError: 'Errore',
+    skippedColumnReason: 'Motivo',
+    skippedTableIntro: '{count} nota/e saltate e lasciate invariate:',
+    skippedUnsavedChanges:
+      'La nota ha modifiche non salvate in un editor aperto. Salvala o chiudila, poi esegui una nuova anteprima.',
     progressCounter: '{count}/{max}',
   },
   settings: {

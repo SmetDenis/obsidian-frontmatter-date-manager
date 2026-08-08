@@ -30,13 +30,57 @@ here.
   - A4 - with auto-update OFF an edit must not stamp, but the
     "Update timestamps for current file" command does; `created` and body
     preserved.
-- `specs/editor-safe-write.e2e.ts`
-  - E1 - stamping a note **open** in the editor preserves its `mtime`
-    byte-for-byte (the write pins `{ ctime, mtime }` so Obsidian does not reload
-    the editor and jump the cursor/scroll); the stamp still lands and `created` +
-    body survive.
-  - E2 - stamping a note **not open** in any editor advances its `mtime` (the
-    conditional branch: no live editor to disturb, so metadata refreshes at once).
+- `specs/editor-safe-write.e2e.ts` - the single-file write into a **clean** open
+  editor (the case the dirty-buffer guard lets through). Complements
+  `editor-dirty-merge.e2e.ts`, which owns every dirty case.
+  - E1 - a note open with a clean buffer is stamped; an unrelated property,
+    `created`, the body, and the live editor's body text are all untouched.
+  - E2 - the write reaches disk (`mtime` advances). The plugin no longer pins
+    `{ ctime, mtime }`: the pin never stopped the merge, and it made a
+    size-neutral re-stamp invisible to the open editor, which then reverted it.
+- `specs/editor-dirty-merge.e2e.ts` - **regression net for issue #10** (the
+  dirty-buffer write guard). Written as a reproduction suite: 9 of its 11
+  scenarios failed on 1.2.1, which is what proved the bug causally; the other two
+  are controls that had to stay green through the fix. Runs by default.
+
+  Every scenario is causal, not symptomatic: `helpers/editorProbe.ts` wraps
+  `fileManager.processFrontMatter` and records the `dirty` flag of every Markdown
+  leaf showing the file **at the moment of each call**. The shared invariant is
+  _never call `processFrontMatter` while any leaf showing that file has unsaved
+  changes_ - asserting only "no merge notice appeared" would green just as
+  happily when the plugin never wrote at all. Scenarios that must drive UI use
+  `holdBufferDirty`, a simulated typist (patching `TextFileView.save` does not
+  work: the autosave debounce binds the original method at construction).
+
+  The nine that failed on 1.2.1 (each recorded `dirty:[true]` at the write):
+  - D1 - the ordinary automatic `modify` path.
+  - D1R - the human-faithful variant: continuous real typing. Also asserts every
+    typed character survives (it does today; the merge notice still appears).
+  - D2 - the default 5 s `delayForNewFiles` create window: the real first-write
+    path on a genuinely new note.
+  - D3 - the manual command with the wikilink suggester open on a real match;
+    plus a control that the deferred stamp lands once the buffer is clean.
+  - D4 - `viewed` on file-open while _another_ leaf of the same file is dirty;
+    plus a control that a clean note still gets stamped.
+  - D5 - a bulk reformat run (UI-driven) against a dirty open note, which must
+    now be skipped visibly; the control is a second, clean note that must still
+    be reformatted in the same run.
+  - D6 - the rate-limited `retryAfterMs` path, with the edit counter enabled.
+  - D7 - the inversion notice, which used to announce a fix before any write.
+  - D9 - with the old pinned `mtime`, a same-length re-stamp emitted no vault
+    event at all, so the editor never learned about the write and its next save
+    silently reverted the stamp. The failure message reports the whole mechanism
+    at once: unchanged size, unmoved mtime, no `modify` event, and a buffer that
+    never received the new value.
+
+  The two controls, green before and after the fix:
+  - D8 - a note open in _reading_ mode has no buffer to protect and must still
+    be stamped promptly (guards against a guard phrased as "the file is open"
+    rather than "a buffer has unsaved changes").
+  - D10 - a size-changing re-stamp (variable-width `dateFormat`) does reach the
+    editor and survives its next save, so the D9 defect is specific to the
+    size-neutral case.
+
 - `specs/update-count.e2e.ts`
   - UC1 - first counted edit writes `updated_count: 1` as a **native unquoted
     number**, co-located with the bumped `updated`; `created`, an unrelated key,

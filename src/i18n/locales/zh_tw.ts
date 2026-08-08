@@ -54,6 +54,10 @@ export const STRINGS_ZH_TW: Strings = {
     downloadSuccess: '已下載 {count} 列為 {filename} 至您的下載資料夾。',
     downloadFailed: '無法下載預覽檔案。',
     failureColumnError: '錯誤',
+    skippedColumnReason: '原因',
+    skippedTableIntro: '{count} 個筆記已略過且未被變更:',
+    skippedUnsavedChanges:
+      '該筆記在開啟的編輯器中有未儲存的變更。請儲存或關閉它，然後執行新的預覽。',
     progressCounter: '{count}/{max}',
   },
   settings: {

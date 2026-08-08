@@ -375,7 +375,7 @@ describe('BulkPopulateTimestampsModal - computePreviewEntry', () => {
 });
 
 describe('BulkPopulateTimestampsModal - applyTimestamps write contract', () => {
-  it('writes without preserving mtime and records the self-trigger guard + cache', async () => {
+  it('writes with no options argument and records the self-trigger guard + cache', async () => {
     const ts2023 = new Date(2023, 5, 20, 14, 0).getTime();
     const ts2024 = new Date(2024, 0, 15, 10, 30).getTime();
     const plugin = createPlugin();

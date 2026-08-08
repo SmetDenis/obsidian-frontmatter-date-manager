@@ -1,5 +1,6 @@
 import FrontmatterDateManagerPlugin from '../main';
 import { errorToMessage } from '../utils';
+import { BulkSkipped } from './write';
 
 export interface ExecutePhaseOptions<T> {
   plugin: FrontmatterDateManagerPlugin;
@@ -17,6 +18,12 @@ export interface ExecuteFailure {
   message: string;
 }
 
+/** A single item deliberately left untouched (BulkSkipped): label + reason. */
+export interface ExecuteSkip {
+  label: string;
+  reason: string;
+}
+
 export interface ExecutePhaseResult {
   processed: number;
   errors: number;
@@ -26,6 +33,12 @@ export interface ExecutePhaseResult {
    * console is not a viable channel for these details.
    */
   failures: ExecuteFailure[];
+  /**
+   * Items skipped on purpose (a BulkSkipped throw, e.g. a note with unsaved
+   * editor changes). Not failures: rendered separately so the user knows which
+   * notes to save/close before running a new preview.
+   */
+  skipped: ExecuteSkip[];
 }
 
 /**
@@ -40,6 +53,7 @@ export async function runExecutePhase<T>(
   let processed = 0;
   let errors = 0;
   const failures: ExecuteFailure[] = [];
+  const skipped: ExecuteSkip[] = [];
 
   opts.plugin.bulkRunning = true;
   try {
@@ -51,10 +65,15 @@ export async function runExecutePhase<T>(
         await opts.processItem(item);
         processed++;
       } catch (e) {
-        errors++;
         const label = opts.labelFor ? opts.labelFor(item) : String(i);
-        failures.push({ label, message: errorToMessage(e) });
-        opts.plugin.logError('Error processing', label, e);
+        if (e instanceof BulkSkipped) {
+          // A deliberate skip, not an error - the item was left untouched.
+          skipped.push({ label, reason: e.message });
+        } else {
+          errors++;
+          failures.push({ label, message: errorToMessage(e) });
+          opts.plugin.logError('Error processing', label, e);
+        }
       }
     }
   } finally {
@@ -63,5 +82,5 @@ export async function runExecutePhase<T>(
 
   if (opts.onComplete) await opts.onComplete();
 
-  return { processed, errors, failures };
+  return { processed, errors, failures, skipped };
 }

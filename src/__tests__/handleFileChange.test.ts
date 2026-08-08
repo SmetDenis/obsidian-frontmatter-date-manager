@@ -27,9 +27,13 @@ interface SetupOpts {
   settings?: Partial<FrontmatterDateManagerSettings>;
   frontmatter?: Record<string, unknown>;
   fileContent?: string;
-  // When true, the workspace reports the file as open in a Markdown editor leaf,
-  // so the write path pins ctime/mtime to avoid reloading the live editor.
-  openInEditor?: boolean;
+  // One entry per Markdown leaf showing the file. `dirty` is the private flag
+  // Obsidian's TextFileView sets while a buffer holds unsaved changes; a
+  // non-boolean simulates API drift and drives the public fallback comparison.
+  // `viewData` feeds that fallback (compared against `diskData`).
+  leaves?: Array<{ dirty?: unknown; viewData?: string; throwOnRead?: boolean }>;
+  // What vault.cachedRead returns for the fallback comparison.
+  diskData?: string;
   processFrontMatterImpl?: (
     file: TFile,
     cb: (fm: Record<string, unknown>) => void,
@@ -68,18 +72,29 @@ function setup(opts: SetupOpts = {}) {
   };
   const processFrontMatter = vi.fn(opts.processFrontMatterImpl ?? defaultImpl);
 
-  // Simulate the workspace: getLeavesOfType('markdown') reports the file as open
-  // only when openInEditor is set, so isFileOpenInEditor drives the write-options
-  // branch (pin mtime for an open note; no options otherwise).
-  const openLeaves = opts.openInEditor
-    ? [{ view: Object.assign(new obsidian.MarkdownView(), { file }) }]
-    : [];
+  // Simulate the workspace: getLeavesOfType('markdown') returns one leaf per
+  // opts.leaves entry, each carrying the private `dirty` flag the write guard
+  // reads (and getViewData for the public fallback).
+  const openLeaves = (opts.leaves ?? []).map((spec) => {
+    const view = Object.assign(new obsidian.MarkdownView(), {
+      file,
+      getViewData: () => {
+        if (spec.throwOnRead) throw new Error('buffer unreadable');
+        return spec.viewData ?? '';
+      },
+    });
+    // Read through to the spec so a test can flip `dirty` mid-run (a buffer
+    // going clean between the deferred pass and its retry).
+    Object.defineProperty(view, 'dirty', { get: () => spec.dirty });
+    return { view };
+  });
 
   plugin.app = {
     vault: {
       read: vi
         .fn()
         .mockResolvedValue(opts.fileContent ?? '---\nx: 1\n---\nbody'),
+      cachedRead: vi.fn().mockResolvedValue(opts.diskData ?? ''),
     },
     fileManager: { processFrontMatter },
     metadataCache: { getFileCache: () => ({ frontmatter }) },
@@ -218,38 +233,244 @@ describe('handleFileChange', () => {
     });
   });
 
-  // Editor-safe write options: when the note is open in an editor, the automatic
-  // write must pin ctime/mtime so Obsidian does not treat it as an external change
-  // and reload the note - which would reset the user's cursor, selection, and
-  // scroll mid-typing (the "storm"). A note not open in any editor is written with
-  // no options so its metadata refreshes immediately (no visible editor to
-  // disturb). Bulk writes never use this path.
-  describe('editor-safe mtime preservation', () => {
-    it('pins ctime/mtime when the note is open in an editor', async () => {
-      const { plugin, processFrontMatter, file } = setup({
+  // Dirty-buffer guard (issue #10). Obsidian's TextFileView 3-way-merges any
+  // vault write of its own file into the live buffer - fuzzy diff-match-patch,
+  // per-hunk failure flags discarded - and shows "modified externally" IFF its
+  // `dirty` flag is set when the modify arrives. mtime is never consulted there,
+  // so the plugin must simply not write while any leaf is dirty.
+  describe('dirty editor buffer defers the write', () => {
+    it('defers instead of writing when the only leaf is dirty', async () => {
+      const { plugin, processFrontMatter, file, timers } = setup({
         frontmatter: {},
-        openInEditor: true,
+        leaves: [{ dirty: true }],
       });
 
-      await plugin.handleFileChange(file);
+      const result = await plugin.handleFileChange(file);
 
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.has(file.path)).toBe(true);
+    });
+
+    it('writes when every leaf is clean, with no write options', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        frontmatter: {},
+        leaves: [{ dirty: false }, { dirty: false }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
-      expect(processFrontMatter.mock.calls[0]?.[2]).toEqual({
-        ctime: file.stat.ctime,
-        mtime: file.stat.mtime,
+      // No { ctime, mtime } pin: it never prevented the merge, and it made a
+      // size-neutral re-stamp emit no event at all (the editor then reverted it).
+      expect(processFrontMatter.mock.calls[0]?.[2]).toBeUndefined();
+    });
+
+    it('blocks the write when ONE leaf among clean ones is dirty', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        frontmatter: {},
+        leaves: [{ dirty: false }, { dirty: true }, { dirty: false }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('falls back to comparing the buffer with disk when `dirty` is not a boolean', async () => {
+      const drifted = setup({
+        frontmatter: {},
+        leaves: [{ dirty: undefined, viewData: 'buffer text' }],
+        diskData: 'disk text',
+      });
+
+      expect(await drifted.plugin.handleFileChange(drifted.file)).toEqual({
+        status: 'ok',
+        wrote: false,
+        deferred: true,
+      });
+      expect(drifted.processFrontMatter).not.toHaveBeenCalled();
+
+      const matching = setup({
+        frontmatter: {},
+        leaves: [{ dirty: 'yes', viewData: 'same text' }],
+        diskData: 'same text',
+      });
+
+      expect(await matching.plugin.handleFileChange(matching.file)).toEqual({
+        status: 'ok',
+        wrote: true,
       });
     });
 
-    it('omits write options when the note is not open in any editor', async () => {
+    // The fallback's NORMAL answer must be "clean". A clean buffer equals disk
+    // by construction, so if `dirty` ever disappears the plugin keeps stamping
+    // instead of deferring forever - the deferral has no cap, so a fallback
+    // that answered "dirty" for clean buffers would silently stop all stamping
+    // and re-arm its timer indefinitely.
+    it('lets the write through when `dirty` is absent but the buffer matches disk', async () => {
+      const { plugin, processFrontMatter, file, timers } = setup({
+        frontmatter: {},
+        leaves: [{ dirty: undefined, viewData: 'identical content' }],
+        diskData: 'identical content',
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(timers.has(file.path)).toBe(false);
+    });
+
+    it('fails closed when the buffer cannot be read', async () => {
       const { plugin, processFrontMatter, file } = setup({
         frontmatter: {},
-        openInEditor: false,
+        leaves: [{ dirty: null, throwOnRead: true }],
       });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('does not refresh the hash cache or stack timers while deferring', async () => {
+      const { plugin, processFrontMatter, file, timers } = setup({
+        settings: { enableContentHashCheck: true },
+        frontmatter: {},
+        leaves: [{ dirty: true }],
+      });
+      const populate = (
+        plugin as unknown as { populateCacheForFile: ReturnType<typeof vi.fn> }
+      ).populateCacheForFile;
+
+      await plugin.handleFileChange(file);
+      const firstTimer = timers.get(file.path);
+      await plugin.handleFileChange(file);
+
+      // Refreshing the hash would absorb the pending change and lose it.
+      expect(populate).not.toHaveBeenCalled();
+      // The per-file timer is coalesced, never stacked.
+      expect(timers.get(file.path)).toBe(firstTimer);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('writes exactly one counter increment once the buffer goes clean', async () => {
+      const dirtyLeaf = { dirty: true as unknown };
+      const { plugin, processFrontMatter, file, writes } = setup({
+        settings: {
+          countUpdatesEnabled: true,
+          headerUpdateCount: 'updated_count',
+        },
+        frontmatter: { updated_count: 4 },
+        leaves: [dirtyLeaf],
+      });
+
+      await plugin.handleFileChange(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+
+      dirtyLeaf.dirty = false;
+      await vi.advanceTimersByTimeAsync(3000);
+
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(writes[0]?.updated_count).toBe(5);
+    });
+  });
+
+  // The "out-of-order dates were detected and fixed" notice must follow a real
+  // write, never precede it: computeFrontmatterUpdates only flags the fix.
+  describe('inversion notice follows the write', () => {
+    const INVERTED = {
+      settings: {
+        inversionFixStrategy: 'max-all' as const,
+        inversionToleranceSec: 0,
+        timezone: 'UTC',
+        // No throttle: `updated` must actually be written this pass, so the
+        // inversion branch is reached and the write really happens.
+        minSecondsBetweenSaves: 0,
+      },
+      // created far ahead of updated -> an inversion the strategy must fix.
+      frontmatter: { created: '2030-01-01T00:00:00', updated: T - 20000 },
+    };
+
+    it('shows the notice after a successful write', async () => {
+      const { plugin, file, processFrontMatter } = setup(INVERTED);
+      const noticeSpy = vi.fn();
+      (plugin as unknown as { _noticeFactory: unknown })._noticeFactory =
+        noticeSpy;
 
       await plugin.handleFileChange(file);
 
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
-      expect(processFrontMatter.mock.calls[0]?.[2]).toBeUndefined();
+      expect(noticeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('stays silent when the pass defers on a dirty buffer', async () => {
+      const { plugin, file, processFrontMatter } = setup({
+        ...INVERTED,
+        leaves: [{ dirty: true }],
+      });
+      const noticeSpy = vi.fn();
+      (plugin as unknown as { _noticeFactory: unknown })._noticeFactory =
+        noticeSpy;
+
+      await plugin.handleFileChange(file);
+
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(noticeSpy).not.toHaveBeenCalled();
+    });
+
+    it('stays silent when the write fails', async () => {
+      const { plugin, file } = setup({
+        ...INVERTED,
+        processFrontMatterImpl: () => Promise.reject(new Error('disk full')),
+      });
+      const noticeSpy = vi.fn();
+      (plugin as unknown as { _noticeFactory: unknown })._noticeFactory =
+        noticeSpy;
+
+      await plugin.handleFileChange(file);
+
+      expect(noticeSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // The manual command routes through processFileWithLock so it can never race
+  // an in-flight automatic pass. A locked file reports `deferred` (the
+  // rescheduled pass will apply the change) - not a false "already up to date".
+  describe('processFileWithLock result mapping', () => {
+    it('returns the write result when the file is not locked', async () => {
+      const { plugin, file, processFrontMatter } = setup({ frontmatter: {} });
+
+      const result = await (
+        plugin as unknown as {
+          processFileWithLock: (f: TFile) => Promise<unknown>;
+        }
+      ).processFileWithLock(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns deferred and reschedules when the file is already being processed', async () => {
+      const { plugin, file, processFrontMatter, timers } = setup({
+        frontmatter: {},
+      });
+      (
+        plugin as unknown as { processingFiles: Set<string> }
+      ).processingFiles.add(file.path);
+
+      const result = await (
+        plugin as unknown as {
+          processFileWithLock: (f: TFile) => Promise<unknown>;
+        }
+      ).processFileWithLock(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+      expect(timers.has(file.path)).toBe(true);
     });
   });
 

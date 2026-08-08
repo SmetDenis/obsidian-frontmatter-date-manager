@@ -13,6 +13,7 @@ import {
   renderDownloadPreviewButton,
   renderProgress,
   renderFailureTable,
+  renderSkippedTable,
   ButtonBarHandle,
 } from './bulk/chrome';
 import {
@@ -266,7 +267,7 @@ export class FindInversionsModal extends PhaseModal {
     const items = this.invertedEntries.map((e) => e.file);
     const progress = renderProgress(contentEl, items.length);
 
-    const { processed, errors, failures } = await runExecutePhase({
+    const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
       items,
       isOpen: () => this.isOpenState(),
@@ -294,6 +295,9 @@ export class FindInversionsModal extends PhaseModal {
       renderFailureTable(contentEl, this.plugin, failures);
     } else {
       renderHeader(contentEl, strings.modals.inversions.doneTitle);
+    }
+    if (skipped.length > 0) {
+      renderSkippedTable(contentEl, this.plugin, skipped);
     }
     renderButtonBar(contentEl, {
       footer: { kind: 'close', onClick: () => void this.close() },

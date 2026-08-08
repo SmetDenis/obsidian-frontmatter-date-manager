@@ -56,6 +56,10 @@ export const STRINGS_ES: Strings = {
       'Se descargaron {count} fila(s) como {filename} en tu carpeta de descargas.',
     downloadFailed: 'No se pudo descargar el archivo de vista previa.',
     failureColumnError: 'Error',
+    skippedColumnReason: 'Motivo',
+    skippedTableIntro: '{count} nota(s) se omitieron y quedaron sin cambios:',
+    skippedUnsavedChanges:
+      'La nota tiene cambios sin guardar en un editor abierto. Guárdala o ciérrala y luego ejecuta una nueva vista previa.',
     progressCounter: '{count}/{max}',
   },
   settings: {

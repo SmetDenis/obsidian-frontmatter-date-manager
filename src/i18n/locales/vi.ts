@@ -56,6 +56,11 @@ export const STRINGS_VI: Strings = {
       'Đã tải về {count} dòng dưới dạng {filename} vào thư mục tải về của bạn.',
     downloadFailed: 'Không thể tải về tệp xem trước.',
     failureColumnError: 'Lỗi',
+    skippedColumnReason: 'Lý do',
+    skippedTableIntro:
+      'Đã bỏ qua {count} ghi chú và giữ nguyên không thay đổi:',
+    skippedUnsavedChanges:
+      'Ghi chú có các thay đổi chưa lưu trong trình soạn thảo đang mở. Hãy lưu hoặc đóng ghi chú, sau đó chạy bản xem trước mới.',
     progressCounter: '{count}/{max}',
   },
   settings: {

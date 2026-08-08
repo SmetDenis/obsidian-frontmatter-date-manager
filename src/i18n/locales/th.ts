@@ -56,6 +56,10 @@ export const STRINGS_TH: Strings = {
       'ดาวน์โหลด {count} แถวเป็นไฟล์ {filename} ไปยังโฟลเดอร์ดาวน์โหลดแล้ว',
     downloadFailed: 'ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้',
     failureColumnError: 'ข้อผิดพลาด',
+    skippedColumnReason: 'เหตุผล',
+    skippedTableIntro: 'ข้าม {count} โน้ตและปล่อยไว้โดยไม่เปลี่ยนแปลง:',
+    skippedUnsavedChanges:
+      'โน้ตนี้มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึกในตัวแก้ไขที่เปิดอยู่ บันทึกหรือปิดโน้ต แล้วเรียกใช้ตัวอย่างใหม่',
     progressCounter: '{count}/{max}',
   },
   settings: {

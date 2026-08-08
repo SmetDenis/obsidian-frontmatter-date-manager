@@ -61,6 +61,10 @@ export const STRINGS_EN = {
       'Downloaded {count} row(s) as {filename} to your downloads folder.',
     downloadFailed: 'Could not download the preview file.',
     failureColumnError: 'Error',
+    skippedColumnReason: 'Reason',
+    skippedTableIntro: '{count} note(s) were skipped and left unchanged:',
+    skippedUnsavedChanges:
+      'The note has unsaved changes in an open editor. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
 

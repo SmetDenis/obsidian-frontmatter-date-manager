@@ -56,6 +56,10 @@ export const STRINGS_UK: Strings = {
       'Завантажено рядків: {count}. Файл {filename} у теці завантажень.',
     downloadFailed: 'Не вдалося завантажити файл попереднього перегляду.',
     failureColumnError: 'Помилка',
+    skippedColumnReason: 'Причина',
+    skippedTableIntro: '{count} нотаток пропущено та залишено без змін:',
+    skippedUnsavedChanges:
+      'У нотатці є незбережені зміни у відкритому редакторі. Збережіть або закрийте її, а потім запустіть новий попередній перегляд.',
     progressCounter: '{count}/{max}',
   },
   settings: {

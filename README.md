@@ -180,7 +180,11 @@ Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) f
 
 > I enabled "viewed" timestamps but they don't appear in some notes.
 
-The viewed timestamp is only written when you open a file. Notes you haven't opened since enabling the feature won't have the field yet. The same filter rules and minimum-interval setting apply to viewed writes.
+The viewed timestamp is only written when you open a file. Notes you haven't opened since enabling the feature won't have the field yet. The same filter rules and minimum-interval setting apply to viewed writes, and the stamp is skipped for that opening if the note has unsaved changes in another open editor. Note that writing this date does change the file, so with the feature enabled, opening a note updates its modification time on disk.
+
+> While I type, `updated` doesn't change right away. Why?
+
+The plugin never writes into a note that has unsaved changes in an open editor - Obsidian would merge that write into your live text and show a "modified externally" popup. The date update waits until the note is saved (Obsidian saves on its own a couple of seconds after you stop typing) and then lands by itself. For the same reason, a bulk operation skips notes with unsaved changes and lists them at the end: save or close those notes and run the preview again.
 
 > I edited tags or aliases, but `updated` didn't change. Is that a bug?
 
@@ -240,6 +244,7 @@ This plugin is fully local. It has no backend, makes no network requests, and co
 
 - **Reads markdown files in your vault.** The bulk tools (fill dates, rename a property, reformat dates, find out-of-order dates, rebuild the change-detection cache) operate across the whole vault, so they list your markdown notes via Obsidian's `getMarkdownFiles()`. The plugin never enumerates non-markdown files (`getFiles()` is not used), so attachments, images, and other binaries are never touched.
 - **Writes only the configured date properties.** All changes go through Obsidian's `processFrontMatter()`, which touches only the `created` / `updated` / `viewed` properties you configure and leaves the note body, key order, comments, and unrelated properties untouched.
+- **Never writes into a note you are editing.** If a note has unsaved changes in an open editor, the plugin waits (or, for bulk operations, skips it and tells you) instead of writing - so a date update can never be merged into the text you are typing.
 - **Writes one sidecar file in its own plugin folder.** The SHA-256 change-detection cache (`hash-cache.json`) is written inside `.obsidian/plugins/frontmatter-date-manager/`, never into your notes.
 - **Local export only.** The "Download full preview" button saves the diff as a local `.tsv` file via the browser and writes no file into your vault. File download is desktop only - on mobile the full diff stays readable in the on-screen table.
 

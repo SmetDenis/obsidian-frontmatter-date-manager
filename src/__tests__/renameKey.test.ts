@@ -120,7 +120,7 @@ describe('RenameKeyModal - computePreviewEntry', () => {
 });
 
 describe('RenameKeyModal - applyRename write contract', () => {
-  it('writes without preserving mtime and records the self-trigger guard + cache', async () => {
+  it('writes with no options argument and records the self-trigger guard + cache', async () => {
     const plugin = createPlugin();
     const cacheCalls: string[] = [];
     (plugin as any).populateCacheForFile = async (f: TFile) => {

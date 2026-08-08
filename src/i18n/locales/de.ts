@@ -57,6 +57,11 @@ export const STRINGS_DE: Strings = {
       '{count} Zeile(n) als {filename} in Ihren Downloads-Ordner heruntergeladen.',
     downloadFailed: 'Die Vorschaudatei konnte nicht heruntergeladen werden.',
     failureColumnError: 'Fehler',
+    skippedColumnReason: 'Grund',
+    skippedTableIntro:
+      '{count} Notiz(en) wurden übersprungen und unverändert gelassen:',
+    skippedUnsavedChanges:
+      'Die Notiz hat ungespeicherte Änderungen in einem offenen Editor. Speichern oder schließen Sie sie und führen Sie dann eine neue Vorschau aus.',
     progressCounter: '{count}/{max}',
   },
   settings: {

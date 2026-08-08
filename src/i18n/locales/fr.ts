@@ -56,6 +56,11 @@ export const STRINGS_FR: Strings = {
       '{count} ligne(s) téléchargées sous {filename} dans votre dossier de téléchargements.',
     downloadFailed: 'Impossible de télécharger le fichier d’aperçu.',
     failureColumnError: 'Erreur',
+    skippedColumnReason: 'Raison',
+    skippedTableIntro:
+      '{count} note(s) ont été ignorées et laissées inchangées :',
+    skippedUnsavedChanges:
+      'La note contient des modifications non enregistrées dans un éditeur ouvert. Enregistrez-la ou fermez-la, puis lancez un nouvel aperçu.',
     progressCounter: '{count}/{max}',
   },
   settings: {

@@ -61,6 +61,10 @@ export const STRINGS_RU: Strings = {
       'Скачано строк: {count}. Файл {filename} в папке загрузок.',
     downloadFailed: 'Не удалось скачать файл предпросмотра.',
     failureColumnError: 'Ошибка',
+    skippedColumnReason: 'Причина',
+    skippedTableIntro: '{count} заметок пропущено и оставлено без изменений:',
+    skippedUnsavedChanges:
+      'В заметке есть несохранённые изменения в открытом редакторе. Сохраните или закройте её, затем запустите новый предпросмотр.',
     progressCounter: '{count}/{max}',
   },
   settings: {

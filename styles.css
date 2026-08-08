@@ -321,6 +321,20 @@
     margin: 0.5rem 0;
 }
 
+/* Notes a bulk run deliberately left untouched (unsaved editor changes).
+   Visually distinct from the failure table: a skip is not a failure, so the
+   intro uses the warning accent, not the error one. */
+.frontmatter-date-manager-bulk-skipped {
+    margin-block-start: 0.75rem;
+}
+
+.frontmatter-date-manager-bulk-skipped-intro {
+    color: var(--text-warning);
+    font-size: var(--font-smaller);
+    font-weight: var(--font-semibold);
+    margin: 0.5rem 0;
+}
+
 /* Populate: configure-phase platform / override notes */
 .frontmatter-date-manager-populate-platform-warning {
     color: var(--text-muted);
