@@ -17,15 +17,15 @@ export const config: WebdriverIO.Config = {
 
   capabilities: [
     {
-      browserName: 'obsidian',
-      // App version of Obsidian to download and run. Pinned to 1.12.7 - the
-      // newest PUBLIC release of the 1.12.x line we type against (the `obsidian`
-      // types are pinned ~1.12.3 in package.json, i.e. >=1.12.3 <1.13.0).
-      // We pin to a concrete version (not "latest") to keep e2e off 1.13.x,
-      // which is catalyst/insider-only. Older 1.12 patches (1.12.3-1.12.6) are
-      // flagged beta in the launcher catalog and need an Insiders account to
-      // download, so 1.12.7 is the oldest exact 1.12 version freely runnable.
-      browserVersion: '1.12.7',
+      'browserName': 'obsidian',
+      // App version of Obsidian to download and run. Pinned to 1.13.4 - the
+      // public release of the 1.13 line we type against (the `obsidian` types
+      // are pinned ~1.13.1 in package.json) and the version that matches the
+      // plugin's minAppVersion 1.13.0 floor. We pin a concrete version (not
+      // "latest") for reproducibility; 1.13.4 is the only 1.13.x flagged
+      // public in the launcher catalog (1.13.0-1.13.3 and 1.13.5+ are
+      // catalyst/insider-only betas), so it is the one freely runnable pick.
+      'browserVersion': '1.13.4',
       'wdio:obsidianOptions': {
         // Oldest installer compatible with the app version - fastest to grab.
         installerVersion: 'earliest',

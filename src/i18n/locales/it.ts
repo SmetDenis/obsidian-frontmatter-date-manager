@@ -63,6 +63,11 @@ export const STRINGS_IT: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Inserisci il nome di una proprietà.',
+      counterNameCollision:
+        "Questo nome è già usato da un'altra proprietà qui sopra.",
+    },
     description: {
       syncIntro:
         'I servizi di sincronizzazione, gli strumenti di backup e altri plugin spesso riscrivono i file senza modificarne il contenuto - e questo azzera le date del file sul disco. Così diventa impossibile sapere quando hai davvero modificato una nota per l’ultima volta.',
@@ -70,7 +75,6 @@ export const STRINGS_IT: Strings = {
         'Questo plugin scrive le date di creazione e di ultima modifica direttamente nelle proprietà di ogni nota e rileva le modifiche reali confrontando il contenuto, così le tue date riflettono le modifiche effettive - non gli artefatti della sincronizzazione.',
     },
     dates: {
-      heading: 'Date da tracciare',
       enableNoneHint:
         'Attiva almeno una data qui sopra per configurare il plugin.',
       created: {
@@ -124,6 +128,7 @@ export const STRINGS_IT: Strings = {
         desc: 'Fuso orario usato per scrivere le date. Lascia vuoto per usare il fuso orario del tuo dispositivo ({localTz}).',
         placeholder: 'Locale ({localTz})',
         resetTooltip: 'Ripristina il fuso orario locale',
+        invalidTimezone: 'Nome del fuso orario sconosciuto.',
       },
       numberProperties: {
         name: 'Salva le date solo numeriche senza virgolette',
@@ -142,10 +147,7 @@ export const STRINGS_IT: Strings = {
       },
       changeDetection: {
         name: 'Rilevamento delle modifiche (hashing del contenuto)',
-        descEnabled:
-          'La data di ultima modifica viene scritta solo quando il contenuto della nota cambia davvero - questo previene falsi aggiornamenti dovuti ai plugin di sincronizzazione.',
-        descDisabled:
-          'Disattivato - la data di ultima modifica viene scritta a ogni salvataggio, anche se nulla è cambiato.',
+        desc: 'Se abilitata, la data di ultima modifica viene scritta solo quando il contenuto della nota cambia davvero - questo previene falsi aggiornamenti dovuti ai plugin di sincronizzazione.',
       },
       hashTrackingMode: {
         name: 'Cosa conta come modifica',
@@ -161,11 +163,14 @@ export const STRINGS_IT: Strings = {
         desc: 'Modificare queste proprietà non aggiornerà la data. Puoi aggiungerne diverse in una volta, separate da virgole. Le proprietà created, updated e viewed vengono sempre ignorate automaticamente.',
         placeholder: 'Nome di una proprietà, ad esempio tags',
         addTooltip: 'Aggiungi proprietà',
-        chipRemoveAriaLabel: 'Rimuovi {entry}',
+        emptyState: 'Nessuna proprietà ignorata.',
       },
     },
     filterRules: {
       name: 'File e cartelle da saltare',
+      pageDesc:
+        'Scegli i file o le cartelle che non ricevono mai aggiornamenti automatici della data.',
+      ruleCount: 'Regole: {count}',
       descIntro:
         'Scegli i file o le cartelle da lasciare intatti (nessun aggiornamento automatico delle date). ',
       descOnePerLine: 'Un modello per riga. Le righe che iniziano con ',
@@ -258,7 +263,8 @@ export const STRINGS_IT: Strings = {
       },
     },
     advanced: {
-      summary: 'Avanzate',
+      pageName: 'Avanzate',
+      pageDesc: 'Opzioni di tempistica, cache e automazione.',
       newFileDelay: {
         name: 'Ritardo per i nuovi file',
         desc: 'Attendi questi millisecondi prima di applicare una data a una nota appena creata. Aiuta a evitare conflitti con i plugin dei modelli. Imposta a 0 per disattivare.',

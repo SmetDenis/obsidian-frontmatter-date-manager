@@ -64,6 +64,11 @@ export const STRINGS_PT_BR: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Digite um nome de propriedade.',
+      counterNameCollision:
+        'Esse nome já está sendo usado por outra propriedade acima.',
+    },
     description: {
       syncIntro:
         'Serviços de sincronização, ferramentas de backup e outros plugins costumam reescrever arquivos sem alterar o conteúdo - o que reinicia as datas do arquivo no disco. Isso torna impossível saber quando você realmente editou uma nota pela última vez.',
@@ -71,7 +76,6 @@ export const STRINGS_PT_BR: Strings = {
         'Este plugin grava as datas de criação e de última edição diretamente nas propriedades de cada nota e detecta alterações reais comparando o conteúdo, para que suas datas reflitam edições de verdade - e não artefatos da sincronização.',
     },
     dates: {
-      heading: 'Datas a rastrear',
       enableNoneHint:
         'Ative pelo menos uma data acima para configurar o plugin.',
       created: {
@@ -122,6 +126,7 @@ export const STRINGS_PT_BR: Strings = {
         desc: 'Fuso horário usado ao gravar as datas. Deixe em branco para usar o fuso horário do seu dispositivo ({localTz}).',
         placeholder: 'Local ({localTz})',
         resetTooltip: 'Redefinir para o fuso horário local',
+        invalidTimezone: 'Nome de fuso horário desconhecido.',
       },
       numberProperties: {
         name: 'Salvar datas só com números sem aspas',
@@ -140,10 +145,7 @@ export const STRINGS_PT_BR: Strings = {
       },
       changeDetection: {
         name: 'Detecção de alterações (hash de conteúdo)',
-        descEnabled:
-          'A data da última edição é gravada apenas quando o conteúdo da nota realmente muda - isso evita atualizações falsas de plugins de sincronização.',
-        descDisabled:
-          'Desativado - a data da última edição é gravada a cada salvamento, mesmo que nada tenha mudado.',
+        desc: 'Quando ativado, a data da última edição é gravada apenas quando o conteúdo da nota realmente muda - isso evita atualizações falsas de plugins de sincronização.',
       },
       hashTrackingMode: {
         name: 'O que conta como alteração',
@@ -159,11 +161,14 @@ export const STRINGS_PT_BR: Strings = {
         desc: 'Editar estas propriedades não atualizará a data. Você pode adicionar várias de uma vez, separadas por vírgulas. As propriedades created, updated e viewed são sempre ignoradas automaticamente.',
         placeholder: 'Nome da propriedade, como tags',
         addTooltip: 'Adicionar propriedade',
-        chipRemoveAriaLabel: 'Remover {entry}',
+        emptyState: 'Nenhuma propriedade ignorada.',
       },
     },
     filterRules: {
       name: 'Arquivos e pastas a ignorar',
+      pageDesc:
+        'Escolha arquivos ou pastas que nunca recebem atualizações automáticas de data.',
+      ruleCount: 'Regras: {count}',
       descIntro:
         'Escolha arquivos ou pastas para deixar em paz (sem atualizações automáticas de data). ',
       descOnePerLine: 'Um padrão por linha. Linhas que começam com ',
@@ -257,7 +262,8 @@ export const STRINGS_PT_BR: Strings = {
       },
     },
     advanced: {
-      summary: 'Avançado',
+      pageName: 'Avançado',
+      pageDesc: 'Opções de tempo, cache e automação.',
       newFileDelay: {
         name: 'Atraso para arquivos novos',
         desc: 'Aguardar esta quantidade de milissegundos antes de carimbar uma data em uma nota recém-criada. Ajuda a evitar conflitos com plugins de modelos. Defina como 0 para desativar.',

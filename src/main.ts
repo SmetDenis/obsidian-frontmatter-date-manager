@@ -79,6 +79,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   private _pauseResumeTimer: number | null = null;
   private _pauseCountdownTimer: number | null = null;
   private _compiledRules: FilterRule[] = [];
+  // Kept so onExternalSettingsChange (and the e2e settings helper) can refresh
+  // the declarative definitions snapshot via update().
+  settingsTab: FrontmatterDateManagerSettingsTab | null = null;
   bulkRunning = false;
   private _sessionInversionNoticeShown = false;
   // Injected in tests; in prod uses real Notice.
@@ -152,7 +155,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     this.setupStatusBar();
     this.setupCommands();
 
-    this.addSettingTab(new FrontmatterDateManagerSettingsTab(this.app, this));
+    this.settingsTab = new FrontmatterDateManagerSettingsTab(this.app, this);
+    this.addSettingTab(this.settingsTab);
 
     if (this.settings.enableContentHashCheck) {
       this.app.workspace.onLayoutReady(() => {
@@ -1179,6 +1183,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   async onExternalSettingsChange() {
     await this.loadSettings();
     this.updateStatusBar();
+    // The declarative settings tree (and its search index) is a snapshot taken
+    // by update() - without this, externally-synced settings leave the tab
+    // showing stale definitions (e.g. the exclude-keys list items). Safe to
+    // call with the settings modal closed.
+    this.settingsTab?.update();
   }
 
   log(...data: unknown[]) {

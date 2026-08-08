@@ -66,6 +66,10 @@ export const STRINGS_ZH_CN: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: '请输入属性名称。',
+      counterNameCollision: '该名称已被上面的另一个属性使用。',
+    },
     description: {
       syncIntro:
         '同步服务、备份工具和其他插件经常在不改变内容的情况下重写文件，这会重置文件在磁盘上的日期。结果你无法判断自己上次实际编辑笔记的时间。',
@@ -73,7 +77,6 @@ export const STRINGS_ZH_CN: Strings = {
         '本插件将创建日期和最后编辑日期直接写入每条笔记的属性，并通过比较内容来识别真实改动，因此你的日期反映的是真实编辑，而不是同步产生的痕迹。',
     },
     dates: {
-      heading: '要跟踪的日期',
       enableNoneHint: '请至少开启上方的一项日期来设置插件。',
       created: {
         enableName: '跟踪创建日期',
@@ -121,6 +124,7 @@ export const STRINGS_ZH_CN: Strings = {
         desc: '写入日期时使用的时区。留空则使用你设备的时区（{localTz}）。',
         placeholder: '本地（{localTz}）',
         resetTooltip: '重置为本地时区',
+        invalidTimezone: '无法识别的时区名称。',
       },
       numberProperties: {
         name: '将纯数字日期保存为不带引号',
@@ -139,10 +143,7 @@ export const STRINGS_ZH_CN: Strings = {
       },
       changeDetection: {
         name: '改动检测（内容哈希）',
-        descEnabled:
-          '只有当笔记内容真正发生变化时才写入最后编辑日期，这可以防止同步插件造成的错误更新。',
-        descDisabled:
-          '已关闭。即使没有任何变化，最后编辑日期也会在每次保存时写入。',
+        desc: '启用后，只有当笔记内容真正发生变化时才写入最后编辑日期，这可以防止同步插件造成的错误更新。',
       },
       hashTrackingMode: {
         name: '什么算作改动',
@@ -158,11 +159,13 @@ export const STRINGS_ZH_CN: Strings = {
         desc: '编辑这些属性不会更新日期。你可以用逗号分隔一次添加多个。created、updated 和 viewed 属性始终会被自动忽略。',
         placeholder: '属性名，例如 tags',
         addTooltip: '添加属性',
-        chipRemoveAriaLabel: '移除 {entry}',
+        emptyState: '没有被忽略的属性。',
       },
     },
     filterRules: {
       name: '要跳过的文件和文件夹',
+      pageDesc: '选择永远不会自动更新日期的文件或文件夹。',
+      ruleCount: '规则：{count}',
       descIntro: '选择不需要处理的文件或文件夹（不自动更新日期）。',
       descOnePerLine: '每行一个模式。以下列字符开头的行 ',
       descCommentsAre: ' 是注释。在行首加上 ',
@@ -243,7 +246,8 @@ export const STRINGS_ZH_CN: Strings = {
       },
     },
     advanced: {
-      summary: '高级',
+      pageName: '高级',
+      pageDesc: '时间、缓存和自动化选项。',
       newFileDelay: {
         name: '新文件延迟',
         desc: '在为新建笔记写入日期之前等待这么多毫秒。有助于避免与模板插件冲突。设为 0 即可关闭。',

@@ -63,6 +63,10 @@ export const STRINGS_KO: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: '속성 이름을 입력하세요.',
+      counterNameCollision: '이 이름은 위의 다른 속성에서 이미 사용 중입니다.',
+    },
     description: {
       syncIntro:
         '동기화 서비스, 백업 도구, 다른 플러그인은 내용을 바꾸지 않고도 파일을 다시 쓰는 경우가 많으며, 그러면 디스크상의 파일 날짜가 초기화됩니다. 그러면 노트를 실제로 마지막으로 편집한 시점을 알 수 없게 됩니다.',
@@ -70,7 +74,6 @@ export const STRINGS_KO: Strings = {
         '이 플러그인은 생성 날짜와 마지막 편집 날짜를 각 노트의 속성에 직접 기록하고, 내용을 비교하여 실제 변경을 감지하므로, 날짜는 동기화로 인한 흔적이 아니라 실제 편집을 반영합니다.',
     },
     dates: {
-      heading: '추적할 날짜',
       enableNoneHint: '플러그인을 설정하려면 위에서 날짜를 하나 이상 켜세요.',
       created: {
         enableName: '생성 날짜 추적',
@@ -118,6 +121,7 @@ export const STRINGS_KO: Strings = {
         desc: '날짜를 기록할 때 사용하는 시간대. 기기의 시간대({localTz})를 사용하려면 비워 두세요.',
         placeholder: '로컬 ({localTz})',
         resetTooltip: '로컬 시간대로 초기화',
+        invalidTimezone: '알 수 없는 시간대 이름입니다.',
       },
       numberProperties: {
         name: '숫자로만 된 날짜를 따옴표 없이 저장',
@@ -136,10 +140,7 @@ export const STRINGS_KO: Strings = {
       },
       changeDetection: {
         name: '변경 감지 (내용 해싱)',
-        descEnabled:
-          '마지막 편집 날짜는 노트 내용이 실제로 바뀔 때만 기록됩니다. 이는 동기화 플러그인으로 인한 잘못된 업데이트를 방지합니다.',
-        descDisabled:
-          '꺼짐 - 마지막 편집 날짜가 아무것도 바뀌지 않았더라도 저장할 때마다 기록됩니다.',
+        desc: '활성화하면 마지막 편집 날짜는 노트 내용이 실제로 바뀔 때만 기록됩니다. 이는 동기화 플러그인으로 인한 잘못된 업데이트를 방지합니다.',
       },
       hashTrackingMode: {
         name: '무엇을 변경으로 간주할지',
@@ -155,11 +156,13 @@ export const STRINGS_KO: Strings = {
         desc: '이 속성을 편집해도 날짜가 업데이트되지 않습니다. 쉼표로 구분해 한 번에 여러 개를 추가할 수 있습니다. created, updated, viewed 속성은 항상 자동으로 무시됩니다.',
         placeholder: 'tags 같은 속성 이름',
         addTooltip: '속성 추가',
-        chipRemoveAriaLabel: '{entry} 제거',
+        emptyState: '무시된 속성이 없습니다.',
       },
     },
     filterRules: {
       name: '건너뛸 파일과 폴더',
+      pageDesc: '날짜가 자동으로 업데이트되지 않을 파일이나 폴더를 선택하세요.',
+      ruleCount: '규칙: {count}',
       descIntro:
         '그대로 둘 파일이나 폴더를 선택하세요(자동 날짜 업데이트 없음). ',
       descOnePerLine: '한 줄에 패턴 하나. 다음으로 시작하는 줄은 ',
@@ -243,7 +246,8 @@ export const STRINGS_KO: Strings = {
       },
     },
     advanced: {
-      summary: '고급',
+      pageName: '고급',
+      pageDesc: '타이밍, 캐시, 자동화 옵션.',
       newFileDelay: {
         name: '새 파일 지연',
         desc: '새로 만든 노트에 날짜를 기록하기 전에 이만큼의 밀리초를 기다립니다. 템플릿 플러그인과의 충돌을 피하는 데 도움이 됩니다. 끄려면 0으로 설정하세요.',

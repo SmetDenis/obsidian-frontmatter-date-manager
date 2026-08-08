@@ -69,6 +69,11 @@ export const STRINGS_EN = {
   },
 
   settings: {
+    validation: {
+      propertyNameRequired: 'Enter a property name.',
+      counterNameCollision:
+        'This name is already used by another property above.',
+    },
     description: {
       syncIntro:
         "Sync services, backup tools, and other plugins often rewrite files without changing their content - which resets the file's dates on disk. That makes it impossible to tell when you actually last edited a note.",
@@ -76,7 +81,6 @@ export const STRINGS_EN = {
         "This plugin writes created and last-edited dates straight into each note's properties, and detects real changes by comparing content, so your dates reflect actual edits - not sync artifacts.",
     },
     dates: {
-      heading: 'Dates to track',
       enableNoneHint: 'Turn on at least one date above to set up the plugin.',
       created: {
         enableName: 'Track creation date',
@@ -124,6 +128,7 @@ export const STRINGS_EN = {
         desc: "Timezone used when writing dates. Leave blank to use your device's timezone ({localTz}).",
         placeholder: 'Local ({localTz})',
         resetTooltip: 'Reset to local timezone',
+        invalidTimezone: 'Unknown timezone name.',
       },
       numberProperties: {
         name: 'Save number-only dates without quotes',
@@ -142,10 +147,7 @@ export const STRINGS_EN = {
       },
       changeDetection: {
         name: 'Change detection (content hashing)',
-        descEnabled:
-          "The last-edited date is written only when the note's content actually changes - this prevents false updates from sync plugins.",
-        descDisabled:
-          'Disabled - the last-edited date is written on every save, even if nothing changed.',
+        desc: "When enabled, the last-edited date is written only when the note's content actually changes - this prevents false updates from sync plugins.",
       },
       hashTrackingMode: {
         name: 'What counts as a change',
@@ -161,11 +163,14 @@ export const STRINGS_EN = {
         desc: 'Editing these properties will not update the date. You can add several at once, separated by commas. The created, updated, and viewed properties are always ignored automatically.',
         placeholder: 'Property name like tags',
         addTooltip: 'Add property',
-        chipRemoveAriaLabel: 'Remove {entry}',
+        emptyState: 'No ignored properties.',
       },
     },
     filterRules: {
       name: 'Files and folders to skip',
+      pageDesc:
+        'Choose files or folders that never get automatic date updates.',
+      ruleCount: 'Rules: {count}',
       descIntro:
         'Choose files or folders to leave alone (no automatic date updates). ',
       descOnePerLine: 'One pattern per line. Lines starting with ',
@@ -248,7 +253,8 @@ export const STRINGS_EN = {
       },
     },
     advanced: {
-      summary: 'Advanced',
+      pageName: 'Advanced',
+      pageDesc: 'Timing, cache, and automation options.',
       newFileDelay: {
         name: 'New file delay',
         desc: 'Wait this many milliseconds before stamping a date on a newly created note. Helps avoid conflicts with template plugins. Set to 0 to turn off.',

@@ -63,6 +63,11 @@ export const STRINGS_PL: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Podaj nazwę właściwości.',
+      counterNameCollision:
+        'Ta nazwa jest już używana przez inną właściwość powyżej.',
+    },
     description: {
       syncIntro:
         'Usługi synchronizacji, narzędzia kopii zapasowych i inne wtyczki często nadpisują pliki bez zmiany ich treści - co resetuje daty pliku na dysku. Przez to nie da się stwierdzić, kiedy naprawdę ostatnio edytowano notatkę.',
@@ -70,7 +75,6 @@ export const STRINGS_PL: Strings = {
         'Ta wtyczka zapisuje daty utworzenia i ostatniej edycji bezpośrednio we właściwościach każdej notatki oraz wykrywa rzeczywiste zmiany, porównując treść, więc daty odzwierciedlają faktyczne edycje, a nie artefakty synchronizacji.',
     },
     dates: {
-      heading: 'Daty do śledzenia',
       enableNoneHint:
         'Włącz powyżej co najmniej jedną datę, aby skonfigurować wtyczkę.',
       created: {
@@ -124,6 +128,7 @@ export const STRINGS_PL: Strings = {
         desc: 'Strefa czasowa używana przy zapisie dat. Pozostaw puste, aby użyć strefy czasowej urządzenia ({localTz}).',
         placeholder: 'Lokalna ({localTz})',
         resetTooltip: 'Przywróć lokalną strefę czasową',
+        invalidTimezone: 'Nieznana nazwa strefy czasowej.',
       },
       numberProperties: {
         name: 'Zapisuj daty liczbowe bez cudzysłowów',
@@ -142,10 +147,7 @@ export const STRINGS_PL: Strings = {
       },
       changeDetection: {
         name: 'Wykrywanie zmian (haszowanie treści)',
-        descEnabled:
-          'Data ostatniej edycji jest zapisywana tylko wtedy, gdy treść notatki rzeczywiście się zmienia - zapobiega to fałszywym aktualizacjom od wtyczek synchronizacji.',
-        descDisabled:
-          'Wyłączone - data ostatniej edycji jest zapisywana przy każdym zapisie, nawet jeśli nic się nie zmieniło.',
+        desc: 'Po włączeniu data ostatniej edycji jest zapisywana tylko wtedy, gdy treść notatki rzeczywiście się zmienia - zapobiega to fałszywym aktualizacjom od wtyczek synchronizacji.',
       },
       hashTrackingMode: {
         name: 'Co liczy się jako zmiana',
@@ -161,11 +163,14 @@ export const STRINGS_PL: Strings = {
         desc: 'Edycja tych właściwości nie zaktualizuje daty. Możesz dodać kilka naraz, oddzielając je przecinkami. Właściwości created, updated i viewed są zawsze ignorowane automatycznie.',
         placeholder: 'Nazwa właściwości, np. tags',
         addTooltip: 'Dodaj właściwość',
-        chipRemoveAriaLabel: 'Usuń {entry}',
+        emptyState: 'Brak ignorowanych właściwości.',
       },
     },
     filterRules: {
       name: 'Pliki i foldery do pominięcia',
+      pageDesc:
+        'Wybierz pliki lub foldery, które nigdy nie otrzymują automatycznej aktualizacji dat.',
+      ruleCount: 'Reguły: {count}',
       descIntro:
         'Wybierz pliki lub foldery, które mają pozostać nietknięte (bez automatycznej aktualizacji dat). ',
       descOnePerLine: 'Jeden wzorzec w wierszu. Wiersze zaczynające się od ',
@@ -259,7 +264,8 @@ export const STRINGS_PL: Strings = {
       },
     },
     advanced: {
-      summary: 'Zaawansowane',
+      pageName: 'Zaawansowane',
+      pageDesc: 'Ustawienia czasowe, pamięci podręcznej i automatyzacji.',
       newFileDelay: {
         name: 'Opóźnienie dla nowych plików',
         desc: 'Ile milisekund odczekać przed zapisaniem daty w nowo utworzonej notatce. Pomaga uniknąć konfliktów z wtyczkami szablonów. Ustaw 0, aby wyłączyć.',

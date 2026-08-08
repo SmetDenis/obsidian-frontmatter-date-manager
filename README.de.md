@@ -6,7 +6,7 @@ _Übersetzung der englischen [README](README.md). Einen Fehler entdeckt? Beiträ
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.11.0+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.13.0+-7C3AED)](https://obsidian.md)
 [![Obsidian downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%22frontmatter-date-manager%22%5D.downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json)](https://community.obsidian.md/plugins/frontmatter-date-manager)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
@@ -61,6 +61,8 @@ Aktualisiert automatisch die Datumsangaben `created`, `updated` und `viewed` im 
 
 ## Installation
 
+Erfordert Obsidian **1.13.0 oder neuer**.
+
 ### Community-Plugins
 
 Öffne in Obsidian Einstellungen > Community-Plugins > Durchsuchen, suche nach **Frontmatter Date Manager** und klicke auf Installieren.
@@ -89,6 +91,8 @@ Konfiguriere das Verhalten unter **Einstellungen -> Frontmatter Date Manager**.
 
 ## Einstellungen
 
+Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Überspringen-Regeln im Gitignore-Stil und die erweiterten Optionen (Verzögerung für neue Dateien, Cache, Befehl nach Aktualisierung) befinden sich auf eigenen Unterseiten innerhalb des Einstellungs-Tabs des Plugins.
+
 | Einstellung                        | Standard                | Beschreibung                                                                     |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | Erstellungsdatum erfassen          | `true`                  | Fügt Notizen, die noch keines haben, ein Erstellungsdatum hinzu                  |
@@ -104,7 +108,7 @@ Konfiguriere das Verhalten unter **Einstellungen -> Frontmatter Date Manager**.
 | Nur-Zahlen-Datumsangaben ohne Anführungszeichen speichern | `false` | Gibt für reine Ziffernformate Zahlen statt Text in Anführungszeichen aus       |
 | Automatische Aktualisierung        | `true`                  | Aktualisiert Datumsangaben automatisch, wenn du eine Notiz bearbeitest           |
 | Mindestsekunden zwischen Aktualisierungen | `30`             | Mindestintervall zwischen Datumsaktualisierungen                                |
-| Zu überspringende Dateien und Ordner | `""` (alle Dateien)   | Regeln im Gitignore-Stil: Zeilen schließen aus, `!` schließt wieder ein, `#` für Kommentare |
+| Zu überspringende Dateien und Ordner | `""` (alle Dateien)   | Regeln im Gitignore-Stil: Zeilen schließen aus, `!` schließt wieder ein, `#` für Kommentare (eigene Unterseite) |
 | Änderungserkennung (Inhalts-Hashing) | `true`                | Schreibt das Datum nur, wenn sich der Inhalt tatsächlich ändert (SHA-256-Hashing) |
 | Was als Änderung gilt              | `body`                  | Was Aktualisierungen auslöst: `body`, `frontmatter` oder `both`                  |
 | Diese Eigenschaften ignorieren     | `[]`                    | Eigenschaften, die bei der Änderungserkennung ignoriert werden; mehrere auf einmal hinzufügen, durch Kommas getrennt |
@@ -164,7 +168,7 @@ Verwende Einstellungen → Massenoperationen → Datumsangaben aus den eigenen D
 
 > Ich verwende Templater / Daily Notes / QuickAdd. Wird das Plugin damit kollidieren?
 
-Nein. Das Plugin wartet 5 Sekunden (konfigurierbar: Einstellungen → Verhalten → Erweitert → Verzögerung für neue Dateien), bevor es neu erstellte Dateien verarbeitet, und gibt Vorlagen-Plugins so Zeit, fertig zu werden.
+Nein. Das Plugin wartet 5 Sekunden (konfigurierbar: Einstellungen → Erweitert → Verzögerung für neue Dateien), bevor es neu erstellte Dateien verarbeitet, und gibt Vorlagen-Plugins so Zeit, fertig zu werden.
 
 > Muss ich zuerst jeder Notiz manuell Eigenschaften hinzufügen?
 

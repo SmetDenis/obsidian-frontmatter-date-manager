@@ -64,6 +64,11 @@ export const STRINGS_FR: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Saisissez un nom de propriété.',
+      counterNameCollision:
+        'Ce nom est déjà utilisé par une autre propriété ci-dessus.',
+    },
     description: {
       syncIntro:
         'Les services de synchronisation, les outils de sauvegarde et d’autres modules réécrivent souvent les fichiers sans changer leur contenu - ce qui réinitialise les dates du fichier sur le disque. Il devient alors impossible de savoir quand vous avez réellement modifié une note pour la dernière fois.',
@@ -71,7 +76,6 @@ export const STRINGS_FR: Strings = {
         'Ce module écrit les dates de création et de dernière modification directement dans les propriétés de chaque note, et détecte les vrais changements en comparant le contenu, afin que vos dates reflètent les modifications réelles - et non les artefacts de synchronisation.',
     },
     dates: {
-      heading: 'Dates à suivre',
       enableNoneHint:
         'Activez au moins une date ci-dessus pour configurer le module.',
       created: {
@@ -126,6 +130,7 @@ export const STRINGS_FR: Strings = {
         desc: 'Fuseau horaire utilisé lors de l’écriture des dates. Laissez vide pour utiliser le fuseau horaire de votre appareil ({localTz}).',
         placeholder: 'Local ({localTz})',
         resetTooltip: 'Réinitialiser sur le fuseau horaire local',
+        invalidTimezone: 'Nom de fuseau horaire inconnu.',
       },
       numberProperties: {
         name: 'Enregistrer les dates en chiffres sans guillemets',
@@ -144,10 +149,7 @@ export const STRINGS_FR: Strings = {
       },
       changeDetection: {
         name: 'Détection des changements (hachage du contenu)',
-        descEnabled:
-          'La date de dernière modification n’est écrite que lorsque le contenu de la note change réellement - cela évite les fausses mises à jour des modules de synchronisation.',
-        descDisabled:
-          'Désactivé - la date de dernière modification est écrite à chaque enregistrement, même si rien n’a changé.',
+        desc: 'Une fois activée, la date de dernière modification n’est écrite que lorsque le contenu de la note change réellement - cela évite les fausses mises à jour des modules de synchronisation.',
       },
       hashTrackingMode: {
         name: 'Ce qui compte comme un changement',
@@ -163,11 +165,14 @@ export const STRINGS_FR: Strings = {
         desc: 'Modifier ces propriétés ne mettra pas la date à jour. Vous pouvez en ajouter plusieurs à la fois, séparées par des virgules. Les propriétés created, updated et viewed sont toujours ignorées automatiquement.',
         placeholder: 'Nom de propriété comme tags',
         addTooltip: 'Ajouter une propriété',
-        chipRemoveAriaLabel: 'Supprimer {entry}',
+        emptyState: 'Aucune propriété ignorée.',
       },
     },
     filterRules: {
       name: 'Fichiers et dossiers à ignorer',
+      pageDesc:
+        'Choisissez les fichiers ou dossiers qui ne reçoivent jamais de mise à jour automatique des dates.',
+      ruleCount: 'Règles : {count}',
       descIntro:
         'Choisissez les fichiers ou dossiers à laisser tranquilles (pas de mise à jour automatique des dates). ',
       descOnePerLine: 'Un motif par ligne. Les lignes commençant par ',
@@ -263,7 +268,8 @@ export const STRINGS_FR: Strings = {
       },
     },
     advanced: {
-      summary: 'Avancé',
+      pageName: 'Avancé',
+      pageDesc: 'Options de temporisation, de cache et d’automatisation.',
       newFileDelay: {
         name: 'Délai pour les nouveaux fichiers',
         desc: 'Attendre ce nombre de millisecondes avant d’apposer une date sur une note nouvellement créée. Aide à éviter les conflits avec les modules de modèles. Mettez 0 pour désactiver.',

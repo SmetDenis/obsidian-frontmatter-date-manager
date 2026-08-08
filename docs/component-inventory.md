@@ -7,7 +7,7 @@
 | Component | File | Type | Responsibility |
 | --- | --- | --- | --- |
 | `FrontmatterDateManagerPlugin` | `src/main.ts` | `Plugin` | Entry point. Event handlers (`create`/`modify`/`rename`/`delete`/`file-open`), per-file debounce + lock, content hashing, hash-cache lifecycle, pause/resume + status bar, 3 commands, self-trigger suppression, the dirty-editor-buffer write guard (`hasUnsavedEditorChanges` - never write into a leaf with unsaved changes; defer, or drop the `viewed` stamp), inversion prevention. |
-| `FrontmatterDateManagerSettingsTab` | `src/Settings.ts` | `PluginSettingTab` | The entire settings UI via imperative `display()`. Sections: Dates to track, Date formatting, Behavior, Modified-before-created, Advanced (collapsible), Bulk operations. |
+| `FrontmatterDateManagerSettingsTab` | `src/Settings.ts` | `PluginSettingTab` | The entire settings UI via the declarative `getSettingDefinitions()` tree (Obsidian 1.13 - no `display()` override), making every setting searchable. All value reads/writes funnel through one `setControlValue` write funnel. Sections: Dates to track, Date formatting, Behavior (with a declarative Filter rules sub-page), Modified-before-created, an Advanced sub-page, and Bulk operations. The tab instance is kept on `plugin.settingsTab` so `onExternalSettingsChange()` can call `settingsTab.update()` to rebuild the tree (a point-in-time snapshot) after an out-of-band settings change. |
 
 ## Settings & validation
 
@@ -27,7 +27,7 @@
 | `epochNumberToDate` | `src/utils.ts` | Epoch seconds-vs-ms disambiguation by magnitude. |
 | `detectSlashDateReadings` / `detectSlashOrderFromLocale` | `src/utils.ts` | Probe `D/D/yyyy` (and dot) ambiguity; map OS locale to `dmy`/`mdy`. Never guesses. |
 | `getMomentFormatHint` | `src/utils.ts` | Detect Moment.js tokens, suggest date-fns equivalents. |
-| `parsePropertyKeys` / `parseCacheMaxSize` / `errorToMessage` | `src/utils.ts` | Comma-split property keys; parse cache size; error-to-message. |
+| `parsePropertyKeys` / `errorToMessage` | `src/utils.ts` | Comma-split property keys; error-to-message. |
 | `isTFile` / `onlyUniqueArray` / `isGlobPattern` / `matchesPathPattern` | `src/utils.ts` | Type guard, dedup, glob detect, path match (picomatch for globs, prefix for plain folders). |
 | `MODIFY_DEBOUNCE_MS` | `src/constants.ts` | The per-file modify debounce (2000ms). |
 | `FRESHNESS_SEC` | `src/constants.ts` | Freshness margin (5s) for the automatic `updated`/`viewed` no-op-write guard. |
@@ -81,4 +81,4 @@ The whole UI ships in 21 languages, following Obsidian's app language automatica
 
 ## Stable-selector contract (for e2e)
 
-Interactive bulk-UI controls carry `frontmatter-date-manager-*` classes (button bar + pager in `bulk/chrome.ts`; mode/override/scope/strategy dropdowns; reformat order dropdown `-slash-order`; rename inputs/toggle; the five settings bulk buttons; exclude input `-exclude-input`/`-add` and property chips). Page Objects key off these - keep them when changing the UI or update the PO. Add via `addClass`/`cls:`, never inline styles.
+Interactive bulk-UI controls carry `frontmatter-date-manager-*` classes (button bar + pager in `bulk/chrome.ts`; mode/override/scope/strategy dropdowns; reformat order dropdown `-slash-order`; rename inputs/toggle; the five settings bulk buttons; exclude input `-exclude-input`/`-add` and the native list `-exclude-list`). Page Objects key off these - keep them when changing the UI or update the PO. Add via `addClass`/`cls:`, never inline styles. Declarative sub-pages (Filter rules, Advanced) have no class hook of their own - e2e navigates them by the visible row name (`settingsTab.openSubPage(name)` / `backFromSubPage()`).

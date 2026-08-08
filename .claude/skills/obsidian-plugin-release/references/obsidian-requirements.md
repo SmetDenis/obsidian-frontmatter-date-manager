@@ -9,7 +9,7 @@ A release for the Obsidian community store must satisfy these. Run the static ch
 - Release assets are the three loose files `main.js`, `manifest.json`, `styles.css` (not a zip). `release.yml` uploads them from `dist/`.
 - `manifest.json` is valid JSON with `id`, `name`, `version`, `minAppVersion`, `description`, `author`, `isDesktopOnly`.
 - `versions.json` maps `<version>` to the current `minAppVersion`.
-- `minAppVersion` is accurate. This repo targets the public 1.12.x line and pins `obsidian` types to `~1.12.3`; do not raise `minAppVersion` to a 1.13+ early-access value unless the user explicitly adopts a 1.13 API.
+- `minAppVersion` is accurate. This repo targets Obsidian 1.13.0+ (declarative settings API) and pins `obsidian` types to `~1.13.1`; do not raise `minAppVersion` past the current public Obsidian release, and verify any newer API exists in both the published npm types and the public release before adopting it.
 - The release workflow generates artifact attestations (SLSA build provenance) for the assets via `actions/attest-build-provenance`. This is a review-bot scorecard RECOMMENDATION, not a hard blocker - a release without it still publishes, but the bot flags `main.js`/`styles.css` as missing provenance. For it to work, `release.yml` must keep the `id-token: write` and `attestations: write` permissions alongside `contents: write`, and the attest step must run on the same `dist/` bytes that get uploaded (no rebuild in between).
 
 ## Live re-check (required, do not skip)

@@ -63,6 +63,10 @@ export const STRINGS_ES: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Introduce un nombre de propiedad.',
+      counterNameCollision: 'Este nombre ya lo usa otra propiedad de arriba.',
+    },
     description: {
       syncIntro:
         'Los servicios de sincronización, las herramientas de copia de seguridad y otros plugins suelen reescribir los archivos sin cambiar su contenido, lo que reinicia las fechas del archivo en el disco. Esto hace imposible saber cuándo editaste realmente una nota por última vez.',
@@ -70,7 +74,6 @@ export const STRINGS_ES: Strings = {
         'Este plugin escribe las fechas de creación y de última edición directamente en las propiedades de cada nota, y detecta los cambios reales comparando el contenido, para que tus fechas reflejen ediciones reales y no artefactos de sincronización.',
     },
     dates: {
-      heading: 'Fechas a registrar',
       enableNoneHint:
         'Activa al menos una fecha arriba para configurar el plugin.',
       created: {
@@ -124,6 +127,7 @@ export const STRINGS_ES: Strings = {
         desc: 'Zona horaria que se usa al escribir las fechas. Déjalo en blanco para usar la zona horaria de tu dispositivo ({localTz}).',
         placeholder: 'Local ({localTz})',
         resetTooltip: 'Restablecer a la zona horaria local',
+        invalidTimezone: 'Nombre de zona horaria desconocido.',
       },
       numberProperties: {
         name: 'Guardar las fechas solo numéricas sin comillas',
@@ -142,10 +146,7 @@ export const STRINGS_ES: Strings = {
       },
       changeDetection: {
         name: 'Detección de cambios (hash de contenido)',
-        descEnabled:
-          'La fecha de última edición se escribe solo cuando el contenido de la nota cambia realmente, lo que evita actualizaciones falsas de los plugins de sincronización.',
-        descDisabled:
-          'Desactivado - la fecha de última edición se escribe en cada guardado, incluso si nada cambió.',
+        desc: 'Cuando está activado, la fecha de última edición se escribe solo cuando el contenido de la nota cambia realmente, lo que evita actualizaciones falsas de los plugins de sincronización.',
       },
       hashTrackingMode: {
         name: 'Qué cuenta como un cambio',
@@ -161,11 +162,14 @@ export const STRINGS_ES: Strings = {
         desc: 'Editar estas propiedades no actualizará la fecha. Puedes añadir varias a la vez, separadas por comas. Las propiedades created, updated y viewed siempre se ignoran automáticamente.',
         placeholder: 'Nombre de propiedad como tags',
         addTooltip: 'Añadir propiedad',
-        chipRemoveAriaLabel: 'Eliminar {entry}',
+        emptyState: 'No hay propiedades ignoradas.',
       },
     },
     filterRules: {
       name: 'Archivos y carpetas a omitir',
+      pageDesc:
+        'Elige archivos o carpetas que nunca reciban actualizaciones automáticas de fecha.',
+      ruleCount: 'Reglas: {count}',
       descIntro:
         'Elige los archivos o carpetas que dejar en paz (sin actualizaciones automáticas de fechas). ',
       descOnePerLine: 'Un patrón por línea. Las líneas que empiezan con ',
@@ -260,7 +264,8 @@ export const STRINGS_ES: Strings = {
       },
     },
     advanced: {
-      summary: 'Avanzado',
+      pageName: 'Avanzado',
+      pageDesc: 'Opciones de temporización, caché y automatización.',
       newFileDelay: {
         name: 'Retraso para archivos nuevos',
         desc: 'Espera esta cantidad de milisegundos antes de estampar una fecha en una nota recién creada. Ayuda a evitar conflictos con los plugins de plantillas. Ponlo en 0 para desactivarlo.',

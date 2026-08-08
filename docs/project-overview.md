@@ -32,8 +32,8 @@ It also ships **five bulk tools** (opened from the settings tab) to retrofit and
 | UI | `PluginSettingTab` + 5 `Modal`-derived bulk wizards |
 | Persistence | `data.json` (settings) + `hash-cache.json` (content hashes) |
 | Mobile support | Yes (`isDesktopOnly: false`) |
-| Min Obsidian version | 1.11.0 (raised from 1.4.11 for `getLanguage()` i18n detection) |
-| Current version | 1.1.1 |
+| Min Obsidian version | 1.13.0 (raised from 1.11.0 for the declarative `getSettingDefinitions()` settings API) |
+| Current version | 1.2.1 |
 | Distribution | Obsidian community plugin store, via GitHub release assets |
 
 ## Tech stack summary
@@ -41,7 +41,7 @@ It also ships **five bulk tools** (opened from the settings tab) to retrofit and
 | Category | Technology | Version |
 | --- | --- | --- |
 | Language | TypeScript | 6.0.3 |
-| Plugin API | obsidian | ~1.12.3 (pinned, tilde) |
+| Plugin API | obsidian | ~1.13.1 (pinned, tilde) |
 | Dates | date-fns | 4.4.0 |
 | Timezones | @date-fns/tz | ^1.5.0 |
 | Hashing | js-sha256 | ^0.11.1 |

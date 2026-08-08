@@ -1,5 +1,5 @@
 /* global describe, it -- Mocha BDD globals injected by the WebdriverIO test runner */
-import { browser } from '@wdio/globals';
+import { browser, $$ } from '@wdio/globals';
 import { assert } from '../helpers/assert';
 import { setSettings } from '../helpers/settings';
 import { settingsTab } from '../pageobjects/settingsTab';
@@ -21,33 +21,42 @@ async function excludeKeys(): Promise<string[]> {
   }, PLUGIN_ID);
 }
 
-// The exclude list only renders when content hashing is on and the tracking
+// The exclude block only renders when content hashing is on and the tracking
 // mode includes properties.
 const SHOW_EXCLUDE = {
   enableContentHashCheck: true,
   hashTrackingMode: 'both',
 } as const;
 
-describe('settings: ignore-properties comma input + chips', function () {
-  it('S1: splits a comma-separated list into separate chips', async function () {
+describe('settings: ignore-properties comma input + list', function () {
+  it('S1: splits a comma-separated list into separate list rows', async function () {
     await setSettings({ ...SHOW_EXCLUDE, frontmatterHashExcludeKeys: [] });
     await settingsTab.open();
 
     await settingsTab.addExcludeProperty('tags, aliases, cssclasses');
 
     await browser.waitUntil(
-      async () => (await settingsTab.excludeChipCount()) === 3,
-      { timeout: 5_000, timeoutMsg: 'expected 3 chips after comma input' },
+      async () => (await settingsTab.excludeRowCount()) === 3,
+      { timeout: 5_000, timeoutMsg: 'expected 3 list rows after comma input' },
     );
 
-    assert.deepEqual(await settingsTab.excludeChipLabels(), [
+    assert.deepEqual(await settingsTab.excludeRowLabels(), [
       'tags',
       'aliases',
       'cssclasses',
     ]);
     assert.deepEqual(await excludeKeys(), ['tags', 'aliases', 'cssclasses']);
 
-    await browser.saveScreenshot('./e2e/screenshots/exclude-chips.png');
+    // The add commits via update(), which re-renders the tab in place. Render
+    // rows must clean up what they append to settingEl - a second intro box
+    // here means a render row leaked DOM across the rebuild.
+    assert.equal(
+      await $$('.frontmatter-date-manager-plugin-description').length,
+      1,
+      'render rows must not duplicate on in-place update()',
+    );
+
+    await browser.saveScreenshot('./e2e/screenshots/exclude-list.png');
 
     await settingsTab.close();
   });
@@ -63,8 +72,8 @@ describe('settings: ignore-properties comma input + chips', function () {
     await settingsTab.addExcludeProperty('tags, , status,');
 
     await browser.waitUntil(
-      async () => (await settingsTab.excludeChipCount()) === 2,
-      { timeout: 5_000, timeoutMsg: 'expected 2 chips (tags + status)' },
+      async () => (await settingsTab.excludeRowCount()) === 2,
+      { timeout: 5_000, timeoutMsg: 'expected 2 list rows (tags + status)' },
     );
 
     assert.deepEqual(await excludeKeys(), ['tags', 'status']);
@@ -72,7 +81,7 @@ describe('settings: ignore-properties comma input + chips', function () {
     await settingsTab.close();
   });
 
-  it('S3: removes a single chip via its remove control', async function () {
+  it('S3: removes a single row via its delete control', async function () {
     await setSettings({
       ...SHOW_EXCLUDE,
       frontmatterHashExcludeKeys: ['tags', 'aliases', 'cssclasses'],
@@ -80,18 +89,25 @@ describe('settings: ignore-properties comma input + chips', function () {
     await settingsTab.open();
 
     await browser.waitUntil(
-      async () => (await settingsTab.excludeChipCount()) === 3,
+      async () => (await settingsTab.excludeRowCount()) === 3,
       { timeout: 5_000 },
     );
 
-    await settingsTab.removeExcludeChip('aliases');
+    await settingsTab.removeExcludeRow('aliases');
 
     await browser.waitUntil(
-      async () => (await settingsTab.excludeChipCount()) === 2,
-      { timeout: 5_000, timeoutMsg: 'chip never removed' },
+      async () => (await settingsTab.excludeRowCount()) === 2,
+      { timeout: 5_000, timeoutMsg: 'list row never removed' },
     );
 
     assert.deepEqual(await excludeKeys(), ['tags', 'cssclasses']);
+
+    // Same no-duplication invariant after the delete-triggered update().
+    assert.equal(
+      await $$('.frontmatter-date-manager-plugin-description').length,
+      1,
+      'render rows must not duplicate on delete-triggered update()',
+    );
 
     await settingsTab.close();
   });

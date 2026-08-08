@@ -15,6 +15,7 @@ export async function setSettings(
             {
               settings?: Record<string, unknown>;
               recompileFilterRules?: () => void;
+              settingsTab?: { update(): void } | null;
             }
           >;
         };
@@ -23,6 +24,9 @@ export async function setSettings(
       if (!plugin?.settings) throw new Error(`plugin ${id} not loaded`);
       Object.assign(plugin.settings, p);
       plugin.recompileFilterRules?.();
+      // The declarative settings tree is a snapshot - rebuild it so the tab
+      // reflects the patched values (mirrors onExternalSettingsChange).
+      plugin.settingsTab?.update();
     },
     PLUGIN_ID,
     patch,

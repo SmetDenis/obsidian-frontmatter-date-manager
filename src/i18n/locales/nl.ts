@@ -64,6 +64,11 @@ export const STRINGS_NL: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Voer een eigenschapsnaam in.',
+      counterNameCollision:
+        'Deze naam wordt al gebruikt door een andere eigenschap hierboven.',
+    },
     description: {
       syncIntro:
         'Synchronisatiediensten, back-uptools en andere plug-ins herschrijven bestanden vaak zonder de inhoud te wijzigen - waardoor de datums van het bestand op schijf worden gereset. Daardoor is het onmogelijk om te zien wanneer u een notitie echt voor het laatst hebt bewerkt.',
@@ -71,7 +76,6 @@ export const STRINGS_NL: Strings = {
         'Deze plug-in schrijft de aanmaak- en laatst-bewerkt-datums rechtstreeks in de eigenschappen van elke notitie en herkent echte wijzigingen door de inhoud te vergelijken, zodat uw datums echte bewerkingen weerspiegelen - geen synchronisatie-artefacten.',
     },
     dates: {
-      heading: 'Welke datums bijhouden',
       enableNoneHint:
         'Schakel hierboven minstens één datum in om de plug-in in te stellen.',
       created: {
@@ -125,6 +129,7 @@ export const STRINGS_NL: Strings = {
         desc: 'Tijdzone die wordt gebruikt bij het schrijven van datums. Laat leeg om de tijdzone van uw apparaat te gebruiken ({localTz}).',
         placeholder: 'Lokaal ({localTz})',
         resetTooltip: 'Terugzetten naar lokale tijdzone',
+        invalidTimezone: 'Onbekende tijdzonenaam.',
       },
       numberProperties: {
         name: 'Datums met alleen cijfers zonder aanhalingstekens opslaan',
@@ -143,10 +148,7 @@ export const STRINGS_NL: Strings = {
       },
       changeDetection: {
         name: 'Wijzigingsdetectie (inhoud-hashing)',
-        descEnabled:
-          'De laatst-bewerkt-datum wordt alleen geschreven wanneer de inhoud van de notitie daadwerkelijk verandert - dit voorkomt valse updates van synchronisatie-plug-ins.',
-        descDisabled:
-          'Uitgeschakeld - de laatst-bewerkt-datum wordt bij elke opslag geschreven, ook als er niets is veranderd.',
+        desc: 'Indien ingeschakeld, wordt de laatst-bewerkt-datum alleen geschreven wanneer de inhoud van de notitie daadwerkelijk verandert - dit voorkomt valse updates van synchronisatie-plug-ins.',
       },
       hashTrackingMode: {
         name: 'Wat telt als een wijziging',
@@ -162,11 +164,14 @@ export const STRINGS_NL: Strings = {
         desc: "Het bewerken van deze eigenschappen werkt de datum niet bij. U kunt er meerdere tegelijk toevoegen, gescheiden door komma's. De eigenschappen created, updated en viewed worden altijd automatisch genegeerd.",
         placeholder: 'Eigenschapsnaam zoals tags',
         addTooltip: 'Eigenschap toevoegen',
-        chipRemoveAriaLabel: '{entry} verwijderen',
+        emptyState: 'Geen genegeerde eigenschappen.',
       },
     },
     filterRules: {
       name: 'Bestanden en mappen om over te slaan',
+      pageDesc:
+        'Kies bestanden of mappen die nooit automatisch een datumupdate krijgen.',
+      ruleCount: 'Regels: {count}',
       descIntro:
         'Kies bestanden of mappen die met rust moeten worden gelaten (geen automatische datumupdates). ',
       descOnePerLine: 'Eén patroon per regel. Regels die beginnen met ',
@@ -259,7 +264,8 @@ export const STRINGS_NL: Strings = {
       },
     },
     advanced: {
-      summary: 'Geavanceerd',
+      pageName: 'Geavanceerd',
+      pageDesc: 'Opties voor timing, cache en automatisering.',
       newFileDelay: {
         name: 'Vertraging voor nieuwe bestanden',
         desc: 'Wacht dit aantal milliseconden voordat een datum op een nieuw aangemaakte notitie wordt gezet. Helpt conflicten met sjabloon-plug-ins te voorkomen. Stel in op 0 om uit te schakelen.',

@@ -53,8 +53,8 @@ export function renderButtonBar(
       primaryBtn = btn;
       btn.buttonEl.addClass('frontmatter-date-manager-bulk-primary');
       btn.setButtonText(p.label);
-      if (p.destructive) btn.setWarning();
-      else btn.setCta();
+      btn.setCta();
+      if (p.destructive) btn.setDestructive();
       btn.setDisabled(p.disabled ?? false);
       btn.onClick(() => void p.onClick());
     });
@@ -83,8 +83,8 @@ export function renderButtonBar(
     },
     setPrimaryDestructive(destructive: boolean) {
       if (!primaryBtn) return;
-      if (destructive) primaryBtn.setWarning();
-      else primaryBtn.setCta();
+      if (destructive) primaryBtn.setDestructive();
+      else primaryBtn.removeDestructive();
     },
   };
 }

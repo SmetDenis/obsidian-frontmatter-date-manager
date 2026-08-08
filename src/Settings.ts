@@ -1,11 +1,12 @@
-import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
+import { App, Notice, PluginSettingTab } from 'obsidian';
+import type {
+  Setting,
+  SettingDefinitionItem,
+  SettingGroupItem,
+} from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
 import { TimezoneSuggest } from './suggesters/TimezoneSuggest';
-import {
-  getMomentFormatHint,
-  parseCacheMaxSize,
-  parsePropertyKeys,
-} from './utils';
+import { getMomentFormatHint, parsePropertyKeys } from './utils';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
@@ -180,459 +181,599 @@ export function sanitizeSettings(raw: unknown): FrontmatterDateManagerSettings {
   return sanitized;
 }
 
+// Settings keys whose values are property names: setControlValue trims them
+// before persisting (a name with stray spaces would write a different key).
+const TRIMMED_KEYS = new Set([
+  'headerCreated',
+  'headerUpdated',
+  'headerLastViewed',
+  'headerUpdateCount',
+]);
+
 export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   plugin: FrontmatterDateManagerPlugin;
-  // Obsidian re-renders the entire settings tab (calls display()) on any
-  // setting change. This preserves the collapsible section's open/closed state.
-  private advancedOpen = false;
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
-  display(): void {
-    const { containerEl } = this;
-
-    containerEl.empty();
-
-    // --- Plugin description ---
-    const descEl = containerEl.createDiv({
-      cls: 'frontmatter-date-manager-plugin-description',
-    });
-    descEl.createEl('p', {
-      text: strings.settings.description.syncIntro,
-    });
-    descEl.createEl('p', {
-      text: strings.settings.description.pluginIntro,
-    });
-
-    // --- Section 1: Timestamp fields ---
-    new Setting(containerEl)
-      .setHeading()
-      .setName(strings.settings.dates.heading);
-
-    this.addEnableCreated();
-    this.addFrontMatterCreated();
-    this.addEnableModifiedTime();
-    this.addFrontMatterUpdated();
-    this.addEnableUpdateCount();
-    this.addFrontMatterUpdateCount();
-    this.addEnableLastViewed();
-    this.addFrontMatterLastViewed();
-
-    const modifiedEnabled = this.plugin.settings.enableModifiedTime ?? true;
-    const viewedEnabled = this.plugin.settings.enableLastViewed ?? false;
-
-    if (
-      !this.plugin.settings.enableCreateTime &&
-      !modifiedEnabled &&
-      !viewedEnabled
-    ) {
-      containerEl.createDiv({
-        cls: 'frontmatter-date-manager-hint-message',
-        text: strings.settings.dates.enableNoneHint,
-      });
-      return;
-    }
-
-    // --- Section 2: Date formatting ---
-    new Setting(containerEl)
-      .setHeading()
-      .setName(strings.settings.formatting.heading);
-
-    this.addDateFormat();
-    this.addTimezone();
-    this.addEnableNumberProperties();
-
-    // --- Section 3: Behavior ---
-    new Setting(containerEl)
-      .setHeading()
-      .setName(strings.settings.behavior.heading);
-
-    this.addEnableAutoUpdate();
-    this.addTimeBetweenUpdates();
-    this.addFilterRulesSetting();
-    this.addContentHashToggle();
-
-    // --- Section: Timestamp inversion ---
-    new Setting(containerEl)
-      .setHeading()
-      .setName(strings.settings.inversions.heading);
-    this.addInversionStrategy();
-    this.addInversionTolerance();
-
-    // Advanced (collapsible)
-    const advancedDetails = containerEl.createEl('details', {
-      cls: 'frontmatter-date-manager-advanced-section',
-    });
-    if (this.advancedOpen) {
-      advancedDetails.setAttribute('open', '');
-    }
-    // Listener is cleaned up when containerEl.empty() destroys the element
-    advancedDetails.addEventListener('toggle', () => {
-      this.advancedOpen = advancedDetails.open;
-    });
-    advancedDetails.createEl('summary', {
-      text: strings.settings.advanced.summary,
-    });
-
-    this.addDelayForNewFiles(advancedDetails);
-    this.addAutoPopulateCache(advancedDetails);
-    this.addMaxCacheEntries(advancedDetails);
-    this.addPostUpdateCommand(advancedDetails);
-
-    // --- Section 4: Bulk operations ---
-    new Setting(containerEl)
-      .setHeading()
-      .setName(strings.settings.bulk.heading);
-
-    new Setting(this.containerEl)
-      .setName(strings.settings.bulk.populate.name)
-      .setDesc(strings.settings.bulk.populate.desc)
-      .addButton((cb) => {
-        cb.buttonEl.addClass('frontmatter-date-manager-open-populate');
-        cb.setButtonText(strings.settings.bulk.populate.button).onClick(() => {
-          new BulkPopulateTimestampsModal(this.app, this.plugin).open();
-        });
-      });
-
-    this.addRenameKeyButton();
-    this.addReformatDateButton();
-    this.addFindInversionsButton();
-
-    if (this.plugin.settings.enableContentHashCheck ?? true) {
-      new Setting(this.containerEl)
-        .setName(strings.settings.bulk.rebuildCache.name)
-        .setDesc(strings.settings.bulk.rebuildCache.desc)
-        .addButton((cb) => {
-          cb.buttonEl.addClass('frontmatter-date-manager-open-rebuild-cache');
-          cb.setButtonText(strings.settings.bulk.rebuildCache.button).onClick(
-            () => {
-              new UpdateAllCacheData(this.app, this.plugin).open();
-            },
-          );
-        });
-    }
+  // Declarative settings tree (Obsidian 1.13+). Called on every update() AND
+  // once at addSettingTab() registration for search indexing - must stay cheap
+  // (no I/O, no DOM). All DOM work lives in the render callbacks, which run
+  // only when a row is actually drawn.
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      this.introItem(),
+      this.datesGroup(),
+      this.noneEnabledHintItem(),
+      this.formattingGroup(),
+      this.behaviorGroup(),
+      // A list cannot nest inside a group (group items are settings/pages
+      // only), so the exclude list sits at top level right after Behavior.
+      this.excludeKeysList(),
+      this.inversionsGroup(),
+      this.advancedPage(),
+      this.bulkGroup(),
+    ];
   }
 
-  async saveSettings() {
+  // Central write funnel: every control-bound change (and every render row that
+  // saves a single key) goes through here. Overriding replaces the framework's
+  // auto-save, so this must persist itself; it also dispatches the per-key side
+  // effects the old per-onChange wiring performed.
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    let v = value;
+    if (TRIMMED_KEYS.has(key) && typeof v === 'string') {
+      v = v.trim();
+    }
+    (this.plugin.settings as unknown as Record<string, unknown>)[key] = v;
     await this.plugin.saveSettings();
-  }
-
-  // --- Timestamp fields ---
-
-  addEnableModifiedTime(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.updated.enableName)
-      .setDesc(strings.settings.dates.updated.enableDesc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableModifiedTime ?? true)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableModifiedTime = newValue;
-            await this.saveSettings();
-            this.display();
-          }),
-      );
-  }
-
-  addFrontMatterUpdated(): void {
-    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
-      return;
+    switch (key) {
+      case 'filterRules':
+        this.plugin.recompileFilterRules();
+        break;
+      case 'enableAutoUpdate':
+        this.plugin.updateStatusBar();
+        break;
+      case 'hashTrackingMode':
+        new Notice(
+          strings.settings.behavior.hashTrackingMode.changedNotice,
+          6000,
+        );
+        break;
     }
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.updated.propertyName)
-      .setDesc(strings.settings.dates.updated.propertyDesc)
-      .addText((text) =>
-        text
-          .setPlaceholder(strings.settings.dates.updated.propertyPlaceholder)
-          .setValue(this.plugin.settings.headerUpdated)
-          .onChange(async (value) => {
-            const trimmed = value.trim();
-            if (trimmed.length === 0) return;
-            this.plugin.settings.headerUpdated = trimmed;
-            await this.saveSettings();
-          }),
-      );
   }
 
-  addEnableUpdateCount(): void {
-    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
-      return;
-    }
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.updateCount.enableName)
-      .setDesc(strings.settings.dates.updateCount.enableDesc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.countUpdatesEnabled ?? false)
-          .onChange(async (newValue) => {
-            this.plugin.settings.countUpdatesEnabled = newValue;
-            await this.saveSettings();
-            this.display();
-          }),
-      );
+  // --- Visibility predicates ---
+
+  private allDatesOff(): boolean {
+    const s = this.plugin.settings;
+    return (
+      !s.enableCreateTime &&
+      !(s.enableModifiedTime ?? true) &&
+      !(s.enableLastViewed ?? false)
+    );
   }
 
-  addFrontMatterUpdateCount(): void {
-    if (!(this.plugin.settings.enableModifiedTime ?? true)) {
-      return;
-    }
-    if (!(this.plugin.settings.countUpdatesEnabled ?? false)) {
-      return;
-    }
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.updateCount.propertyName)
-      .setDesc(strings.settings.dates.updateCount.propertyDesc)
-      .addText((text) =>
-        text
-          .setValue(this.plugin.settings.headerUpdateCount ?? 'updated_count')
-          .onChange(async (value) => {
-            const trimmed = value.trim();
-            if (trimmed.length === 0) return;
-            this.plugin.settings.headerUpdateCount = trimmed;
-            await this.saveSettings();
-          }),
-      );
+  private excludeKeysVisible(): boolean {
+    const s = this.plugin.settings;
+    const mode = s.hashTrackingMode ?? 'body';
+    return (
+      (s.enableContentHashCheck ?? true) &&
+      (mode === 'frontmatter' || mode === 'both')
+    );
   }
 
-  private addRenameKeyButton(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.bulk.rename.name)
-      .setDesc(strings.settings.bulk.rename.desc)
-      .addButton((cb) => {
-        cb.buttonEl.addClass('frontmatter-date-manager-open-rename');
-        cb.setButtonText(strings.settings.bulk.rename.button).onClick(() => {
-          new RenameKeyModal(this.app, this.plugin).open();
+  // --- Input validation (UI gate only - sanitizeSettings stays the load
+  // boundary for already-stored data) ---
+
+  private validatePropertyName(value: string): string | undefined {
+    return value.trim() === ''
+      ? strings.settings.validation.propertyNameRequired
+      : undefined;
+  }
+
+  // Date-key fields reject the counter's name (mirrors the sanitizeSettings /
+  // counterKeyOrNull collision rule, surfaced as an inline error instead of a
+  // silent counter disable at next load). Only guards while the counter is
+  // enabled - with it off there is nothing to clobber.
+  private validateDateKey(value: string): string | undefined {
+    const base = this.validatePropertyName(value);
+    if (base) return base;
+    const s = this.plugin.settings;
+    if (
+      (s.countUpdatesEnabled ?? false) &&
+      value.trim() === (s.headerUpdateCount ?? 'updated_count').trim()
+    ) {
+      return strings.settings.validation.counterNameCollision;
+    }
+    return undefined;
+  }
+
+  private validateCounterName(value: string): string | undefined {
+    const base = this.validatePropertyName(value);
+    if (base) return base;
+    const s = this.plugin.settings;
+    const dateKeys = [
+      s.headerCreated.trim(),
+      s.headerUpdated.trim(),
+      (s.headerLastViewed ?? 'viewed').trim(),
+    ];
+    return dateKeys.includes(value.trim())
+      ? strings.settings.validation.counterNameCollision
+      : undefined;
+  }
+
+  // --- Tree builders ---
+
+  private introItem(): SettingDefinitionItem {
+    return {
+      name: '',
+      searchable: false,
+      render: (setting: Setting) => {
+        // The in-place re-render path (update() with the tab open) only
+        // clears controlEl - every element created on settingEl must be
+        // detached by the returned cleanup, or it duplicates on each update().
+        // Applies to ALL render rows below that touch settingEl.
+        const descEl = setting.settingEl.createDiv({
+          cls: 'frontmatter-date-manager-plugin-description',
         });
-      });
-  }
-
-  addEnableCreated(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.created.enableName)
-      .setDesc(strings.settings.dates.created.enableDesc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableCreateTime)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableCreateTime = newValue;
-            await this.saveSettings();
-            this.display();
-          }),
-      );
-  }
-
-  addFrontMatterCreated(): void {
-    if (!this.plugin.settings.enableCreateTime) {
-      return;
-    }
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.created.propertyName)
-      .setDesc(strings.settings.dates.created.propertyDesc)
-      .addText((text) =>
-        text
-          .setPlaceholder(strings.settings.dates.created.propertyPlaceholder)
-          .setValue(this.plugin.settings.headerCreated)
-          .onChange(async (value) => {
-            const trimmed = value.trim();
-            if (trimmed.length === 0) return;
-            this.plugin.settings.headerCreated = trimmed;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  addEnableLastViewed(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.viewed.enableName)
-      .setDesc(strings.settings.dates.viewed.enableDesc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableLastViewed ?? false)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableLastViewed = newValue;
-            await this.saveSettings();
-            this.display();
-          }),
-      );
-  }
-
-  addFrontMatterLastViewed(): void {
-    if (!(this.plugin.settings.enableLastViewed ?? false)) {
-      return;
-    }
-    new Setting(this.containerEl)
-      .setName(strings.settings.dates.viewed.propertyName)
-      .setDesc(strings.settings.dates.viewed.propertyDesc)
-      .addText((text) =>
-        text
-          .setPlaceholder(strings.settings.dates.viewed.propertyPlaceholder)
-          .setValue(this.plugin.settings.headerLastViewed ?? 'viewed')
-          .onChange(async (value) => {
-            const trimmed = value.trim();
-            if (trimmed.length === 0) return;
-            this.plugin.settings.headerLastViewed = trimmed;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  // --- Date formatting ---
-
-  addDateFormat(): void {
-    this.createDateFormatEditor({
-      getValue: () => this.plugin.settings.dateFormat,
-      name: strings.settings.formatting.dateFormat.name,
-      description: strings.settings.formatting.dateFormat.desc,
-      setValue: (newValue) => (this.plugin.settings.dateFormat = newValue),
-    });
-  }
-
-  private addReformatDateButton(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.bulk.reformat.name)
-      .setDesc(strings.settings.bulk.reformat.desc)
-      .addButton((cb) => {
-        cb.buttonEl.addClass('frontmatter-date-manager-open-reformat');
-        cb.setButtonText(strings.settings.bulk.reformat.button).onClick(() => {
-          new ReformatDateModal(this.app, this.plugin).open();
+        descEl.createEl('p', { text: strings.settings.description.syncIntro });
+        descEl.createEl('p', {
+          text: strings.settings.description.pluginIntro,
         });
-      });
+        return () => void descEl.remove();
+      },
+    };
   }
 
-  addTimezone(): void {
+  // First section carries no heading (style guide: the leading "general"
+  // section is unheaded; headings start at the second section).
+  private datesGroup(): SettingDefinitionItem {
+    const d = strings.settings.dates;
+    const s = () => this.plugin.settings;
+    const items: SettingGroupItem[] = [
+      {
+        name: d.created.enableName,
+        desc: d.created.enableDesc,
+        control: { type: 'toggle', key: 'enableCreateTime' },
+      },
+      {
+        name: d.created.propertyName,
+        desc: d.created.propertyDesc,
+        visible: () => s().enableCreateTime,
+        control: {
+          type: 'text',
+          key: 'headerCreated',
+          placeholder: d.created.propertyPlaceholder,
+          validate: (value: string) => this.validateDateKey(value),
+        },
+      },
+      {
+        name: d.updated.enableName,
+        desc: d.updated.enableDesc,
+        control: {
+          type: 'toggle',
+          key: 'enableModifiedTime',
+          defaultValue: true,
+        },
+      },
+      {
+        name: d.updated.propertyName,
+        desc: d.updated.propertyDesc,
+        visible: () => s().enableModifiedTime ?? true,
+        control: {
+          type: 'text',
+          key: 'headerUpdated',
+          placeholder: d.updated.propertyPlaceholder,
+          validate: (value: string) => this.validateDateKey(value),
+        },
+      },
+      {
+        name: d.updateCount.enableName,
+        desc: d.updateCount.enableDesc,
+        visible: () => s().enableModifiedTime ?? true,
+        control: {
+          type: 'toggle',
+          key: 'countUpdatesEnabled',
+          defaultValue: false,
+        },
+      },
+      {
+        name: d.updateCount.propertyName,
+        desc: d.updateCount.propertyDesc,
+        visible: () =>
+          (s().enableModifiedTime ?? true) &&
+          (s().countUpdatesEnabled ?? false),
+        control: {
+          type: 'text',
+          key: 'headerUpdateCount',
+          defaultValue: DEFAULT_SETTINGS.headerUpdateCount,
+          validate: (value: string) => this.validateCounterName(value),
+        },
+      },
+      {
+        name: d.viewed.enableName,
+        desc: d.viewed.enableDesc,
+        control: {
+          type: 'toggle',
+          key: 'enableLastViewed',
+          defaultValue: false,
+        },
+      },
+      {
+        name: d.viewed.propertyName,
+        desc: d.viewed.propertyDesc,
+        visible: () => s().enableLastViewed ?? false,
+        control: {
+          type: 'text',
+          key: 'headerLastViewed',
+          placeholder: d.viewed.propertyPlaceholder,
+          defaultValue: DEFAULT_SETTINGS.headerLastViewed,
+          validate: (value: string) => this.validateDateKey(value),
+        },
+      },
+    ];
+    return { type: 'group', items };
+  }
+
+  private noneEnabledHintItem(): SettingDefinitionItem {
+    return {
+      name: '',
+      searchable: false,
+      visible: () => this.allDatesOff(),
+      render: (setting: Setting) => {
+        const hintEl = setting.settingEl.createDiv({
+          cls: 'frontmatter-date-manager-hint-message',
+          text: strings.settings.dates.enableNoneHint,
+        });
+        return () => void hintEl.remove();
+      },
+    };
+  }
+
+  private formattingGroup(): SettingDefinitionItem {
+    const f = strings.settings.formatting;
     const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return {
+      type: 'group',
+      heading: f.heading,
+      visible: () => !this.allDatesOff(),
+      items: [
+        {
+          name: f.dateFormat.name,
+          render: (setting: Setting) => void this.renderDateFormatRow(setting),
+        },
+        {
+          name: f.timezone.name,
+          desc: t(f.timezone.desc, { localTz }),
+          render: (setting: Setting) => this.renderTimezoneRow(setting),
+        },
+        {
+          name: f.numberProperties.name,
+          desc: f.numberProperties.desc,
+          control: { type: 'toggle', key: 'enableNumberProperties' },
+        },
+      ],
+    };
+  }
 
-    new Setting(this.containerEl)
-      .setName(strings.settings.formatting.timezone.name)
-      .setDesc(t(strings.settings.formatting.timezone.desc, { localTz }))
-      .addText((text) => {
-        new TimezoneSuggest(this.app, text.inputEl);
-        text
-          .setPlaceholder(
-            t(strings.settings.formatting.timezone.placeholder, { localTz }),
-          )
-          .setValue(this.plugin.settings.timezone)
-          .onChange(async (value) => {
-            const trimmed = value.trim();
-            if (trimmed.length > 0) {
-              // Intl.DateTimeFormat constructor throws on invalid timezone strings;
-              // used here as validation. Silent return prevents saving invalid value.
-              try {
-                Intl.DateTimeFormat(undefined, { timeZone: trimmed });
-              } catch {
-                return;
+  private behaviorGroup(): SettingDefinitionItem {
+    const b = strings.settings.behavior;
+    const s = () => this.plugin.settings;
+    return {
+      type: 'group',
+      heading: b.heading,
+      visible: () => !this.allDatesOff(),
+      items: [
+        {
+          name: b.autoUpdate.name,
+          desc: b.autoUpdate.desc,
+          control: { type: 'toggle', key: 'enableAutoUpdate' },
+        },
+        {
+          name: b.minSeconds.name,
+          desc: b.minSeconds.desc,
+          visible: () =>
+            (s().enableModifiedTime ?? true) || (s().enableLastViewed ?? false),
+          control: {
+            type: 'slider',
+            key: 'minSecondsBetweenSaves',
+            min: 5,
+            max: 300,
+            step: 5,
+          },
+        },
+        this.filterRulesPage(),
+        {
+          name: b.changeDetection.name,
+          desc: b.changeDetection.desc,
+          control: {
+            type: 'toggle',
+            key: 'enableContentHashCheck',
+            defaultValue: true,
+          },
+        },
+        {
+          name: b.hashTrackingMode.name,
+          desc: b.hashTrackingMode.desc,
+          visible: () => s().enableContentHashCheck ?? true,
+          control: {
+            type: 'dropdown',
+            key: 'hashTrackingMode',
+            defaultValue: 'body',
+            options: {
+              body: b.hashTrackingMode.optionBody,
+              frontmatter: b.hashTrackingMode.optionFrontmatter,
+              both: b.hashTrackingMode.optionBoth,
+            },
+          },
+        },
+        {
+          name: b.excludeKeys.name,
+          desc: b.excludeKeys.desc,
+          visible: () => this.excludeKeysVisible(),
+          render: (setting: Setting) =>
+            void this.renderExcludeInputRow(setting),
+        },
+      ],
+    };
+  }
+
+  private excludeKeysList(): SettingDefinitionItem {
+    const keys = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
+    return {
+      type: 'list',
+      cls: 'frontmatter-date-manager-exclude-list',
+      visible: () => !this.allDatesOff() && this.excludeKeysVisible(),
+      emptyState: strings.settings.behavior.excludeKeys.emptyState,
+      onDelete: (index: number) => {
+        void this.removeExcludeKeyAt(index);
+      },
+      items: keys.map((key) => ({ name: key, searchable: false })),
+    };
+  }
+
+  private inversionsGroup(): SettingDefinitionItem {
+    const i = strings.settings.inversions;
+    return {
+      type: 'group',
+      heading: i.heading,
+      visible: () => !this.allDatesOff(),
+      items: [
+        {
+          name: i.strategy.name,
+          desc: i.strategy.desc,
+          control: {
+            type: 'dropdown',
+            key: 'inversionFixStrategy',
+            defaultValue: 'disabled',
+            options: {
+              'disabled': i.strategy.optionDisabled,
+              'created-to-updated': i.strategy.optionCreatedToUpdated,
+              'updated-to-created': i.strategy.optionUpdatedToCreated,
+              'max-all': i.strategy.optionMaxAll,
+            },
+          },
+        },
+        {
+          name: i.tolerance.name,
+          desc: i.tolerance.desc,
+          control: {
+            type: 'number',
+            key: 'inversionToleranceSec',
+            min: 0,
+            step: 1,
+            placeholder: '0',
+            defaultValue: 0,
+          },
+        },
+      ],
+    };
+  }
+
+  private advancedPage(): SettingDefinitionItem {
+    const a = strings.settings.advanced;
+    return {
+      type: 'page',
+      name: a.pageName,
+      desc: a.pageDesc,
+      visible: () => !this.allDatesOff(),
+      items: [
+        {
+          name: a.newFileDelay.name,
+          desc: a.newFileDelay.desc,
+          control: {
+            type: 'number',
+            key: 'delayForNewFiles',
+            min: 0,
+            step: 1,
+            placeholder: '5000',
+          },
+        },
+        {
+          name: a.autoPopulateCache.name,
+          desc: a.autoPopulateCache.desc,
+          control: {
+            type: 'toggle',
+            key: 'enableAutoPopulateCache',
+            defaultValue: DEFAULT_SETTINGS.enableAutoPopulateCache,
+          },
+        },
+        {
+          name: a.maxCacheEntries.name,
+          desc: a.maxCacheEntries.desc,
+          control: {
+            type: 'number',
+            key: 'hashCacheMaxSize',
+            min: 0,
+            step: 1,
+            placeholder: '10000',
+            defaultValue: 10_000,
+          },
+        },
+        {
+          name: a.postUpdateCommand.name,
+          desc: a.postUpdateCommand.desc,
+          // A control dropdown would bake the command list into the
+          // definitions snapshot, built once at plugin load - commands from
+          // later-loading plugins would be missing for the whole session.
+          // A render row re-enumerates app.commands on every open instead.
+          render: (setting: Setting) => {
+            setting.addDropdown((dd) => {
+              for (const [id, label] of Object.entries(this.commandOptions())) {
+                dd.addOption(id, label);
               }
-            }
-            this.plugin.settings.timezone = trimmed;
-            await this.saveSettings();
-          });
-      })
-      .addExtraButton((cb) => {
-        cb.setIcon('reset')
-          .setTooltip(strings.settings.formatting.timezone.resetTooltip)
-          .onClick(async () => {
-            this.plugin.settings.timezone = '';
-            await this.saveSettings();
-            this.display();
-          });
-      });
+              dd.setValue(this.plugin.settings.postUpdateCommand);
+              dd.onChange(async (value) => {
+                await this.setControlValue('postUpdateCommand', value);
+              });
+            });
+          },
+        },
+      ],
+    };
   }
 
-  addEnableNumberProperties(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.formatting.numberProperties.name)
-      .setDesc(strings.settings.formatting.numberProperties.desc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableNumberProperties)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableNumberProperties = newValue;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  // --- Behavior ---
-
-  addEnableAutoUpdate(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.behavior.autoUpdate.name)
-      .setDesc(strings.settings.behavior.autoUpdate.desc)
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableAutoUpdate)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableAutoUpdate = newValue;
-            await this.saveSettings();
-            this.plugin.updateStatusBar();
-          }),
-      );
-  }
-
-  addTimeBetweenUpdates(): void {
-    const modifiedEnabled = this.plugin.settings.enableModifiedTime ?? true;
-    const viewedEnabled = this.plugin.settings.enableLastViewed ?? false;
-    if (!modifiedEnabled && !viewedEnabled) {
-      return;
+  private commandOptions(): Record<string, string> {
+    const options: Record<string, string> = {
+      '': strings.settings.advanced.postUpdateCommand.optionNone,
+    };
+    // Obsidian internal API - no public typings available
+    const internalApp = this.app as unknown as {
+      commands: { commands: Record<string, { name: string }> };
+    };
+    for (const [id, cmd] of Object.entries(internalApp.commands.commands)) {
+      options[id] = cmd.name;
     }
-    new Setting(this.containerEl)
-      .setName(strings.settings.behavior.minSeconds.name)
-      .setDesc(strings.settings.behavior.minSeconds.desc)
-      .addSlider((slider) =>
-        slider
-          .setLimits(5, 300, 5)
-          .setValue(this.plugin.settings.minSecondsBetweenSaves)
-          .onChange(async (value) => {
-            this.plugin.settings.minSecondsBetweenSaves = value;
-            await this.saveSettings();
-          })
-          .setDynamicTooltip(),
-      );
+    return options;
   }
 
-  addFilterRulesSetting(): void {
+  private bulkGroup(): SettingDefinitionItem {
+    const b = strings.settings.bulk;
+    return {
+      type: 'group',
+      heading: b.heading,
+      visible: () => !this.allDatesOff(),
+      items: [
+        this.bulkButtonRow(
+          b.populate,
+          'frontmatter-date-manager-open-populate',
+          () =>
+            void new BulkPopulateTimestampsModal(this.app, this.plugin).open(),
+        ),
+        this.bulkButtonRow(
+          b.rename,
+          'frontmatter-date-manager-open-rename',
+          () => void new RenameKeyModal(this.app, this.plugin).open(),
+        ),
+        this.bulkButtonRow(
+          b.reformat,
+          'frontmatter-date-manager-open-reformat',
+          () => void new ReformatDateModal(this.app, this.plugin).open(),
+        ),
+        this.bulkButtonRow(
+          b.findInversions,
+          'frontmatter-date-manager-open-inversions',
+          () => void new FindInversionsModal(this.app, this.plugin).open(),
+        ),
+        {
+          ...this.bulkButtonRow(
+            b.rebuildCache,
+            'frontmatter-date-manager-open-rebuild-cache',
+            () => void new UpdateAllCacheData(this.app, this.plugin).open(),
+          ),
+          visible: () => this.plugin.settings.enableContentHashCheck ?? true,
+        },
+      ],
+    };
+  }
+
+  // Render (not action) rows: action rows cannot carry a CSS class, and the
+  // e2e Page Objects locate these buttons by their stable
+  // frontmatter-date-manager-open-* classes.
+  private bulkButtonRow(
+    labels: { name: string; desc: string; button: string },
+    cssClass: string,
+    openModal: () => void,
+  ): SettingGroupItem {
+    return {
+      name: labels.name,
+      desc: labels.desc,
+      render: (setting: Setting) => {
+        setting.addButton((cb) => {
+          cb.buttonEl.addClass(cssClass);
+          cb.setButtonText(labels.button).onClick(openModal);
+        });
+      },
+    };
+  }
+
+  // --- Filter rules sub-page ---
+
+  private filterRulesPage(): SettingGroupItem {
+    const fr = strings.settings.filterRules;
+    // Shared between the editor and preview render callbacks: typing in the
+    // textarea clears a stale preview. Both closures are recreated together on
+    // every update(), so the ref can never outlive its sibling row.
+    const shared: { previewEl: HTMLElement | null } = { previewEl: null };
+    return {
+      type: 'page',
+      name: fr.name,
+      desc: fr.pageDesc,
+      displayValue: () =>
+        t(fr.ruleCount, { count: this.plugin.getCompiledRules().length }),
+      items: [
+        {
+          name: fr.name,
+          // The page entry already carries this name - keeping the editor row
+          // out of the search index avoids a duplicate hit for the same thing.
+          searchable: false,
+          render: (setting: Setting) =>
+            this.renderFilterRulesEditor(setting, shared),
+        },
+        {
+          name: '',
+          searchable: false,
+          render: (setting: Setting) => this.renderFilterReference(setting),
+        },
+        {
+          name: '',
+          searchable: false,
+          render: (setting: Setting) =>
+            this.renderFilterPreviewRow(setting, shared),
+        },
+      ],
+    };
+  }
+
+  private renderFilterRulesEditor(
+    setting: Setting,
+    shared: { previewEl: HTMLElement | null },
+  ): () => void {
+    const fr = strings.settings.filterRules;
     const descr = createFragment();
-    descr.append(
-      strings.settings.filterRules.descIntro,
-      strings.settings.filterRules.descOnePerLine,
-    );
+    descr.append(fr.descIntro, fr.descOnePerLine);
     descr.createEl('code', { text: '#' });
-    descr.append(strings.settings.filterRules.descCommentsAre);
+    descr.append(fr.descCommentsAre);
     descr.createEl('code', { text: '!' });
-    descr.append(
-      strings.settings.filterRules.descAddBack,
-      strings.settings.filterRules.descLastWins,
-    );
+    descr.append(fr.descAddBack, fr.descLastWins);
     descr.createEl('br');
     descr.createEl('a', {
       href: 'https://git-scm.com/docs/gitignore',
-      text: strings.settings.filterRules.advancedSyntaxLink,
+      text: fr.advancedSyntaxLink,
     });
-
-    const setting = new Setting(this.containerEl)
-      .setName(strings.settings.filterRules.name)
-      .setDesc(descr);
+    setting.setDesc(descr);
     setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
 
-    const warnEl = this.containerEl.createDiv({
+    const warnEl = setting.settingEl.createDiv({
       cls: 'frontmatter-date-manager-filter-warn',
-      text: strings.settings.filterRules.noRulesWarning,
+      text: fr.noRulesWarning,
     });
-
-    const errorsEl = this.containerEl.createDiv({
+    const errorsEl = setting.settingEl.createDiv({
       cls: 'frontmatter-date-manager-filter-errors',
     });
-
-    this.addFilterRulesReference();
-
-    const previewEl = this.containerEl.createDiv({
-      cls: 'frontmatter-date-manager-filter-preview',
-    });
-
-    const currentValue = this.plugin.settings.filterRules ?? '';
 
     const updateFeedback = (text: string) => {
       const trimmed = text.trim();
@@ -643,7 +784,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         const { errors } = parseFilterRules(trimmed);
         for (const err of errors) {
           errorsEl.createDiv({
-            text: t(strings.settings.filterRules.parseError, {
+            text: t(fr.parseError, {
               lineNumber: err.lineNumber,
               message: err.message,
               text: err.text.trim(),
@@ -653,33 +794,51 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       }
     };
 
+    const currentValue = this.plugin.settings.filterRules ?? '';
     setting.addTextArea((textArea) => {
       textArea.inputEl.addClass('frontmatter-date-manager-filter-textarea');
       textArea.inputEl.rows = 10;
       textArea.inputEl.placeholder = [
-        strings.settings.filterRules.placeholderExcludeFolder,
+        fr.placeholderExcludeFolder,
         'templates/',
         '',
-        strings.settings.filterRules.placeholderExcludeByPattern,
+        fr.placeholderExcludeByPattern,
         'daily/**/*.md',
         '',
-        strings.settings.filterRules.placeholderReinclude,
+        fr.placeholderReinclude,
         '!daily/important.md',
       ].join('\n');
       textArea.setValue(currentValue);
       updateFeedback(currentValue);
 
       textArea.onChange(async (value) => {
-        this.plugin.settings.filterRules = value;
-        await this.saveSettings();
-        this.plugin.recompileFilterRules();
+        // Rules with a bad line still save (valid lines compile) - that is
+        // why this is a render row, not a textarea control with validate.
+        await this.setControlValue('filterRules', value);
         updateFeedback(value);
-        previewEl.empty();
+        shared.previewEl?.empty();
       });
     });
 
-    new Setting(this.containerEl).setName('').addButton((btn) => {
-      btn.setButtonText(strings.settings.filterRules.previewButton);
+    return () => {
+      warnEl.remove();
+      errorsEl.remove();
+    };
+  }
+
+  private renderFilterPreviewRow(
+    setting: Setting,
+    shared: { previewEl: HTMLElement | null },
+  ): () => void {
+    const fr = strings.settings.filterRules;
+    setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
+    const previewEl = setting.settingEl.createDiv({
+      cls: 'frontmatter-date-manager-filter-preview',
+    });
+    shared.previewEl = previewEl;
+
+    setting.addButton((btn) => {
+      btn.setButtonText(fr.previewButton);
       btn.onClick(() => {
         previewEl.empty();
         const rules = this.plugin.getCompiledRules();
@@ -696,7 +855,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         }
 
         previewEl.createDiv({
-          text: t(strings.settings.filterRules.previewSummary, {
+          text: t(fr.previewSummary, {
             tracked: tracked.length,
             excluded: excluded.length,
           }),
@@ -706,9 +865,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         if (excluded.length > 0) {
           const details = previewEl.createEl('details');
           details.createEl('summary', {
-            text: t(strings.settings.filterRules.skippedFilesSummary, {
-              excluded: excluded.length,
-            }),
+            text: t(fr.skippedFilesSummary, { excluded: excluded.length }),
           });
           const list = details.createEl('ul');
           const limit = Math.min(excluded.length, 50);
@@ -717,18 +874,25 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           }
           if (excluded.length > 50) {
             list.createEl('li', {
-              text: t(strings.settings.filterRules.skippedMore, {
-                count: excluded.length - 50,
-              }),
+              text: t(fr.skippedMore, { count: excluded.length - 50 }),
             });
           }
         }
       });
     });
+
+    return () => {
+      previewEl.remove();
+      if (shared.previewEl === previewEl) shared.previewEl = null;
+    };
   }
 
-  addFilterRulesReference(): void {
-    const refEl = this.containerEl.createEl('details', {
+  private renderFilterReference(setting: Setting): () => void {
+    // Column layout, like the editor/preview rows: without it the row's empty
+    // .setting-item-info flex child eats the left half and squeezes the
+    // reference into the right column.
+    setting.settingEl.addClass('frontmatter-date-manager-filter-setting');
+    const refEl = setting.settingEl.createEl('details', {
       cls: 'frontmatter-date-manager-filter-reference',
     });
     refEl.createEl('summary', {
@@ -824,87 +988,134 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       cls: 'frontmatter-date-manager-ref-note',
     });
     noteEl.append(ref.emptyNote);
+
+    return () => void refEl.remove();
   }
 
-  addContentHashToggle(): void {
-    const hashEnabled = this.plugin.settings.enableContentHashCheck ?? true;
+  // --- Render helpers (rows a control cannot express) ---
 
-    new Setting(this.containerEl)
-      .setName(strings.settings.behavior.changeDetection.name)
-      .setDesc(
-        hashEnabled
-          ? strings.settings.behavior.changeDetection.descEnabled
-          : strings.settings.behavior.changeDetection.descDisabled,
-      )
-      .addToggle((cb) =>
-        cb.setValue(hashEnabled).onChange(async (newValue) => {
-          this.plugin.settings.enableContentHashCheck = newValue;
-          await this.saveSettings();
-          this.display();
-        }),
-      );
-
-    if (!hashEnabled) return;
-
-    this.addFrontmatterHashTracking();
-    this.addFrontmatterExcludeKeys();
-  }
-
-  private addFrontmatterHashTracking(): void {
-    const setting = new Setting(this.containerEl)
-      .setName(strings.settings.behavior.hashTrackingMode.name)
-      .setDesc(strings.settings.behavior.hashTrackingMode.desc)
-      .addDropdown((dropdown) => {
-        dropdown.addOption(
-          'body',
-          strings.settings.behavior.hashTrackingMode.optionBody,
-        );
-        dropdown.addOption(
-          'frontmatter',
-          strings.settings.behavior.hashTrackingMode.optionFrontmatter,
-        );
-        dropdown.addOption(
-          'both',
-          strings.settings.behavior.hashTrackingMode.optionBoth,
-        );
-        dropdown.setValue(this.plugin.settings.hashTrackingMode ?? 'body');
-        dropdown.onChange(async (value) => {
-          this.plugin.settings.hashTrackingMode = value as HashTrackingMode;
-          await this.saveSettings();
-          new Notice(
-            strings.settings.behavior.hashTrackingMode.changedNotice,
-            6000,
-          );
-          this.display();
+  // Live preview of the current format in the description, rebuilt on every
+  // keystroke - a control's desc is static, so this stays a render row.
+  private renderDateFormatRow(setting: Setting): void {
+    const df = strings.settings.formatting.dateFormat;
+    const createDoc = () => {
+      const descr = createFragment();
+      const tzOptions = this.plugin.settings.timezone
+        ? { in: tz(this.plugin.settings.timezone) }
+        : {};
+      let preview: string;
+      try {
+        preview = t(df.currentlyPreview, {
+          preview: format(
+            new Date(),
+            this.plugin.settings.dateFormat,
+            tzOptions,
+          ),
         });
-      });
-    setting.settingEl.addClass('frontmatter-date-manager-nested-setting');
+      } catch {
+        const hint = getMomentFormatHint(this.plugin.settings.dateFormat);
+        preview = hint ? t(df.invalidWithHint, { hint }) : df.invalidFormat;
+      }
+      descr.append(
+        df.desc,
+        descr.createEl('br'),
+        descr.createEl('a', {
+          href: 'https://date-fns.org/v4.1.0/docs/format',
+          text: df.formatCodesLink,
+        }),
+        descr.createEl('br'),
+        preview,
+        descr.createEl('br'),
+        df.obsidianDefault,
+      );
+      return descr;
+    };
+
+    setting.setDesc(createDoc());
+    setting.addText((text) =>
+      text
+        .setPlaceholder(DEFAULT_SETTINGS.dateFormat)
+        .setValue(this.plugin.settings.dateFormat)
+        .onChange(async (value) => {
+          await this.setControlValue('dateFormat', value);
+          setting.setDesc(createDoc());
+        }),
+    );
   }
 
-  private addFrontmatterExcludeKeys(): void {
-    const mode = this.plugin.settings.hashTrackingMode ?? 'body';
-    if (mode !== 'frontmatter' && mode !== 'both') return;
+  // TimezoneSuggest needs the raw input element, which control rows never
+  // expose - so this stays a render row.
+  private renderTimezoneRow(setting: Setting): () => void {
+    const tzStrings = strings.settings.formatting.timezone;
+    const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const currentList = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
+    let errorEl: HTMLElement | null = null;
+    const showError = (show: boolean) => {
+      errorEl ??= setting.settingEl.createDiv({
+        cls: 'frontmatter-date-manager-timezone-error',
+        text: tzStrings.invalidTimezone,
+      });
+      errorEl.toggleClass('frontmatter-date-manager-hidden', !show);
+    };
+
+    setting
+      .addText((text) => {
+        new TimezoneSuggest(this.app, text.inputEl);
+        text
+          .setPlaceholder(t(tzStrings.placeholder, { localTz }))
+          .setValue(this.plugin.settings.timezone)
+          .onChange(async (value) => {
+            const trimmed = value.trim();
+            if (trimmed.length > 0) {
+              // Intl.DateTimeFormat constructor throws on invalid timezone
+              // strings; used here as validation. An invalid value shows an
+              // inline error and is never saved.
+              try {
+                Intl.DateTimeFormat(undefined, { timeZone: trimmed });
+              } catch {
+                showError(true);
+                return;
+              }
+            }
+            showError(false);
+            await this.setControlValue('timezone', trimmed);
+          });
+      })
+      .addExtraButton((cb) => {
+        cb.setIcon('reset')
+          .setTooltip(tzStrings.resetTooltip)
+          .onClick(async () => {
+            await this.setControlValue('timezone', '');
+            // Full re-render: the date-format row's preview depends on the
+            // timezone, and the input's displayed value must reset too.
+            this.update();
+          });
+      });
+
+    return () => errorEl?.remove();
+  }
+
+  private renderExcludeInputRow(setting: Setting): void {
+    const ek = strings.settings.behavior.excludeKeys;
     let inputValue = '';
 
     const addKeys = async () => {
+      const currentList = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
       const newKeys = parsePropertyKeys(inputValue, currentList);
       if (newKeys.length === 0) return;
-      this.plugin.settings.frontmatterHashExcludeKeys = [
+      await this.setControlValue('frontmatterHashExcludeKeys', [
         ...currentList,
         ...newKeys,
-      ];
-      await this.saveSettings();
-      this.display();
+      ]);
+      // The list's definition items changed - a DOM-state refresh is not
+      // enough, the tree must be rebuilt.
+      this.update();
     };
 
-    const setting = new Setting(this.containerEl)
-      .setName(strings.settings.behavior.excludeKeys.name)
-      .setDesc(strings.settings.behavior.excludeKeys.desc)
+    setting
       .addText((text) => {
         text.inputEl.addClass('frontmatter-date-manager-exclude-input');
-        text.setPlaceholder(strings.settings.behavior.excludeKeys.placeholder);
+        text.setPlaceholder(ek.placeholder);
         text.onChange((value) => {
           inputValue = value;
         });
@@ -918,252 +1129,17 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       .addButton((cb) => {
         cb.buttonEl.addClass('frontmatter-date-manager-exclude-add');
         cb.setIcon('plus');
-        cb.setTooltip(strings.settings.behavior.excludeKeys.addTooltip);
+        cb.setTooltip(ek.addTooltip);
         cb.onClick(() => {
           void addKeys();
         });
       });
-    setting.settingEl.addClass('frontmatter-date-manager-nested-setting');
-
-    if (currentList.length > 0) {
-      const chips = this.containerEl.createDiv({
-        cls: 'frontmatter-date-manager-property-chips',
-      });
-      currentList.forEach((entry) => {
-        const chip = chips.createSpan({
-          cls: 'frontmatter-date-manager-property-chip',
-        });
-        chip.createSpan({
-          cls: 'frontmatter-date-manager-property-chip-label',
-          text: entry,
-        });
-        const remove = chip.createSpan({
-          cls: 'frontmatter-date-manager-property-chip-remove',
-          attr: {
-            'role': 'button',
-            'tabindex': '0',
-            'aria-label': t(
-              strings.settings.behavior.excludeKeys.chipRemoveAriaLabel,
-              { entry },
-            ),
-          },
-        });
-        setIcon(remove, 'x');
-        const triggerRemove = () => {
-          void this.removeExcludeKey(entry);
-        };
-        remove.addEventListener('click', triggerRemove);
-        remove.addEventListener('keydown', (evt) => {
-          if (evt.key === 'Enter' || evt.key === ' ') {
-            evt.preventDefault();
-            triggerRemove();
-          }
-        });
-      });
-    }
   }
 
-  private async removeExcludeKey(entry: string): Promise<void> {
-    const list = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
-    this.plugin.settings.frontmatterHashExcludeKeys = list.filter(
-      (v) => v !== entry,
-    );
-    await this.saveSettings();
-    this.display();
-  }
-
-  // --- Advanced (rendered into a custom container) ---
-
-  addDelayForNewFiles(parent: HTMLElement): void {
-    new Setting(parent)
-      .setName(strings.settings.advanced.newFileDelay.name)
-      .setDesc(strings.settings.advanced.newFileDelay.desc)
-      .addText((text) =>
-        text
-          .setPlaceholder('5000')
-          .setValue(String(this.plugin.settings.delayForNewFiles))
-          .onChange(async (value) => {
-            this.plugin.settings.delayForNewFiles = parseInt(value) || 0;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  addAutoPopulateCache(parent: HTMLElement): void {
-    new Setting(parent)
-      .setName(strings.settings.advanced.autoPopulateCache.name)
-      .setDesc(strings.settings.advanced.autoPopulateCache.desc)
-      .addToggle((cb) =>
-        cb
-          .setValue(this.plugin.settings.enableAutoPopulateCache ?? false)
-          .onChange(async (newValue) => {
-            this.plugin.settings.enableAutoPopulateCache = newValue;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  addMaxCacheEntries(parent: HTMLElement): void {
-    new Setting(parent)
-      .setName(strings.settings.advanced.maxCacheEntries.name)
-      .setDesc(strings.settings.advanced.maxCacheEntries.desc)
-      .addText((text) =>
-        text
-          .setPlaceholder('10000')
-          .setValue(String(this.plugin.settings.hashCacheMaxSize ?? 10_000))
-          .onChange(async (value) => {
-            this.plugin.settings.hashCacheMaxSize = parseCacheMaxSize(value);
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  addPostUpdateCommand(parent: HTMLElement): void {
-    new Setting(parent)
-      .setName(strings.settings.advanced.postUpdateCommand.name)
-      .setDesc(strings.settings.advanced.postUpdateCommand.desc)
-      .addDropdown((dropdown) => {
-        dropdown.addOption(
-          '',
-          strings.settings.advanced.postUpdateCommand.optionNone,
-        );
-        // Obsidian internal API - no public typings available
-        const internalApp = this.app as unknown as {
-          commands: { commands: Record<string, { name: string }> };
-        };
-        const commands = internalApp.commands.commands;
-        for (const [id, cmd] of Object.entries(commands)) {
-          dropdown.addOption(id, cmd.name);
-        }
-        dropdown.setValue(this.plugin.settings.postUpdateCommand);
-        dropdown.onChange(async (value) => {
-          this.plugin.settings.postUpdateCommand = value;
-          await this.saveSettings();
-        });
-      });
-  }
-
-  // --- Inversion handling ---
-
-  private addInversionStrategy(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.inversions.strategy.name)
-      .setDesc(strings.settings.inversions.strategy.desc)
-      .addDropdown((dd) => {
-        dd.addOption(
-          'disabled',
-          strings.settings.inversions.strategy.optionDisabled,
-        );
-        dd.addOption(
-          'created-to-updated',
-          strings.settings.inversions.strategy.optionCreatedToUpdated,
-        );
-        dd.addOption(
-          'updated-to-created',
-          strings.settings.inversions.strategy.optionUpdatedToCreated,
-        );
-        dd.addOption(
-          'max-all',
-          strings.settings.inversions.strategy.optionMaxAll,
-        );
-        dd.setValue(this.plugin.settings.inversionFixStrategy ?? 'disabled');
-        dd.onChange(async (value) => {
-          this.plugin.settings.inversionFixStrategy =
-            value as InversionFixStrategy;
-          await this.saveSettings();
-        });
-      });
-  }
-
-  private addInversionTolerance(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.inversions.tolerance.name)
-      .setDesc(strings.settings.inversions.tolerance.desc)
-      .addText((text) =>
-        text
-          .setPlaceholder('0')
-          .setValue(String(this.plugin.settings.inversionToleranceSec ?? 0))
-          .onChange(async (value) => {
-            const parsed = parseInt(value, 10);
-            this.plugin.settings.inversionToleranceSec = Number.isFinite(parsed)
-              ? Math.max(0, parsed)
-              : 0;
-            await this.saveSettings();
-          }),
-      );
-  }
-
-  private addFindInversionsButton(): void {
-    new Setting(this.containerEl)
-      .setName(strings.settings.bulk.findInversions.name)
-      .setDesc(strings.settings.bulk.findInversions.desc)
-      .addButton((cb) => {
-        cb.buttonEl.addClass('frontmatter-date-manager-open-inversions');
-        cb.setButtonText(strings.settings.bulk.findInversions.button).onClick(
-          () => {
-            new FindInversionsModal(this.app, this.plugin).open();
-          },
-        );
-      });
-  }
-
-  // --- Helpers ---
-
-  createDateFormatEditor({
-    description,
-    name,
-    getValue,
-    setValue,
-  }: DateFormatArgs) {
-    const createDoc = () => {
-      const descr = createFragment();
-      const tzOptions = this.plugin.settings.timezone
-        ? { in: tz(this.plugin.settings.timezone) }
-        : {};
-      let preview: string;
-      try {
-        preview = t(strings.settings.formatting.dateFormat.currentlyPreview, {
-          preview: format(new Date(), getValue(), tzOptions),
-        });
-      } catch {
-        const hint = getMomentFormatHint(getValue());
-        preview = hint
-          ? t(strings.settings.formatting.dateFormat.invalidWithHint, { hint })
-          : strings.settings.formatting.dateFormat.invalidFormat;
-      }
-      descr.append(
-        description,
-        descr.createEl('br'),
-        descr.createEl('a', {
-          href: 'https://date-fns.org/v4.1.0/docs/format',
-          text: strings.settings.formatting.dateFormat.formatCodesLink,
-        }),
-        descr.createEl('br'),
-        preview,
-        descr.createEl('br'),
-        strings.settings.formatting.dateFormat.obsidianDefault,
-      );
-      return descr;
-    };
-    const dformat = new Setting(this.containerEl)
-      .setName(name)
-      .setDesc(createDoc())
-      .addText((text) =>
-        text
-          .setPlaceholder(DEFAULT_SETTINGS.dateFormat)
-          .setValue(getValue())
-          .onChange(async (value) => {
-            setValue(value);
-            dformat.setDesc(createDoc());
-            await this.saveSettings();
-          }),
-      );
+  private async removeExcludeKeyAt(index: number): Promise<void> {
+    const list = [...(this.plugin.settings.frontmatterHashExcludeKeys ?? [])];
+    list.splice(index, 1);
+    await this.setControlValue('frontmatterHashExcludeKeys', list);
+    this.update();
   }
 }
-
-type DateFormatArgs = {
-  getValue: () => string;
-  setValue: (newValue: string) => void;
-  name: string;
-  description: string;
-};

@@ -61,6 +61,10 @@ export const STRINGS_ZH_TW: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: '請輸入屬性名稱。',
+      counterNameCollision: '此名稱已被上面的另一個屬性使用。',
+    },
     description: {
       syncIntro:
         '同步服務、備份工具和其他外掛經常在不變更內容的情況下重寫檔案，這會重設檔案在磁碟上的日期，導致無法判斷您實際上次編輯筆記的時間。',
@@ -68,7 +72,6 @@ export const STRINGS_ZH_TW: Strings = {
         '此外掛將建立日期與上次編輯日期直接寫入每篇筆記的屬性，並透過比對內容偵測真正的變更，因此您的日期反映的是實際的編輯，而非同步造成的假象。',
     },
     dates: {
-      heading: '要追蹤的日期',
       enableNoneHint: '請在上方至少開啟一個日期，以設定此外掛。',
       created: {
         enableName: '追蹤建立日期',
@@ -116,6 +119,7 @@ export const STRINGS_ZH_TW: Strings = {
         desc: '寫入日期時使用的時區。留空則使用您裝置的時區（{localTz}）。',
         placeholder: '本機（{localTz}）',
         resetTooltip: '重設為本機時區',
+        invalidTimezone: '無法識別的時區名稱。',
       },
       numberProperties: {
         name: '純數字日期不加引號儲存',
@@ -134,10 +138,7 @@ export const STRINGS_ZH_TW: Strings = {
       },
       changeDetection: {
         name: '變更偵測（內容雜湊）',
-        descEnabled:
-          '只有在筆記內容確實變更時才寫入上次編輯日期，這可避免同步外掛造成的錯誤更新。',
-        descDisabled:
-          '已關閉，即使沒有任何變更，每次儲存都會寫入上次編輯日期。',
+        desc: '啟用後，只有在筆記內容確實變更時才寫入上次編輯日期，這可避免同步外掛造成的錯誤更新。',
       },
       hashTrackingMode: {
         name: '什麼算是變更',
@@ -153,11 +154,13 @@ export const STRINGS_ZH_TW: Strings = {
         desc: '編輯這些屬性不會更新日期。您可以一次新增多個，以逗號分隔。created、updated 和 viewed 屬性永遠會自動略過。',
         placeholder: '屬性名稱，例如 tags',
         addTooltip: '新增屬性',
-        chipRemoveAriaLabel: '移除 {entry}',
+        emptyState: '沒有被忽略的屬性。',
       },
     },
     filterRules: {
       name: '要略過的檔案與資料夾',
+      pageDesc: '選擇永遠不會自動更新日期的檔案或資料夾。',
+      ruleCount: '規則：{count}',
       descIntro: '選擇要保持原狀的檔案或資料夾（不自動更新日期）。',
       descOnePerLine: '每行一個模式。以下列字元開頭的行：',
       descCommentsAre: ' 是註解。以下列字元開頭：',
@@ -238,7 +241,8 @@ export const STRINGS_ZH_TW: Strings = {
       },
     },
     advanced: {
-      summary: '進階',
+      pageName: '進階',
+      pageDesc: '時間、快取和自動化選項。',
       newFileDelay: {
         name: '新檔案延遲',
         desc: '在為新建立的筆記標記日期前等待這麼多毫秒。有助於避免與範本外掛衝突。設為 0 可關閉。',

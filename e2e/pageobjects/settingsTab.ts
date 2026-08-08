@@ -4,21 +4,40 @@ const PLUGIN_ID = 'frontmatter-date-manager';
 
 const EXCLUDE_INPUT = '.frontmatter-date-manager-exclude-input';
 const EXCLUDE_ADD = '.frontmatter-date-manager-exclude-add';
-const CHIP = '.frontmatter-date-manager-property-chip';
-const CHIP_LABEL = '.frontmatter-date-manager-property-chip-label';
-const CHIP_REMOVE = '.frontmatter-date-manager-property-chip-remove';
+const EXCLUDE_LIST = '.frontmatter-date-manager-exclude-list';
+// Real entries only - the list renders its empty-state placeholder as a
+// .setting-item too (with .mod-empty-state).
+const EXCLUDE_ROW = `${EXCLUDE_LIST} .setting-item:not(.mod-empty-state)`;
+const ROW_NAME = '.setting-item-name';
+// Delete affordance the declarative list adds to each row when onDelete is set.
+const ROW_DELETE = '.clickable-icon';
+// Sub-page chrome (declarative `type: 'page'` navigation).
+const SUBPAGE_BACK = '.setting-page-back-button';
+const NAVIGABLE_ROW = '.setting-item.mod-navigable';
+
+async function visibleBackButton() {
+  const backs = await $$(SUBPAGE_BACK).getElements();
+  for (const back of backs) {
+    if (await back.isDisplayed()) return back;
+  }
+  return null;
+}
 
 export const settingsTab = {
-  /** Open the settings window directly on this plugin's tab. */
+  /** Open the settings UI directly on this plugin's tab. */
   async open(): Promise<void> {
     await browser.executeObsidian(({ app }, id) => {
-      const setting = (
-        app as unknown as {
-          setting: { open(): void; openTabById(id: string): void };
-        }
-      ).setting;
-      setting.open();
-      setting.openTabById(id);
+      const internal = app as unknown as {
+        vault: { setConfig(key: string, value: unknown): void };
+        setting: { open(): void; openTabById(id: string): void };
+      };
+      // Obsidian 1.13 opens settings in a separate OS window by default
+      // (vault config `settingsPopoutWindow`, default true). Force the classic
+      // in-window modal so every Page Object selector - and the bulk modals
+      // opened from settings buttons - stays in the main webdriver context.
+      internal.vault.setConfig('settingsPopoutWindow', false);
+      internal.setting.open();
+      internal.setting.openTabById(id);
     }, PLUGIN_ID);
   },
 
@@ -29,7 +48,38 @@ export const settingsTab = {
     await btn.click();
   },
 
-  // --- "Ignore these properties" exclude list (comma input + chips) ---
+  /** Open a declarative sub-page by its visible row name (English-only e2e). */
+  async openSubPage(name: string): Promise<void> {
+    const rows = await $$(NAVIGABLE_ROW).getElements();
+    for (const row of rows) {
+      if (
+        (await row.isDisplayed()) &&
+        (await row.$(ROW_NAME).getText()) === name
+      ) {
+        await row.click();
+        await browser.waitUntil(
+          async () => (await visibleBackButton()) !== null,
+          {
+            timeout: 5_000,
+            timeoutMsg: 'sub-page back button never appeared',
+          },
+        );
+        return;
+      }
+    }
+    throw new Error(`no navigable settings row named "${name}"`);
+  },
+
+  async backFromSubPage(): Promise<void> {
+    // The settings modal keeps other tabs' DOM around, so a bare $ can match
+    // a hidden back button (and the raw-coordinates click lands on whatever
+    // sits there, e.g. the tab sidebar). Only ever click the visible one.
+    const back = await visibleBackButton();
+    if (!back) throw new Error('no visible sub-page back button');
+    await back.click();
+  },
+
+  // --- "Ignore these properties" exclude list (comma input + native list) ---
 
   /** Type into the exclude input and click "+" to commit. */
   async addExcludeProperty(value: string): Promise<void> {
@@ -39,24 +89,25 @@ export const settingsTab = {
     await $(EXCLUDE_ADD).click();
   },
 
-  /** Labels of the currently rendered exclude chips, in order. */
-  async excludeChipLabels(): Promise<string[]> {
-    return $$(CHIP_LABEL).map((l) => l.getText());
+  /** Names of the currently rendered exclude-list rows, in order. */
+  async excludeRowLabels(): Promise<string[]> {
+    return $$(`${EXCLUDE_ROW} ${ROW_NAME}`).map((l) => l.getText());
   },
 
-  async excludeChipCount(): Promise<number> {
-    return $$(CHIP).length;
+  async excludeRowCount(): Promise<number> {
+    return $$(EXCLUDE_ROW).length;
   },
 
-  /** Click the remove control of the chip whose label matches. */
-  async removeExcludeChip(label: string): Promise<void> {
-    const chips = await $$(CHIP).getElements();
-    for (const chip of chips) {
-      if ((await chip.$(CHIP_LABEL).getText()) === label) {
-        await chip.$(CHIP_REMOVE).click();
+  /** Click the delete control of the list row whose name matches. */
+  async removeExcludeRow(label: string): Promise<void> {
+    const rows = await $$(EXCLUDE_ROW).getElements();
+    for (const row of rows) {
+      if ((await row.$(ROW_NAME).getText()) === label) {
+        await row.$(ROW_DELETE).click();
         return;
       }
     }
+    throw new Error(`no exclude-list row named "${label}"`);
   },
 
   async close(): Promise<void> {

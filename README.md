@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.11.0+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.13.0+-7C3AED)](https://obsidian.md)
 [![Obsidian downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%22frontmatter-date-manager%22%5D.downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json)](https://community.obsidian.md/plugins/frontmatter-date-manager)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
@@ -59,6 +59,8 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 
 ## Installation
 
+Requires Obsidian **1.13.0 or newer**.
+
 ### Community plugins
 
 In Obsidian, open Settings > Community plugins > Browse, search for **Frontmatter Date Manager**, and click Install.
@@ -87,6 +89,8 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 ## Settings
 
+Every option is findable through Obsidian's settings search. The gitignore-style skip rules and the advanced options (new file delay, cache, post-update command) live on their own sub-pages inside the plugin's settings tab.
+
 | Setting                            | Default                 | Description                                                                      |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | Track creation date                | `true`                  | Add a creation date to notes that don't have one yet                             |
@@ -102,7 +106,7 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 | Save number-only dates without quotes | `false`              | Output numbers instead of quoted text for digit-only formats                     |
 | Auto-update                        | `true`                  | Automatically update dates when you edit a note                                  |
 | Minimum seconds between updates    | `30`                    | Minimum interval between date updates                                            |
-| Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments              |
+| Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments (own sub-page) |
 | Change detection (content hashing) | `true`                  | Write the date only when content actually changes (SHA-256 hashing)             |
 | What counts as a change            | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                          |
 | Ignore these properties            | `[]`                    | Properties to ignore in change detection; add several at once, comma-separated   |
@@ -162,7 +166,7 @@ Use Settings → Bulk operations → Set dates from the file's own dates. It rea
 
 > I use Templater / Daily Notes / QuickAdd. Will the plugin conflict with them?
 
-No. The plugin waits 5 seconds (configurable: Settings → Behavior → Advanced → New file delay) before processing newly created files, giving template plugins time to finish.
+No. The plugin waits 5 seconds (configurable: Settings → Advanced → New file delay) before processing newly created files, giving template plugins time to finish.
 
 > Do I need to add properties to every note manually first?
 

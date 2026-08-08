@@ -6,7 +6,7 @@ _英語版 [README](README.md) の翻訳です。誤りを見つけましたか�
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.11.0+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.13.0+-7C3AED)](https://obsidian.md)
 [![Obsidian downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%22frontmatter-date-manager%22%5D.downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json)](https://community.obsidian.md/plugins/frontmatter-date-manager)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
@@ -61,6 +61,8 @@ Obsidian でノートを編集すると、YAML frontmatter 内の `created`、`u
 
 ## インストール
 
+Obsidian **1.13.0 以降**が必要です。
+
 ### コミュニティプラグイン
 
 Obsidian で 設定 > コミュニティプラグイン > 閲覧 を開き、**Frontmatter Date Manager** を検索して、インストールをクリックします。
@@ -89,6 +91,8 @@ Obsidian で 設定 > コミュニティプラグイン > 閲覧 を開き、**F
 
 ## 設定
 
+すべての項目は Obsidian の設定検索から見つけられます。gitignore スタイルのスキップルールと、詳細オプション（新規ファイルの遅延、キャッシュ、更新後コマンド）は、プラグインの設定タブ内のそれぞれ専用のサブページにあります。
+
 | 設定                            | デフォルト                 | 説明                                                                      |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | 作成日を追跡                | `true`                  | まだ作成日を持たないノートに作成日を追加します                             |
@@ -104,7 +108,7 @@ Obsidian で 設定 > コミュニティプラグイン > 閲覧 を開き、**F
 | 数値のみの日付を引用符なしで保存 | `false`              | 数字のみのフォーマットで、引用符付きテキストの代わりに数値を出力します                     |
 | 自動更新                        | `true`                  | ノートを編集すると日付を自動的に更新します                                  |
 | 更新間隔の最小秒数    | `30`                    | 日付更新間の最小間隔                                            |
-| スキップするファイルとフォルダ          | `""` (all files)        | gitignore スタイルのルール: 行は除外、`!` は再包含、`#` はコメント              |
+| スキップするファイルとフォルダ          | `""` (all files)        | gitignore スタイルのルール: 行は除外、`!` は再包含、`#` はコメント（専用サブページ）              |
 | 変更検出（コンテンツハッシュ） | `true`                  | 内容が実際に変更されたときだけ日付を書き込みます（SHA-256 ハッシュ）             |
 | 変更とみなす対象            | `body`                  | 更新をトリガーする対象: `body`、`frontmatter`、または `both`                          |
 | これらのプロパティを無視            | `[]`                    | 変更検出で無視するプロパティ。カンマ区切りで一度に複数追加可能   |
@@ -164,7 +168,7 @@ LIMIT 20
 
 > Templater / Daily Notes / QuickAdd を使っています。プラグインは競合しますか？
 
-いいえ。プラグインは新規作成されたファイルを処理する前に5秒待機します（設定可能: 設定 → 動作 → 詳細設定 → 新規ファイルの遅延）。これにより、テンプレートプラグインが完了する時間が与えられます。
+いいえ。プラグインは新規作成されたファイルを処理する前に5秒待機します（設定可能: 設定 → 詳細設定 → 新規ファイルの遅延）。これにより、テンプレートプラグインが完了する時間が与えられます。
 
 > 先にすべてのノートに手動でプロパティを追加する必要がありますか？
 
