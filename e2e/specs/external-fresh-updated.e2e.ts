@@ -176,10 +176,8 @@ describe('external edit with a fresh updated is not re-stamped', function () {
     assert.equal(fmValue(after, 'created'), '2020-01-01T00:00:00');
     assert.match(getBody(after), /externally edited body/);
     // M2: FDM did not rewrite the file - mtime is unchanged since the external
-    // write. createNote uses vault.create (it opens no editor leaf), so
-    // editorSafeWriteOptions returns undefined and a real re-stamp WOULD move
-    // mtime - which makes this a guaranteed true-negative, not a pinned-mtime
-    // false green.
+    // write. The plugin never pins mtime on a write, so a real re-stamp WOULD
+    // move it - which makes this a guaranteed true-negative.
     assert.equal(
       await currentMtime(path),
       wrote.mtime,

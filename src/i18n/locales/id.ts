@@ -56,6 +56,10 @@ export const STRINGS_ID: Strings = {
       'Mengunduh {count} baris sebagai {filename} ke folder unduhan Anda.',
     downloadFailed: 'Tidak dapat mengunduh berkas pratinjau.',
     failureColumnError: 'Kesalahan',
+    skippedColumnReason: 'Alasan',
+    skippedTableIntro: '{count} catatan dilewati dan dibiarkan tidak berubah:',
+    skippedUnsavedChanges:
+      'Catatan ini memiliki perubahan yang belum disimpan di editor yang terbuka. Simpan atau tutup catatan tersebut, lalu jalankan pratinjau baru.',
     progressCounter: '{count}/{max}',
   },
   settings: {

@@ -56,6 +56,10 @@ export const STRINGS_FA: Strings = {
       'تعداد {count} ردیف به‌صورت {filename} در پوشه دانلودهای شما دانلود شد.',
     downloadFailed: 'دانلود پرونده پیش‌نمایش ممکن نشد.',
     failureColumnError: 'خطا',
+    skippedColumnReason: 'دلیل',
+    skippedTableIntro: '{count} یادداشت رد شد و بدون تغییر باقی ماند:',
+    skippedUnsavedChanges:
+      'این یادداشت تغییرات ذخیره‌نشده‌ای در یک ویرایشگر باز دارد. آن را ذخیره یا ببندید، سپس پیش‌نمایش جدیدی اجرا کنید.',
     progressCounter: '{count}/{max}',
   },
   settings: {

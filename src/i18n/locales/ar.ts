@@ -56,6 +56,10 @@ export const STRINGS_AR: Strings = {
       'تم تنزيل عدد الصفوف: {count}. الملف {filename} في مجلد التنزيلات.',
     downloadFailed: 'تعذّر تنزيل ملف المعاينة.',
     failureColumnError: 'خطأ',
+    skippedColumnReason: 'السبب',
+    skippedTableIntro: 'تم تخطي {count} ملاحظة/ملاحظات وتُركت دون تغيير:',
+    skippedUnsavedChanges:
+      'تحتوي الملاحظة على تغييرات غير محفوظة في محرر مفتوح. احفظها أو أغلقها، ثم شغّل معاينة جديدة.',
     progressCounter: '{count}/{max}',
   },
   settings: {

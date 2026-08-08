@@ -83,7 +83,10 @@ describe('computeFrontmatterUpdates inversion prevention', () => {
     expect(result.createdValue).toBeUndefined();
   });
 
-  it('shows Notice only once per session', () => {
+  // The compute is PURE: it flags the fix but never notifies. Announcing here
+  // would tell the user "detected and fixed" even on a pass that deferred (a
+  // dirty editor buffer, a rate limit) or failed - i.e. wrote nothing.
+  it('flags the fix without showing a Notice - the compute has no side effects', () => {
     const plugin = createPlugin({
       inversionFixStrategy: 'created-to-updated',
       minSecondsBetweenSaves: 0,
@@ -101,9 +104,29 @@ describe('computeFrontmatterUpdates inversion prevention', () => {
     const noticeSpy = vi.fn();
     (plugin as any)._noticeFactory = noticeSpy;
 
-    (plugin as any).computeFrontmatterUpdates(file);
-    (plugin as any).computeFrontmatterUpdates(file);
+    const result = (plugin as any).computeFrontmatterUpdates(file);
 
-    expect(noticeSpy).toHaveBeenCalledTimes(1);
+    expect(result.inversionFixed).toBe(true);
+    expect(noticeSpy).not.toHaveBeenCalled();
+  });
+
+  it('leaves inversionFixed unset when no inversion is present', () => {
+    const plugin = createPlugin({
+      inversionFixStrategy: 'created-to-updated',
+      minSecondsBetweenSaves: 0,
+      timezone: 'UTC',
+    });
+    plugin.app = mockApp({
+      created: '2024-02-01T10:00:00',
+      updated: '2024-02-08T10:00:00',
+    });
+    const file = mockFile(
+      new Date('2024-02-01T10:00:00Z').getTime(),
+      new Date('2024-02-08T10:00:00Z').getTime(),
+    );
+
+    const result = (plugin as any).computeFrontmatterUpdates(file);
+
+    expect(result.inversionFixed).toBeUndefined();
   });
 });

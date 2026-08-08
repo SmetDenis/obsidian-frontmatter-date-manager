@@ -1,6 +1,6 @@
 import { ButtonComponent, Platform, Setting } from 'obsidian';
 import { clampPage, getPageCount, getPageSlice } from './pagination';
-import type { ExecuteFailure } from './executePhase';
+import type { ExecuteFailure, ExecuteSkip } from './executePhase';
 import { downloadPreviewAsFile } from './export';
 import { strings, format } from '../i18n';
 import type FrontmatterDateManagerPlugin from '../main';
@@ -263,6 +263,41 @@ export function renderFailureTable(
       columns,
       rows,
       'frontmatter-date-manager-failures',
+    );
+  });
+}
+
+/**
+ * Render the list of notes a bulk run deliberately left untouched (BulkSkipped,
+ * e.g. unsaved editor changes) as a paginated `File | Reason` table plus a
+ * download button. Rendered separately from renderFailureTable and visually
+ * distinct (its own intro line + CSS class): a skip is not a failure. The
+ * per-row reason tells the user how to proceed (save/close the note, run a new
+ * preview) - skipped files are never silently requeued.
+ */
+export function renderSkippedTable(
+  parent: HTMLElement,
+  plugin: FrontmatterDateManagerPlugin,
+  skipped: ExecuteSkip[],
+): void {
+  const section = parent.createDiv({
+    cls: 'frontmatter-date-manager-bulk-skipped',
+  });
+  section.createEl('p', {
+    cls: 'frontmatter-date-manager-bulk-skipped-intro',
+    text: format(strings.bulkChrome.skippedTableIntro, {
+      count: skipped.length,
+    }),
+  });
+  const columns = [strings.common.file, strings.bulkChrome.skippedColumnReason];
+  const rows = skipped.map((s) => [s.label, s.reason]);
+  renderPaginatedDiffTable(section, { columns, rows });
+  renderDownloadPreviewButton(section, () => {
+    downloadPreviewAsFile(
+      plugin,
+      columns,
+      rows,
+      'frontmatter-date-manager-skipped',
     );
   });
 }

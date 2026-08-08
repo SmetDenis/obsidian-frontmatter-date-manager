@@ -6,6 +6,12 @@ export function createPlugin(
 ): FrontmatterDateManagerPlugin {
   const plugin = new FrontmatterDateManagerPlugin();
   plugin.settings = { ...DEFAULT_SETTINGS, ...overrides };
+  // Minimal app so the dirty-editor guard (hasUnsavedEditorChanges, consulted
+  // by every write path incl. bulk) can run: no leaf open -> nothing dirty.
+  // Tests that care about editor state replace plugin.app with their own.
+  plugin.app = {
+    workspace: { getLeavesOfType: () => [] },
+  } as unknown as FrontmatterDateManagerPlugin['app'];
   return plugin;
 }
 

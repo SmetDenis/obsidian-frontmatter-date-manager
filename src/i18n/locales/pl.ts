@@ -56,6 +56,10 @@ export const STRINGS_PL: Strings = {
       'Pobrano wierszy: {count}. Plik {filename} w folderze pobranych.',
     downloadFailed: 'Nie udało się pobrać pliku podglądu.',
     failureColumnError: 'Błąd',
+    skippedColumnReason: 'Powód',
+    skippedTableIntro: '{count} notatek pominięto i pozostawiono bez zmian:',
+    skippedUnsavedChanges:
+      'Notatka ma niezapisane zmiany w otwartym edytorze. Zapisz ją lub zamknij, a następnie uruchom nowy podgląd.',
     progressCounter: '{count}/{max}',
   },
   settings: {

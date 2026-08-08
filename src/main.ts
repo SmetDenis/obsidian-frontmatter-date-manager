@@ -34,6 +34,15 @@ export interface HashCacheEntry {
   lastAccessed: number;
 }
 
+// Result of one handleFileChange pass. `wrote` is true only when
+// processFrontMatter actually ran; `deferred` is true only when a real change
+// is pending and will be written by a scheduled retry (rate limit, dirty
+// editor buffer, or a concurrent pass holding the lock).
+export type FileChangeResult =
+  | { status: 'ok'; wrote: boolean; deferred?: boolean }
+  | { status: 'error'; error: unknown }
+  | { status: 'ignored' };
+
 const HASH_CACHE_FILE = 'hash-cache.json';
 const HASH_CACHE_DEFAULT_MAX_SIZE = 10_000;
 // Capped debounce pair: DEBOUNCE resets on each dirty event,
@@ -215,7 +224,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (file) {
           if (!checking) {
-            this.handleFileChange(file)
+            // Through the lock, not handleFileChange directly - the command
+            // must never run concurrently with an in-flight automatic pass on
+            // the same file. No view.save() flush either: with several leaves
+            // on one file flushing one proves nothing about the others, and it
+            // would write the user's content without being asked.
+            this.processFileWithLock(file)
               .then((result) => {
                 if (result.status === 'ok') {
                   new Notice(
@@ -535,41 +549,52 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return key;
   }
 
-  // True when the file is currently loaded in a Markdown editor leaf (not a
-  // deferred/unloaded leaf). Used to decide whether an automatic frontmatter
-  // write must preserve the file's mtime - see editorSafeWriteOptions.
-  private isFileOpenInEditor(file: TFile): boolean {
-    return this.app.workspace
-      .getLeavesOfType('markdown')
-      .some(
-        (leaf) =>
-          leaf.view instanceof MarkdownView &&
-          leaf.view.file?.path === file.path,
-      );
+  // Every Markdown editor view currently showing this file. Deferred/unloaded
+  // leaves are skipped naturally: their view is not a MarkdownView instance.
+  private markdownViewsFor(file: TFile): MarkdownView[] {
+    const views: MarkdownView[] = [];
+    for (const leaf of this.app.workspace.getLeavesOfType('markdown')) {
+      if (
+        leaf.view instanceof MarkdownView &&
+        leaf.view.file?.path === file.path
+      ) {
+        views.push(leaf.view);
+      }
+    }
+    return views;
   }
 
-  // Write options for an automatic (single-file) frontmatter write. When the
-  // target note is open in an editor we pin its ctime/mtime so Obsidian does NOT
-  // treat the write as an external change: otherwise it reloads the note into the
-  // editor and the user's cursor, selection, and scroll jump while they are still
-  // typing (the reported "storm"). A note not open in any editor is written with
-  // no options (undefined) - there is no live editor to disturb, so its metadata
-  // (Properties view, Dataview) refreshes immediately, which is preferable.
+  // True when ANY editor view of this file holds unsaved changes. Obsidian's
+  // TextFileView reacts to a vault write of its own file by 3-way-merging the
+  // new content into the live buffer (fuzzy diff-match-patch) and showing
+  // "<file> has been modified externally, merging changes automatically" - and
+  // that branch is gated on the view's `dirty` flag, never on mtime. So the
+  // plugin must not call processFrontMatter while any leaf showing the file is
+  // dirty; EVERY matching leaf is checked because one can be clean while
+  // another holds unsaved changes.
   //
-  // The tradeoff for the open note: its `updated`/`viewed` value in the live
-  // Properties view only catches up on the next real edit or reopen (on disk it
-  // is already correct). This intentionally reverses the earlier "always
-  // re-render" choice - stability while typing outranks live-reflecting a
-  // timestamp the user is not looking at.
-  //
-  // Bulk operations must NEVER use this (they write via src/bulk/write.ts):
-  // preserving mtime there leaves the hash cache stale and lets a self-triggered
-  // modify event escaping the bulkRunning window spuriously re-stamp `updated`.
-  private editorSafeWriteOptions(
-    file: TFile,
-  ): { ctime: number; mtime: number } | undefined {
-    if (!this.isFileOpenInEditor(file)) return undefined;
-    return { ctime: file.stat.ctime, mtime: file.stat.mtime };
+  // `dirty` has no public typings - it is read through an `unknown` cast, the
+  // established pattern for internal APIs here (see app.commands). The guard
+  // fails CLOSED: when `dirty` is not a boolean (API drift), fall back to
+  // comparing the buffer with the file on disk, and treat an unreadable buffer
+  // as unsafe. A delayed stamp is recoverable; a merge into the user's live
+  // buffer is not. Public because bulk writes (src/bulk/write.ts) share it.
+  async hasUnsavedEditorChanges(file: TFile): Promise<boolean> {
+    for (const view of this.markdownViewsFor(file)) {
+      const flag = (view as unknown as { dirty?: unknown }).dirty;
+      if (typeof flag === 'boolean') {
+        if (flag) return true;
+        continue;
+      }
+      try {
+        if (view.getViewData() !== (await this.app.vault.cachedRead(file))) {
+          return true;
+        }
+      } catch {
+        return true;
+      }
+    }
+    return false;
   }
 
   private computeFrontmatterUpdates(file: TFile): {
@@ -581,6 +606,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // edit-activity counter increments iff this is true - so a service rewrite of
     // `updated` (which sets `updatedValue` with no edit) never moves the counter.
     countedEdit?: boolean;
+    // True when the inversion-fix strategy rewrote the candidate values. The
+    // caller shows the "detected and fixed" notice AFTER the successful write -
+    // never here, or a deferred/failed pass would announce a fix that did not
+    // happen. This keeps the compute pure (no user-visible side effects).
+    inversionFixed?: boolean;
   } | null {
     const updatedKey = this.settings.headerUpdated.trim();
     const createdKey = this.settings.headerCreated.trim();
@@ -605,6 +635,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       updatedValue?: string | number;
       retryAfterMs?: number;
       countedEdit?: boolean;
+      inversionFixed?: boolean;
     } = {};
 
     if (this.settings.enableCreateTime && createdKey) {
@@ -697,7 +728,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           const newUpdated = this.formatDate(fixed.updated);
           if (newCreated !== undefined) result.createdValue = newCreated;
           if (newUpdated !== undefined) result.updatedValue = newUpdated;
-          this.showInversionNoticeOnce();
+          result.inversionFixed = true;
         }
       }
     }
@@ -705,13 +736,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return result;
   }
 
-  async handleFileChange(
-    file: TAbstractFile,
-  ): Promise<
-    | { status: 'ok'; wrote: boolean; deferred?: boolean }
-    | { status: 'error'; error: unknown }
-    | { status: 'ignored' }
-  > {
+  async handleFileChange(file: TAbstractFile): Promise<FileChangeResult> {
     if (!isTFile(file)) {
       return { status: 'ignored' };
     }
@@ -730,6 +755,28 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const checkResult = await this.shouldFileBeIgnored(file);
     if (checkResult.ignored) {
       return { status: 'ignored' };
+    }
+
+    // Never write while an editor buffer of this file has unsaved changes -
+    // Obsidian would merge the write into the live buffer and pop the
+    // "modified externally" notice (see hasUnsavedEditorChanges). Defer the
+    // WHOLE pass exactly like the rate-limit branch below: no write, no hash
+    // refresh (the pending change must stay detectable), one coalesced timer.
+    // Obsidian's own 2 s autosave clears `dirty` shortly after typing stops,
+    // so the deferral cannot starve - and a cap that eventually forced a write
+    // would reintroduce the merge, so there deliberately is none. Placed
+    // BEFORE computeFrontmatterUpdates: the compute would be wasted work for
+    // a pass that must not write.
+    if (await this.hasUnsavedEditorChanges(file)) {
+      this.log('Editor buffer has unsaved changes - deferring');
+      if (!this.modifyTimers.has(file.path)) {
+        const timer = window.setTimeout(() => {
+          this.modifyTimers.delete(file.path);
+          void this.processFileWithLock(file);
+        }, MODIFY_DEBOUNCE_MS);
+        this.modifyTimers.set(file.path, timer);
+      }
+      return { status: 'ok', wrote: false, deferred: true };
     }
 
     const updates = this.computeFrontmatterUpdates(file);
@@ -800,15 +847,21 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             frontmatter[counterKey] = coerceCount(frontmatter[counterKey]) + 1;
           }
         },
-        // Preserve mtime when the note is open in an editor so the write does not
-        // reload it and jump the user's cursor/scroll while they type.
-        this.editorSafeWriteOptions(file),
+        // No { ctime, mtime } pin - deliberately. The write only happens on a
+        // clean buffer (guard above), where Obsidian replaces just the
+        // frontmatter lines in an open editor without disturbing the cursor.
+        // Pinning mtime here proved harmful: a size-neutral re-stamp (fixed
+        // width dateFormat) then emitted NO event, the editor never learned
+        // about the write, and its next save silently reverted the stamp.
       );
-      // After write, Obsidian updates file.stat.mtime (unchanged when we pinned
-      // it above). Store it so the self-triggered modify event is detected and
-      // skipped - the guard compares the stored value to the event's mtime and
-      // holds either way.
+      // After write, Obsidian updates file.stat.mtime. Store it so the
+      // self-triggered modify event is detected and skipped.
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
+      // The write above actually landed - only now may the inversion fix be
+      // announced (computeFrontmatterUpdates is pure and never notifies).
+      if (updates.inversionFixed === true) {
+        this.showInversionNoticeOnce();
+      }
       // Re-read after processFrontMatter modified the file
       await this.populateCacheForFile(file);
 
@@ -852,21 +905,27 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   }
 
   // processingFiles Set prevents concurrent processFrontMatter on the same file.
-  // If another modify fires mid-processing, we re-schedule instead of dropping it.
-  private async processFileWithLock(file: TFile): Promise<void> {
+  // If another modify fires mid-processing, we re-schedule instead of dropping
+  // it. Returns the pass result so the manual command (which routes through
+  // this lock too, so it can never race the automatic path) can report
+  // honestly: a locked file maps to `deferred` - the rescheduled pass IS
+  // pending and will apply the change shortly.
+  private async processFileWithLock(file: TFile): Promise<FileChangeResult> {
     if (this.processingFiles.has(file.path)) {
-      // Already processing this file - re-schedule
-      const retryTimer = window.setTimeout(() => {
-        this.modifyTimers.delete(file.path);
-        void this.processFileWithLock(file);
-      }, MODIFY_DEBOUNCE_MS);
-      this.modifyTimers.set(file.path, retryTimer);
-      return;
+      // Already processing this file - re-schedule (coalesced per-file timer).
+      if (!this.modifyTimers.has(file.path)) {
+        const retryTimer = window.setTimeout(() => {
+          this.modifyTimers.delete(file.path);
+          void this.processFileWithLock(file);
+        }, MODIFY_DEBOUNCE_MS);
+        this.modifyTimers.set(file.path, retryTimer);
+      }
+      return { status: 'ok', wrote: false, deferred: true };
     }
     this.processingFiles.add(file.path);
     try {
       this.log('TRIGGER FROM MODIFY (debounced)');
-      await this.handleFileChange(file);
+      return await this.handleFileChange(file);
     } finally {
       this.processingFiles.delete(file.path);
     }
@@ -900,6 +959,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     ) {
       return;
     }
+
+    // Any dirty editor buffer of this file blocks the viewed stamp - and the
+    // stamp is DROPPED for this open, not retried: `viewed` means "at open", so
+    // a deferred write would record a false time and fire after the user moved
+    // on. The just-opened leaf is clean by definition, but ANOTHER leaf showing
+    // the same file can hold unsaved changes (the D4 scenario).
+    if (await this.hasUnsavedEditorChanges(file)) return;
 
     // Rate-limiting via shouldUpdateValue
     const cached: Record<string, unknown> | undefined =
@@ -937,14 +1003,15 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         (frontmatter: Record<string, unknown>) => {
           frontmatter[viewedKey] = formattedNow;
         },
-        // The just-opened note is loaded in an editor, so pin its mtime: merely
-        // viewing a file must not reload the editor nor falsely bump its
-        // modified time.
-        this.editorSafeWriteOptions(file),
+        // No { ctime, mtime } pin (see handleFileChange): the buffer is clean
+        // (guard above), so the editor absorbs the write without a merge.
+        // Accepted consequence: with the last-viewed feature enabled, opening a
+        // note moves its mtime. If that ever becomes unacceptable as a product
+        // property, the answer is to move `viewed` out of frontmatter - not to
+        // fake timestamps.
       );
-      // After write, Obsidian updates file.stat.mtime (unchanged when we pinned
-      // it above). Store it so the self-triggered modify event is detected and
-      // skipped.
+      // After write, Obsidian updates file.stat.mtime. Store it so the
+      // self-triggered modify event is detected and skipped.
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
 
       // Update hash cache so subsequent modify event finds matching hash
@@ -1013,8 +1080,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           return;
         }
 
-        // Debounce per file to prevent race conditions during rapid typing.
-        // Multiple concurrent processFrontMatter() calls can corrupt YAML.
+        // Debounce per file: coalesce a typing burst into one pass instead of
+        // one per keystroke. NOT a corruption guard - Obsidian serializes
+        // processFrontMatter through a single adapter promise chain
+        // (vault.process -> queue), so concurrent calls interleave as whole
+        // read-mutate-write units, never as torn YAML. What the debounce (and
+        // processingFiles) actually prevent is redundant writes and one pass
+        // clobbering another's value.
         const existing = this.modifyTimers.get(file.path);
         if (existing) window.clearTimeout(existing);
 

@@ -56,6 +56,11 @@ export const STRINGS_NL: Strings = {
       '{count} rij(en) gedownload als {filename} naar uw downloadmap.',
     downloadFailed: 'Het voorbeeldbestand kon niet worden gedownload.',
     failureColumnError: 'Fout',
+    skippedColumnReason: 'Reden',
+    skippedTableIntro:
+      '{count} notitie(s) zijn overgeslagen en ongewijzigd gelaten:',
+    skippedUnsavedChanges:
+      'De notitie heeft niet-opgeslagen wijzigingen in een open editor. Sla deze op of sluit deze en voer daarna een nieuwe voorvertoning uit.',
     progressCounter: '{count}/{max}',
   },
   settings: {

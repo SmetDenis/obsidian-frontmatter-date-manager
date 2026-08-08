@@ -6,7 +6,7 @@
 
 | Component | File | Type | Responsibility |
 | --- | --- | --- | --- |
-| `FrontmatterDateManagerPlugin` | `src/main.ts` | `Plugin` | Entry point. Event handlers (`create`/`modify`/`rename`/`delete`/`file-open`), per-file debounce + lock, content hashing, hash-cache lifecycle, pause/resume + status bar, 3 commands, self-trigger suppression, editor-safe writes (`editorSafeWriteOptions` pins mtime for a note open in an editor so the write does not reload it / jump the cursor), inversion prevention. |
+| `FrontmatterDateManagerPlugin` | `src/main.ts` | `Plugin` | Entry point. Event handlers (`create`/`modify`/`rename`/`delete`/`file-open`), per-file debounce + lock, content hashing, hash-cache lifecycle, pause/resume + status bar, 3 commands, self-trigger suppression, the dirty-editor-buffer write guard (`hasUnsavedEditorChanges` - never write into a leaf with unsaved changes; defer, or drop the `viewed` stamp), inversion prevention. |
 | `FrontmatterDateManagerSettingsTab` | `src/Settings.ts` | `PluginSettingTab` | The entire settings UI via imperative `display()`. Sections: Dates to track, Date formatting, Behavior, Modified-before-created, Advanced (collapsible), Bulk operations. |
 
 ## Settings & validation
@@ -37,10 +37,10 @@
 | Component | File | Pure? | Responsibility |
 | --- | --- | --- | --- |
 | `PhaseModal` | `bulk/PhaseModal.ts` | No (DOM) | Modal host: `goTo`/`back`/`isOpenState`. No operation logic. |
-| `applyFrontmatterWrite` | `bulk/write.ts` | No | The one safe bulk frontmatter write (no `{ctime,mtime}`, set `lastPluginWriteMtime`, refresh hash). |
+| `applyFrontmatterWrite` + `BulkSkipped` | `bulk/write.ts` | Yes | The one safe bulk frontmatter write (no `{ctime,mtime}`, set `lastPluginWriteMtime`, refresh hash). Throws the `BulkSkipped` sentinel instead of writing when the note has unsaved editor changes. |
 | `runBatchedScan` | `bulk/scan.ts` | Mostly | Batched per-file compute (yields every 50), progress + abort. |
-| `runExecutePhase` | `bulk/executePhase.ts` | Mostly | Execute loop owning `bulkRunning`, per-file failure capture (`{label, message}`), abort + `onComplete`. |
-| render helpers + `PREVIEW_MAX_ROWS` | `bulk/chrome.ts` | No (DOM) | `renderHeader`/`renderButtonBar`/`renderWarning`/`renderSummary`/`renderPaginatedDiffTable`/`renderDownloadPreviewButton`/`renderFailureTable`/`renderProgress`. |
+| `runExecutePhase` | `bulk/executePhase.ts` | Mostly | Execute loop owning `bulkRunning`, per-file failure capture (`{label, message}`), deliberate skips (`{label, reason}` from `BulkSkipped`), abort + `onComplete`. |
+| render helpers + `PREVIEW_MAX_ROWS` | `bulk/chrome.ts` | No (DOM) | `renderHeader`/`renderButtonBar`/`renderWarning`/`renderSummary`/`renderPaginatedDiffTable`/`renderDownloadPreviewButton`/`renderFailureTable`/`renderSkippedTable`/`renderProgress`. |
 | `getPageCount` / `clampPage` / `getPageSlice` | `bulk/pagination.ts` | Yes | Pure page math. |
 | `toTSV` / `downloadPreviewAsFile` | `bulk/export.ts` | Yes/No | Pure TSV serialization + local file download (transient object URL; desktop-only; no clipboard). |
 

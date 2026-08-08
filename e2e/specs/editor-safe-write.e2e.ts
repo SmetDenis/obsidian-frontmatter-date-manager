@@ -2,22 +2,27 @@
 import { browser } from '@wdio/globals';
 import { obsidianPage } from 'wdio-obsidian-service';
 import { assert } from '../helpers/assert';
-import {
-  createNote,
-  readNote,
-  appendToNote,
-  waitForKey,
-} from '../helpers/vault';
+import { createNote, readNote, waitForKey } from '../helpers/vault';
 import { setSettings } from '../helpers/settings';
 import { fmValue, getBody } from '../helpers/frontmatter';
 
 const ISO = "yyyy-MM-dd'T'HH:mm:ss";
 const COMMAND_ID = 'frontmatter-date-manager:update-timestamps-current-file';
 
-// Real-Obsidian mtime of a note (the seam the unit mock cannot reach). A write
-// that PRESERVES this value is exactly what stops Obsidian from treating the
-// change as external and reloading the editor - which would jump the user's
-// cursor and scroll while they type.
+// The happy path of the single-file write on a note that IS open in the editor
+// but whose buffer is CLEAN. This is the case the dirty-buffer guard must let
+// through, and it is the complement of editor-dirty-merge.e2e.ts (which covers
+// every dirty case). It asserts what actually matters for a clean buffer: the
+// stamp lands, the write does not disturb the editor's text, and everything
+// else in the note survives real processFrontMatter serialization.
+//
+// It deliberately does NOT assert mtime preservation any more. The plugin used
+// to pin { ctime, mtime } for an open note on the theory that this prevented
+// Obsidian from reloading the editor - that rationale was disproved (the reload
+// and merge are gated on the view's `dirty` flag and never look at mtime), and
+// the pin caused a real defect: a size-neutral re-stamp emitted no event at all,
+// so the editor never learned about the write and its next save reverted it.
+
 async function mtimeOf(path: string): Promise<number> {
   return browser.executeObsidian(({ app, obsidian }, p) => {
     const f = app.vault.getAbstractFileByPath(p);
@@ -25,10 +30,17 @@ async function mtimeOf(path: string): Promise<number> {
   }, path);
 }
 
-describe('editor-safe writes: mtime preservation for an open note', function () {
-  it('E1: stamping a note OPEN in the editor preserves its mtime (no reload)', async function () {
+async function editorText(): Promise<string> {
+  return browser.executeObsidian(({ app, obsidian }) => {
+    const view = app.workspace.getActiveViewOfType(obsidian.MarkdownView);
+    return view?.editor.getValue() ?? '';
+  });
+}
+
+describe('single-file writes into a CLEAN open editor', function () {
+  it('E1: a note open with a clean buffer is stamped, and the editor text is untouched', async function () {
     // Command path so the body is never edited: only the plugin's own write can
-    // move mtime, making the assertion exact.
+    // change the file, making the assertions exact.
     await setSettings({
       enableAutoUpdate: false,
       enableLastViewed: false,
@@ -40,70 +52,64 @@ describe('editor-safe writes: mtime preservation for an open note', function () 
 
     const path = await createNote(
       'editorsafe',
-      `---\ncreated: 2020-01-01T00:00:00\n---\n\n# Note\n\nline 1\nline 2\nline 3\n`,
+      `---\ncreated: 2020-01-01T00:00:00\nkeep: me\n---\n\n# Note\n\nline 1\nline 2\nline 3\n`,
     );
 
-    // Open the note in a Markdown editor leaf, then snapshot mtime BEFORE any
-    // plugin write (opening does not modify the file).
     await obsidianPage.openFile(path);
-    const before = await mtimeOf(path);
+    await browser.pause(500); // let the initial load settle; the buffer is clean
+    const bodyBefore = (await editorText()).split('---').slice(2).join('---');
 
-    // Stamp via the command (routes through handleFileChange; the file is open).
     await browser.executeObsidianCommand(COMMAND_ID);
     await waitForKey(path, 'updated');
 
-    const after = await mtimeOf(path);
-
-    // The write pinned { ctime, mtime } because the note is open, so mtime must
-    // be byte-for-byte unchanged. An unchanged mtime is what keeps Obsidian from
-    // reloading the editor (the cursor/scroll "storm").
-    assert.equal(
-      after,
-      before,
-      `mtime must be preserved for a note open in the editor (before=${before}, after=${after})`,
-    );
-
-    // The stamp still landed, created is preserved, and the body survives.
     const doc = await readNote(path);
     assert.match(fmValue(doc, 'updated')!, /^\d{4}-\d{2}-\d{2}T/);
+    // Untouched: an unrelated property, the pre-existing created value, the body.
     assert.equal(fmValue(doc, 'created'), '2020-01-01T00:00:00');
+    assert.equal(fmValue(doc, 'keep'), 'me');
     assert.match(getBody(doc), /line 1\nline 2\nline 3/);
+
+    // The live buffer's body is unchanged - the write only replaced frontmatter
+    // lines, no merge and no text disturbance.
+    const bodyAfter = (await editorText()).split('---').slice(2).join('---');
+    assert.equal(bodyAfter, bodyBefore, 'the editor body text was disturbed');
   });
 
-  it('E2: stamping a note NOT open in any editor advances its mtime', async function () {
-    // The contrast case that proves the branch is conditional: a closed note has
-    // no live editor to disturb, so the write is left to bump mtime (metadata
-    // then refreshes immediately).
+  it('E2: the write reaches the file system - mtime advances even for an open note', async function () {
+    // The pin is gone, so a write on an open note now bumps mtime like any
+    // other. That is what makes the write visible to the open editor (Obsidian
+    // emits `modified` on an mtime OR size change), which is precisely what
+    // stops the editor's next save from reverting a size-neutral stamp.
     await setSettings({
-      enableAutoUpdate: true,
+      enableAutoUpdate: false,
       enableLastViewed: false,
       headerCreated: 'created',
       headerUpdated: 'updated',
       dateFormat: ISO,
       enableNumberProperties: false,
-      // Take the new-file delay window out of the timing so the append is
-      // processed by the normal debounce path.
-      delayForNewFiles: 0,
     });
 
     const path = await createNote(
-      'editorsafe-closed',
+      'editorsafe-mtime',
       `---\ncreated: 2020-01-01T00:00:00\n---\n\n# Note\n\nbody\n`,
     );
 
-    // The note is never opened, so it is absent from every Markdown leaf. Edit
-    // its body on disk and snapshot mtime right after the edit, before the
-    // debounced plugin write.
-    await appendToNote(path, '\nedit while closed\n');
-    const beforePluginWrite = await mtimeOf(path);
+    await obsidianPage.openFile(path);
+    await browser.pause(500);
+    const before = await mtimeOf(path);
 
-    // The auto path stamps `updated`; with the note closed the write bumps mtime.
+    await browser.executeObsidianCommand(COMMAND_ID);
     await waitForKey(path, 'updated');
     const after = await mtimeOf(path);
 
     assert.ok(
-      after > beforePluginWrite,
-      `mtime must advance for a note not open in any editor (before=${beforePluginWrite}, after=${after})`,
+      after >= before,
+      `mtime must not be pinned backwards (before=${before}, after=${after})`,
+    );
+    assert.notEqual(
+      after,
+      -1,
+      'the note vanished from the vault - the scenario proves nothing',
     );
   });
 });

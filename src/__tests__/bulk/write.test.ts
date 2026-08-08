@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import * as obsidian from 'obsidian';
 import { TFile } from 'obsidian';
 import { createPlugin } from '../helpers';
-import { applyFrontmatterWrite } from '../../bulk/write';
+import { applyFrontmatterWrite, BulkSkipped } from '../../bulk/write';
 
 function createMockFile(path: string): TFile {
   return {
@@ -61,5 +62,34 @@ describe('applyFrontmatterWrite', () => {
 
     expect(plugin.lastPluginWriteMtime.get('b.md')).toBe(2000);
     expect(cacheCalls).toHaveLength(0);
+  });
+
+  // A bulk run must never merge into a live buffer. It SKIPS visibly instead of
+  // deferring: a run can be cancelled or its modal closed, and a later silent
+  // write would break the mandatory dry-run preview contract.
+  it('throws BulkSkipped and writes nothing when the note has unsaved changes', async () => {
+    const plugin = createPlugin({ enableContentHashCheck: true });
+    const file = createMockFile('c.md');
+    (plugin as any).app = {
+      workspace: {
+        getLeavesOfType: () => [
+          {
+            view: Object.assign(new obsidian.MarkdownView(), {
+              file,
+              dirty: true,
+            }),
+          },
+        ],
+      },
+    };
+    const capture: { argCount?: number } = {};
+    const app = createApp(capture);
+
+    await expect(
+      applyFrontmatterWrite(app, plugin, file, () => {}),
+    ).rejects.toBeInstanceOf(BulkSkipped);
+
+    expect(capture.argCount).toBeUndefined();
+    expect(plugin.lastPluginWriteMtime.has('c.md')).toBe(false);
   });
 });

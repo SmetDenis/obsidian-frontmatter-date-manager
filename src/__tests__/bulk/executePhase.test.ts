@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createPlugin } from '../helpers';
 import { runExecutePhase } from '../../bulk/executePhase';
+import { BulkSkipped } from '../../bulk/write';
 
 describe('runExecutePhase', () => {
   it('processes every item, resets bulkRunning, runs onComplete', async () => {
@@ -22,7 +23,7 @@ describe('runExecutePhase', () => {
     });
 
     expect(processed).toEqual([1, 2, 3]);
-    expect(res).toEqual({ processed: 3, errors: 0, failures: [] });
+    expect(res).toEqual({ processed: 3, errors: 0, failures: [], skipped: [] });
     expect(plugin.bulkRunning).toBe(false);
     expect(completed).toBe(true);
   });
@@ -61,6 +62,29 @@ describe('runExecutePhase', () => {
 
     expect(res.errors).toBe(1);
     expect(res.failures).toEqual([{ label: 'file-1.md', message: 'oops' }]);
+  });
+
+  it('collects a BulkSkipped throw as a skip, not an error', async () => {
+    const plugin = createPlugin();
+    const res = await runExecutePhase<number>({
+      plugin,
+      items: [1, 2, 3],
+      isOpen: () => true,
+      processItem: async (n) => {
+        if (n === 2) throw new BulkSkipped('unsaved changes');
+        if (n === 3) throw new Error('boom');
+      },
+      onProgress: () => {},
+      labelFor: (n) => `file-${n}.md`,
+    });
+
+    expect(res.processed).toBe(1);
+    // A skip is not counted as an error and never lands in `failures`.
+    expect(res.errors).toBe(1);
+    expect(res.failures).toEqual([{ label: 'file-3.md', message: 'boom' }]);
+    expect(res.skipped).toEqual([
+      { label: 'file-2.md', reason: 'unsaved changes' },
+    ]);
   });
 
   it('aborts when isOpen flips false', async () => {

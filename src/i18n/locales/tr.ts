@@ -56,6 +56,10 @@ export const STRINGS_TR: Strings = {
       'İndirilen satır sayısı: {count}. {filename} dosyası indirilenler klasörünüze kaydedildi.',
     downloadFailed: 'Önizleme dosyası indirilemedi.',
     failureColumnError: 'Hata',
+    skippedColumnReason: 'Neden',
+    skippedTableIntro: '{count} not atlandı ve değiştirilmedi:',
+    skippedUnsavedChanges:
+      'Notta açık bir düzenleyicide kaydedilmemiş değişiklikler var. Kaydedin veya kapatın, ardından yeni bir önizleme çalıştırın.',
     progressCounter: '{count}/{max}',
   },
   settings: {

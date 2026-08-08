@@ -61,6 +61,11 @@ export const STRINGS_JA: Strings = {
       '{count} 行をダウンロードしました。ファイル {filename} がダウンロードフォルダにあります。',
     downloadFailed: 'プレビューファイルをダウンロードできませんでした。',
     failureColumnError: 'エラー',
+    skippedColumnReason: '理由',
+    skippedTableIntro:
+      '{count} 件のノートはスキップされ、変更されませんでした:',
+    skippedUnsavedChanges:
+      'このノートには開いているエディタに未保存の変更があります。保存するか閉じてから、新しいプレビューを実行してください。',
     progressCounter: '{count}/{max}',
   },
   settings: {

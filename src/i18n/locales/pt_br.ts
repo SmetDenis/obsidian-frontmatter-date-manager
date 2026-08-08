@@ -56,6 +56,11 @@ export const STRINGS_PT_BR: Strings = {
       'Baixado(s) {count} linha(s) como {filename} na sua pasta de downloads.',
     downloadFailed: 'Não foi possível baixar o arquivo de visualização.',
     failureColumnError: 'Erro',
+    skippedColumnReason: 'Motivo',
+    skippedTableIntro:
+      '{count} nota(s) foram puladas e deixadas sem alterações:',
+    skippedUnsavedChanges:
+      'A nota tem alterações não salvas em um editor aberto. Salve-a ou feche-a e execute uma nova pré-visualização.',
     progressCounter: '{count}/{max}',
   },
   settings: {

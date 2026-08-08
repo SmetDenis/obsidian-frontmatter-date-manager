@@ -27,10 +27,10 @@ obsidian-frontmatter-date-manager/
 │   │
 │   ├── bulk/                         # Shared building blocks composed by all 5 modals
 │   │   ├── PhaseModal.ts             #   Modal host: phase navigation + lifecycle only.
-│   │   ├── write.ts                  #   applyFrontmatterWrite - the one safe bulk write.
+│   │   ├── write.ts                  #   applyFrontmatterWrite + BulkSkipped sentinel.
 │   │   ├── scan.ts                   #   runBatchedScan - batched compute + abort.
-│   │   ├── executePhase.ts           #   runExecutePhase - execute loop + failure capture.
-│   │   ├── chrome.ts                 #   Render helpers (header/diff table/failure table/...).
+│   │   ├── executePhase.ts           #   runExecutePhase - execute loop, failures + skips.
+│   │   ├── chrome.ts                 #   Render helpers (header/diff/failure/skipped table/...).
 │   │   ├── pagination.ts             #   Pure page math (unit-tested).
 │   │   └── export.ts                 #   Pure TSV + local file download (no clipboard).
 │   │

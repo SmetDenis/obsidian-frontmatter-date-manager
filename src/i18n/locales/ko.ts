@@ -56,6 +56,10 @@ export const STRINGS_KO: Strings = {
       '{count}개 행을 {filename} 파일로 다운로드 폴더에 저장했습니다.',
     downloadFailed: '미리 보기 파일을 다운로드하지 못했습니다.',
     failureColumnError: '오류',
+    skippedColumnReason: '이유',
+    skippedTableIntro: '{count}개의 노트를 건너뛰어 변경하지 않았습니다:',
+    skippedUnsavedChanges:
+      '이 노트에는 열려 있는 편집기에 저장되지 않은 변경 사항이 있습니다. 저장하거나 닫은 후 새 미리보기를 실행하세요.',
     progressCounter: '{count}/{max}',
   },
   settings: {

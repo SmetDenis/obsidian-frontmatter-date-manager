@@ -22,6 +22,7 @@ import {
   renderDownloadPreviewButton,
   renderProgress,
   renderFailureTable,
+  renderSkippedTable,
 } from './bulk/chrome';
 
 export type ReformatScope = 'created' | 'updated' | 'viewed' | 'both' | 'all';
@@ -597,7 +598,7 @@ export class ReformatDateModal extends PhaseModal {
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
 
-    const { processed, errors, failures } = await runExecutePhase({
+    const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
       items,
       isOpen: () => this.isOpenState(),
@@ -631,6 +632,9 @@ export class ReformatDateModal extends PhaseModal {
         contentEl,
         t(strings.modals.reformat.doneTitle, { processed }),
       );
+    }
+    if (skipped.length > 0) {
+      renderSkippedTable(contentEl, this.plugin, skipped);
     }
     renderButtonBar(contentEl, {
       footer: {

@@ -20,6 +20,7 @@ function createTFile(path: string): TFile {
 function setupOpenPlugin(
   overrides: Partial<FrontmatterDateManagerSettings> = {},
   openFile?: TFile,
+  leafDirty: unknown[] = [],
 ) {
   const plugin = createPlugin({ timezone: 'UTC', ...overrides });
   plugin.recompileFilterRules();
@@ -33,14 +34,24 @@ function setupOpenPlugin(
       return Promise.resolve();
     },
   );
-  // When openFile is provided the workspace reports it as open in a Markdown
-  // editor leaf, so handleFileOpen pins ctime/mtime (viewing must not reload the
-  // just-opened editor). Otherwise no leaf is open.
+  // When openFile is provided the workspace reports it as open in Markdown
+  // leaves - one per `leafDirty` entry (its value becomes the leaf's private
+  // `dirty` flag), or a single clean leaf when the list is empty.
+  const dirtyFlags = leafDirty.length > 0 ? leafDirty : [false];
   const openLeaves = openFile
-    ? [{ view: Object.assign(new obsidian.MarkdownView(), { file: openFile }) }]
+    ? dirtyFlags.map((dirty) => ({
+        view: Object.assign(new obsidian.MarkdownView(), {
+          file: openFile,
+          dirty,
+          getViewData: () => '# note body',
+        }),
+      }))
     : [];
   plugin.app = {
-    vault: { read: vi.fn().mockResolvedValue('# note body') },
+    vault: {
+      read: vi.fn().mockResolvedValue('# note body'),
+      cachedRead: vi.fn().mockResolvedValue('# note body'),
+    },
     fileManager: { processFrontMatter },
     metadataCache: { getFileCache: () => ({ frontmatter: {} }) },
     workspace: { getLeavesOfType: vi.fn(() => openLeaves) },
@@ -70,15 +81,39 @@ describe('handleFileOpen - viewed stamping respects shouldFileBeIgnored', () => 
     expect(processFrontMatter).toHaveBeenCalledOnce();
   });
 
-  it('pins ctime/mtime when the opened note is loaded in an editor, so viewing does not reload it', async () => {
+  it('stamps a clean open note with no write options', async () => {
     const file = createTFile('notes/daily.md');
     const { plugin, processFrontMatter } = setupOpenPlugin({}, file);
     await (plugin as any).handleFileOpen(file);
     expect(processFrontMatter).toHaveBeenCalledOnce();
-    expect(processFrontMatter.mock.calls[0]?.[2]).toEqual({
-      ctime: file.stat.ctime,
-      mtime: file.stat.mtime,
-    });
+    // No { ctime, mtime } pin: on a clean buffer the editor absorbs the write,
+    // and the pin previously made a size-neutral write invisible to it.
+    // Accepted: with last-viewed on, opening a note moves its mtime.
+    expect(processFrontMatter.mock.calls[0]?.[2]).toBeUndefined();
+  });
+
+  // The viewed stamp is DROPPED (not deferred) when a buffer is dirty: `viewed`
+  // means "at open", so a later write would record a false time.
+  it('drops the viewed stamp when ANOTHER leaf of the same file is dirty', async () => {
+    const file = createTFile('notes/daily.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [
+      false,
+      true,
+    ]);
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when a leaf reports a non-boolean dirty and its buffer differs from disk', async () => {
+    const file = createTFile('notes/daily.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [
+      undefined,
+    ]);
+    (plugin as any).app.vault.cachedRead = vi
+      .fn()
+      .mockResolvedValue('different on disk');
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).not.toHaveBeenCalled();
   });
 });
 

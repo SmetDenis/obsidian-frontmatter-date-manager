@@ -57,10 +57,10 @@ vault 'modify' event
        -> self-trigger check: lastPluginWriteMtime matches file.stat.mtime? skip
        -> shouldFileBeIgnored(): extension, Canvas.md, Excalidraw, filter rules,
           empty file, then SHA-256 hash vs cache
+       -> hasUnsavedEditorChanges(): any Markdown leaf of this file dirty?
+          -> yes: defer the whole pass (no write, no hash refresh), reschedule
        -> computeFrontmatterUpdates(): decide created/updated values
-       -> processFrontMatter() writes ONLY changed keys
-          (pins { ctime, mtime } via editorSafeWriteOptions when the note is
-           open in an editor, so the write does not reload it and jump the cursor)
+       -> processFrontMatter() writes ONLY changed keys (no write options)
        -> store lastPluginWriteMtime, re-hash file, mark cache dirty
        -> debounced flush to hash-cache.json
 ```
@@ -69,9 +69,13 @@ vault 'modify' event
 
 After every automated write the code stores `file.stat.mtime` in `lastPluginWriteMtime`, and `handleFileChange` skips the next event whose mtime matches. This breaks the write -> modify -> write loop and applies to `handleFileChange`, `handleFileOpen`, **and every bulk write**. The guard holds whether or not mtime was preserved on the write - it stores whatever `file.stat.mtime` is post-write, which is exactly what the self-triggered event carries.
 
-### 5.1a Editor-safe mtime preservation (automatic single-file writes)
+### 5.1a Dirty-editor-buffer write guard (issue #10)
 
-The automatic single-file writes (`handleFileChange`, `handleFileOpen`) pass `editorSafeWriteOptions(file)` to `processFrontMatter`. When the note is **open in a Markdown editor leaf** (`isFileOpenInEditor`), the write pins `{ ctime, mtime }` so Obsidian does not treat it as an external change and reload the note - a reload resets the user's cursor, selection, and scroll while they type. A note not open in any editor gets no options, so its metadata refreshes immediately. Tradeoff: the open note's live Properties value of `updated`/`viewed` catches up on the next real edit or reopen (on disk it is already correct). **Bulk writes never preserve mtime** (`applyFrontmatterWrite`, `src/bulk/write.ts`): doing so would leave the hash cache stale and let a self-triggered event escaping the `bulkRunning` window spuriously re-stamp `updated`.
+Obsidian's `TextFileView` 3-way-merges any vault write of its own file into the live buffer - fuzzy diff-match-patch, per-hunk failure flags discarded - and shows "modified externally, merging changes automatically", **iff the view's private `dirty` flag is set** when the `modify` arrives. mtime is never consulted there. So `hasUnsavedEditorChanges(file)` gates every write path: it checks **every** Markdown leaf showing the file (one can be clean while another is dirty), reads `dirty` through an `unknown` cast, and **fails closed** - a non-boolean `dirty` falls back to `getViewData() !== cachedRead()`, and an unreadable buffer counts as dirty.
+
+Per path: `handleFileChange` defers the whole pass (no write, no hash refresh, one coalesced timer, no cap - Obsidian's 2 s autosave clears `dirty` shortly after typing stops); `handleFileOpen` **drops** the `viewed` stamp (it means "at open", so a later write would record a false time); bulk throws `BulkSkipped` and the modal reports the file as skipped. The manual command routes through `processFileWithLock` (which returns the result) so it cannot race the automatic path.
+
+**No write path passes `{ ctime, mtime }`.** An earlier version pinned them for a note open in an editor, on the theory that this prevented the reload - it did not (the merge is gated on `dirty`), and it caused a real defect: a size-neutral re-stamp changed neither mtime nor size, Obsidian emitted no event, the open editor never learned about the write, and its next save reverted the stamp. Consequence accepted with the removal: with last-viewed enabled, opening a note now moves its `mtime`.
 
 ### 5.2 Change detection (content hashing)
 

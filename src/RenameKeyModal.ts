@@ -15,6 +15,7 @@ import {
   renderDownloadPreviewButton,
   renderProgress,
   renderFailureTable,
+  renderSkippedTable,
 } from './bulk/chrome';
 
 export interface RenameKeyPreviewEntry {
@@ -303,7 +304,7 @@ export class RenameKeyModal extends PhaseModal {
 
     const progress = renderProgress(contentEl, this.previewEntries.length);
 
-    const { processed, errors, failures } = await runExecutePhase({
+    const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
       items: this.previewEntries,
       isOpen: () => this.isOpenState(),
@@ -337,6 +338,9 @@ export class RenameKeyModal extends PhaseModal {
         contentEl,
         format(strings.modals.rename.doneTitle, { processed }),
       );
+    }
+    if (skipped.length > 0) {
+      renderSkippedTable(contentEl, this.plugin, skipped);
     }
     renderButtonBar(contentEl, {
       footer: {
