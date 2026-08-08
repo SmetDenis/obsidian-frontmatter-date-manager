@@ -4,3 +4,6 @@ main.js
 
 # e2e: downloaded Obsidian binary + installer cache (not ours to format)
 e2e/.obsidian-cache/
+
+# GitNexus index (generated, git-excluded via .git/info/exclude)
+.gitnexus/

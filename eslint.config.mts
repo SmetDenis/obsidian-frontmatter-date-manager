@@ -110,5 +110,7 @@ export default tseslint.config(
     // **/*.ts, so .mts is treated like the other excluded runner/build configs.
     'e2e/wdio.conf.mts',
     'tmp/**',
+    // GitNexus index (generated, git-excluded via .git/info/exclude)
+    '.gitnexus/**',
   ]),
 );
