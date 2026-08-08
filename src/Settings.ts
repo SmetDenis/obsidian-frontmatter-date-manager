@@ -526,6 +526,10 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     return {
       type: 'list',
       cls: 'frontmatter-date-manager-exclude-list',
+      // A list cannot nest inside the behavior group, so it needs its own
+      // heading - otherwise the entries read as an orphaned card wedged
+      // between "Behavior" and the next section.
+      heading: strings.settings.behavior.excludeKeys.listHeading,
       visible: () => !this.allDatesOff() && this.excludeKeysVisible(),
       emptyState: strings.settings.behavior.excludeKeys.emptyState,
       onDelete: (index: number) => {
@@ -726,9 +730,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         t(fr.ruleCount, { count: this.plugin.getCompiledRules().length }),
       items: [
         {
-          name: fr.name,
-          // The page entry already carries this name - keeping the editor row
-          // out of the search index avoids a duplicate hit for the same thing.
+          // Deliberately unnamed: the sub-page header already reads "Files and
+          // folders to skip", so repeating it on the editor row printed the
+          // same title twice on one screen. Unsearchable for the same reason -
+          // the page entry is the one search hit for this setting.
+          name: '',
           searchable: false,
           render: (setting: Setting) =>
             this.renderFilterRulesEditor(setting, shared),

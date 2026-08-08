@@ -57,7 +57,7 @@ Then enable the plugin in Obsidian (Settings -> Community plugins) and reload.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on push/PR to `main` across Node **20 and 22**: `make install` -> `format-check` -> `lint` -> `test` -> `build`. (E2E is intentionally not in CI.)
+`.github/workflows/ci.yml` runs on push/PR to `main` across Node **20 and 22**: `make install` -> `format-check` -> `lint` -> `typecheck-e2e` -> `test` -> `build`. (Running the e2e suite is intentionally not in CI - it needs a real Obsidian and a display - but its specs/page objects are type-checked there so they cannot rot between manual runs.)
 
 ## Pre-completion check - MANDATORY
 

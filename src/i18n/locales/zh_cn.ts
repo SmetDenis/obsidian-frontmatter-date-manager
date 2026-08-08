@@ -159,6 +159,7 @@ export const STRINGS_ZH_CN: Strings = {
         desc: '编辑这些属性不会更新日期。你可以用逗号分隔一次添加多个。created、updated 和 viewed 属性始终会被自动忽略。',
         placeholder: '属性名，例如 tags',
         addTooltip: '添加属性',
+        listHeading: '忽略的属性',
         emptyState: '没有被忽略的属性。',
       },
     },

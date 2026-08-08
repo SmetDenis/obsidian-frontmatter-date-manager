@@ -165,6 +165,7 @@ export const STRINGS_FR: Strings = {
         desc: 'Modifier ces propriétés ne mettra pas la date à jour. Vous pouvez en ajouter plusieurs à la fois, séparées par des virgules. Les propriétés created, updated et viewed sont toujours ignorées automatiquement.',
         placeholder: 'Nom de propriété comme tags',
         addTooltip: 'Ajouter une propriété',
+        listHeading: 'Propriétés ignorées',
         emptyState: 'Aucune propriété ignorée.',
       },
     },

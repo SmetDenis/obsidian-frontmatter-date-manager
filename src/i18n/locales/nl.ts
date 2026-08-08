@@ -164,6 +164,7 @@ export const STRINGS_NL: Strings = {
         desc: "Het bewerken van deze eigenschappen werkt de datum niet bij. U kunt er meerdere tegelijk toevoegen, gescheiden door komma's. De eigenschappen created, updated en viewed worden altijd automatisch genegeerd.",
         placeholder: 'Eigenschapsnaam zoals tags',
         addTooltip: 'Eigenschap toevoegen',
+        listHeading: 'Genegeerde eigenschappen',
         emptyState: 'Geen genegeerde eigenschappen.',
       },
     },

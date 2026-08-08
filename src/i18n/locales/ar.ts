@@ -156,6 +156,7 @@ export const STRINGS_AR: Strings = {
         desc: 'تعديل هذه الخصائص لن يحدّث التاريخ. يمكنك إضافة عدة خصائص دفعة واحدة مفصولة بفواصل. تُتجاهَل الخصائص created وupdated وviewed دائمًا تلقائيًا.',
         placeholder: 'اسم خاصية مثل tags',
         addTooltip: 'إضافة خاصية',
+        listHeading: 'الخصائص المتجاهَلة',
         emptyState: 'لا توجد خصائص متجاهَلة.',
       },
     },

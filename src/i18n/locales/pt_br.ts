@@ -161,6 +161,7 @@ export const STRINGS_PT_BR: Strings = {
         desc: 'Editar estas propriedades não atualizará a data. Você pode adicionar várias de uma vez, separadas por vírgulas. As propriedades created, updated e viewed são sempre ignoradas automaticamente.',
         placeholder: 'Nome da propriedade, como tags',
         addTooltip: 'Adicionar propriedade',
+        listHeading: 'Propriedades ignoradas',
         emptyState: 'Nenhuma propriedade ignorada.',
       },
     },

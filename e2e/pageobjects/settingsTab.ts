@@ -5,9 +5,11 @@ const PLUGIN_ID = 'frontmatter-date-manager';
 const EXCLUDE_INPUT = '.frontmatter-date-manager-exclude-input';
 const EXCLUDE_ADD = '.frontmatter-date-manager-exclude-add';
 const EXCLUDE_LIST = '.frontmatter-date-manager-exclude-list';
-// Real entries only - the list renders its empty-state placeholder as a
-// .setting-item too (with .mod-empty-state).
-const EXCLUDE_ROW = `${EXCLUDE_LIST} .setting-item:not(.mod-empty-state)`;
+// Real entries only. The list renders two non-entry rows as .setting-item too:
+// its empty-state placeholder (.mod-empty-state) and, since the list carries a
+// `heading`, the heading row (.setting-item-heading). Both must be excluded or
+// the row count is off by one.
+const EXCLUDE_ROW = `${EXCLUDE_LIST} .setting-item:not(.mod-empty-state):not(.setting-item-heading)`;
 const ROW_NAME = '.setting-item-name';
 // Delete affordance the declarative list adds to each row when onDelete is set.
 const ROW_DELETE = '.clickable-icon';

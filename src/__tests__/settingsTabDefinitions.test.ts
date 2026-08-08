@@ -129,6 +129,11 @@ describe('getSettingDefinitions structure', () => {
     const page = (behavior.items as AnyDef[]).find((d) => d.type === 'page');
     expect(page?.name).toBe(strings.settings.filterRules.name);
     expect(page?.items).toHaveLength(3);
+    // None of the rows inside repeats the page's own title - the sub-page
+    // header already shows it, and a second copy printed it twice on screen.
+    for (const item of page?.items as AnyDef[]) {
+      expect(item.name).toBe('');
+    }
     // Rule count surfaces on the entry row without opening the page.
     expect((page?.displayValue as () => string)()).toBe('Rules: 0');
   });
@@ -385,6 +390,11 @@ describe('exclude-keys list', () => {
     }
     expect(list.emptyState).toBe(
       strings.settings.behavior.excludeKeys.emptyState,
+    );
+    // The list sits at top level (it cannot nest inside the behavior group),
+    // so its own heading is what ties the rows to the input row above.
+    expect(list.heading).toBe(
+      strings.settings.behavior.excludeKeys.listHeading,
     );
   });
 

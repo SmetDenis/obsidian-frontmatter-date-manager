@@ -163,6 +163,7 @@ export const STRINGS_IT: Strings = {
         desc: 'Modificare queste proprietà non aggiornerà la data. Puoi aggiungerne diverse in una volta, separate da virgole. Le proprietà created, updated e viewed vengono sempre ignorate automaticamente.',
         placeholder: 'Nome di una proprietà, ad esempio tags',
         addTooltip: 'Aggiungi proprietà',
+        listHeading: 'Proprietà ignorate',
         emptyState: 'Nessuna proprietà ignorata.',
       },
     },

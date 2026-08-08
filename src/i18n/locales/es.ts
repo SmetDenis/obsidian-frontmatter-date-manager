@@ -162,6 +162,7 @@ export const STRINGS_ES: Strings = {
         desc: 'Editar estas propiedades no actualizará la fecha. Puedes añadir varias a la vez, separadas por comas. Las propiedades created, updated y viewed siempre se ignoran automáticamente.',
         placeholder: 'Nombre de propiedad como tags',
         addTooltip: 'Añadir propiedad',
+        listHeading: 'Propiedades ignoradas',
         emptyState: 'No hay propiedades ignoradas.',
       },
     },

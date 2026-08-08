@@ -1,8 +1,7 @@
-import tseslint from 'typescript-eslint';
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import globals from 'globals';
-import { globalIgnores } from 'eslint/config';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
 // This config is deliberately a STRICT SUPERSET of the Obsidian review bot:
 //   1. `...obsidianmd.configs.recommended` is the bot's exact ruleset, so
@@ -24,7 +23,9 @@ import { globalIgnores } from 'eslint/config';
 // this config would suppress that locally but not on review. That inline
 // directive, in turn, must carry a `-- <reason>` description to satisfy
 // require-description (above); a bare `/* global ... */` is now a lint error.
-export default tseslint.config(
+// `defineConfig` (eslint core), not the deprecated `tseslint.config` wrapper -
+// typescript-eslint now recommends it and flags its own helper as deprecated.
+export default defineConfig(
   {
     languageOptions: {
       globals: {

@@ -159,6 +159,7 @@ export const STRINGS_ID: Strings = {
         desc: 'Mengedit properti ini tidak akan memperbarui tanggal. Anda dapat menambahkan beberapa sekaligus, dipisahkan dengan koma. Properti created, updated, dan viewed selalu diabaikan otomatis.',
         placeholder: 'Nama properti seperti tags',
         addTooltip: 'Tambah properti',
+        listHeading: 'Properti yang diabaikan',
         emptyState: 'Tidak ada properti yang diabaikan.',
       },
     },
