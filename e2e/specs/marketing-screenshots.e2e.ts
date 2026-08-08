@@ -42,21 +42,16 @@ async function captionOn(line1: string, line2: string): Promise<void> {
           '#fdm-caption .l2{color:#e6dcff;font-size:14px;font-weight:500;line-height:1.3;text-align:center;}';
         activeDocument.head.appendChild(style);
       }
+      // createDiv() both creates AND attaches, so each node is built directly in
+      // its final parent - no detached node is ever moved.
       let band = activeDocument.getElementById('fdm-caption');
       if (!band) {
-        band = activeDocument.createElement('div');
+        band = activeDocument.body.createDiv();
         band.id = 'fdm-caption';
-        activeDocument.body.appendChild(band);
       }
-      band.textContent = '';
-      const a = activeDocument.createElement('div');
-      a.className = 'l1';
-      a.textContent = l1;
-      band.appendChild(a);
-      const b = activeDocument.createElement('div');
-      b.className = 'l2';
-      b.textContent = l2;
-      band.appendChild(b);
+      band.empty();
+      band.createDiv({ cls: 'l1', text: l1 });
+      band.createDiv({ cls: 'l2', text: l2 });
     },
     line1,
     line2,
