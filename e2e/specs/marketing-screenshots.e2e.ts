@@ -27,20 +27,32 @@ const OUT = './screenshots';
 async function captionOn(line1: string, line2: string): Promise<void> {
   await browser.executeObsidian(
     (_o, l1, l2) => {
-      const styleId = 'fdm-caption-style';
-      if (!activeDocument.getElementById(styleId)) {
-        const style = activeDocument.createElement('style');
-        style.id = styleId;
-        style.textContent =
+      // The banner's CSS is adopted as a constructable stylesheet rather than
+      // injected as a <style> element. That is deliberate on two counts: no
+      // element is created at all (so neither obsidianmd/prefer-create-el nor
+      // no-forbidden-elements applies - and the rule's suggested
+      // `createEl('style')` would itself be a no-forbidden-elements ERROR), and
+      // these throwaway capture-only styles stay out of the plugin's shipped
+      // styles.css. Inline styles are not an option either - they trip
+      // no-static-styles-assignment.
+      const doc = activeDocument as Document & {
+        adoptedStyleSheets: CSSStyleSheet[];
+        __fdmCaptionSheet?: CSSStyleSheet;
+      };
+      if (!doc.__fdmCaptionSheet) {
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(
           '#fdm-caption{position:fixed;top:0;left:0;right:0;z-index:2147483647;' +
-          'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
-          'gap:3px;padding:11px 28px;box-sizing:border-box;' +
-          'background:linear-gradient(90deg,#7C3AED 0%,#4f46e5 100%);' +
-          "font-family:'Maple Mono','Maple Mono NF',ui-monospace,monospace;" +
-          'box-shadow:0 3px 16px rgba(0,0,0,.45);}' +
-          '#fdm-caption .l1{color:#fff;font-size:20px;font-weight:700;line-height:1.3;text-align:center;}' +
-          '#fdm-caption .l2{color:#e6dcff;font-size:14px;font-weight:500;line-height:1.3;text-align:center;}';
-        activeDocument.head.appendChild(style);
+            'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+            'gap:3px;padding:11px 28px;box-sizing:border-box;' +
+            'background:linear-gradient(90deg,#7C3AED 0%,#4f46e5 100%);' +
+            "font-family:'Maple Mono','Maple Mono NF',ui-monospace,monospace;" +
+            'box-shadow:0 3px 16px rgba(0,0,0,.45);}' +
+            '#fdm-caption .l1{color:#fff;font-size:20px;font-weight:700;line-height:1.3;text-align:center;}' +
+            '#fdm-caption .l2{color:#e6dcff;font-size:14px;font-weight:500;line-height:1.3;text-align:center;}',
+        );
+        doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
+        doc.__fdmCaptionSheet = sheet;
       }
       // createDiv() both creates AND attaches, so each node is built directly in
       // its final parent - no detached node is ever moved.
@@ -62,7 +74,17 @@ async function captionOn(line1: string, line2: string): Promise<void> {
 async function captionOff(): Promise<void> {
   await browser.executeObsidian(() => {
     activeDocument.getElementById('fdm-caption')?.remove();
-    activeDocument.getElementById('fdm-caption-style')?.remove();
+    // Drop the adopted stylesheet too, so nothing leaks into the next shot.
+    const doc = activeDocument as Document & {
+      adoptedStyleSheets: CSSStyleSheet[];
+      __fdmCaptionSheet?: CSSStyleSheet;
+    };
+    if (doc.__fdmCaptionSheet) {
+      doc.adoptedStyleSheets = doc.adoptedStyleSheets.filter(
+        (s) => s !== doc.__fdmCaptionSheet,
+      );
+      delete doc.__fdmCaptionSheet;
+    }
   });
 }
 
