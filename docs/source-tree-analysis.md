@@ -46,7 +46,7 @@ obsidian-frontmatter-date-manager/
 │   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops; getLanguage stub).
 │   └── __tests__/                    # 36 vitest spec files + helpers/setup (incl. bulk/).
 │
-├── e2e/                             # WebdriverIO + real Obsidian (1.12.7). Manual, not CI.
+├── e2e/                             # WebdriverIO + real Obsidian (1.13.4). Manual, not CI.
 │   ├── specs/                       #   *.e2e.ts (Group A auto path, Group B bulk modals,
 │   │                                #   marketing-screenshots.e2e.ts).
 │   ├── helpers/                     #   Per-test notes, frontmatter parsing, settings patch.
@@ -88,7 +88,7 @@ obsidian-frontmatter-date-manager/
 ## Entry points
 
 - **Runtime:** `src/main.ts` -> `onload()` registers everything; `dist/main.js` is what Obsidian loads.
-- **Settings UI:** `FrontmatterDateManagerSettingsTab.display()` in `src/Settings.ts`.
+- **Settings UI:** `FrontmatterDateManagerSettingsTab.getSettingDefinitions()` in `src/Settings.ts` (declarative tree, no `display()` override).
 - **Bulk tools:** opened from settings buttons -> the five `*Modal.ts` files.
 - **Build:** `esbuild.config.mjs` (invoked by `package.json` `dev`/`build` and the Makefile).
 

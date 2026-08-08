@@ -65,6 +65,11 @@ export const STRINGS_DE: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Geben Sie einen Eigenschaftsnamen ein.',
+      counterNameCollision:
+        'Dieser Name wird bereits von einer anderen Eigenschaft oben verwendet.',
+    },
     description: {
       syncIntro:
         'Synchronisierungsdienste, Backup-Tools und andere Plugins schreiben Dateien oft neu, ohne ihren Inhalt zu ändern - dadurch werden die Daten der Datei auf der Festplatte zurückgesetzt. Das macht es unmöglich zu erkennen, wann Sie eine Notiz tatsächlich zuletzt bearbeitet haben.',
@@ -72,7 +77,6 @@ export const STRINGS_DE: Strings = {
         'Dieses Plugin schreibt das Erstellungs- und das letzte Bearbeitungsdatum direkt in die Eigenschaften jeder Notiz und erkennt echte Änderungen durch Inhaltsvergleich, sodass Ihre Daten echte Bearbeitungen widerspiegeln - nicht Synchronisierungsartefakte.',
     },
     dates: {
-      heading: 'Zu verfolgende Daten',
       enableNoneHint:
         'Aktivieren Sie oben mindestens ein Datum, um das Plugin einzurichten.',
       created: {
@@ -127,6 +131,7 @@ export const STRINGS_DE: Strings = {
         desc: 'Zeitzone, die beim Schreiben von Daten verwendet wird. Leer lassen, um die Zeitzone Ihres Geräts zu verwenden ({localTz}).',
         placeholder: 'Lokal ({localTz})',
         resetTooltip: 'Auf lokale Zeitzone zurücksetzen',
+        invalidTimezone: 'Unbekannter Zeitzonenname.',
       },
       numberProperties: {
         name: 'Reine Zahlendaten ohne Anführungszeichen speichern',
@@ -145,10 +150,7 @@ export const STRINGS_DE: Strings = {
       },
       changeDetection: {
         name: 'Änderungserkennung (Inhalts-Hashing)',
-        descEnabled:
-          'Das letzte Bearbeitungsdatum wird nur geschrieben, wenn sich der Inhalt der Notiz tatsächlich ändert - das verhindert falsche Aktualisierungen durch Synchronisierungs-Plugins.',
-        descDisabled:
-          'Deaktiviert - das letzte Bearbeitungsdatum wird bei jedem Speichern geschrieben, auch wenn sich nichts geändert hat.',
+        desc: 'Wenn aktiviert, wird das letzte Bearbeitungsdatum nur geschrieben, wenn sich der Inhalt der Notiz tatsächlich ändert - das verhindert falsche Aktualisierungen durch Synchronisierungs-Plugins.',
       },
       hashTrackingMode: {
         name: 'Was als Änderung zählt',
@@ -164,11 +166,14 @@ export const STRINGS_DE: Strings = {
         desc: 'Das Bearbeiten dieser Eigenschaften aktualisiert das Datum nicht. Sie können mehrere auf einmal hinzufügen, durch Kommas getrennt. Die Eigenschaften created, updated und viewed werden immer automatisch ignoriert.',
         placeholder: 'Eigenschaftsname wie tags',
         addTooltip: 'Eigenschaft hinzufügen',
-        chipRemoveAriaLabel: '{entry} entfernen',
+        emptyState: 'Keine ignorierten Eigenschaften.',
       },
     },
     filterRules: {
       name: 'Zu überspringende Dateien und Ordner',
+      pageDesc:
+        'Wählen Sie Dateien oder Ordner, die nie automatisch aktualisierte Daten erhalten.',
+      ruleCount: 'Regeln: {count}',
       descIntro:
         'Wählen Sie Dateien oder Ordner, die unangetastet bleiben sollen (keine automatischen Datumsaktualisierungen). ',
       descOnePerLine: 'Ein Muster pro Zeile. Zeilen, die mit ',
@@ -267,7 +272,8 @@ export const STRINGS_DE: Strings = {
       },
     },
     advanced: {
-      summary: 'Erweitert',
+      pageName: 'Erweitert',
+      pageDesc: 'Optionen für Timing, Cache und Automatisierung.',
       newFileDelay: {
         name: 'Verzögerung für neue Dateien',
         desc: 'So viele Millisekunden warten, bevor ein Datum in eine neu erstellte Notiz geschrieben wird. Hilft, Konflikte mit Vorlagen-Plugins zu vermeiden. Auf 0 setzen, um zu deaktivieren.',

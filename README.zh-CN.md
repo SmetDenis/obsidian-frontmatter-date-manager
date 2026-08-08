@@ -6,7 +6,7 @@ _本文档译自[英文 README](README.md)。发现错误？欢迎参与改进�
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
-[![Obsidian](https://img.shields.io/badge/Obsidian-v1.11.0+-7C3AED)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-v1.13.0+-7C3AED)](https://obsidian.md)
 [![Obsidian downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=7C3AED&label=downloads&query=%24%5B%22frontmatter-date-manager%22%5D.downloads&url=https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugin-stats.json)](https://community.obsidian.md/plugins/frontmatter-date-manager)
 [![License: MIT](https://img.shields.io/github/license/SmetDenis/obsidian-frontmatter-date-manager)](LICENSE)
 
@@ -61,6 +61,8 @@ _本文档译自[英文 README](README.md)。发现错误？欢迎参与改进�
 
 ## 安装
 
+需要 Obsidian **1.13.0 或更高版本**。
+
 ### 社区插件
 
 在 Obsidian 中，打开「设置 > 第三方插件 > 浏览」，搜索 **Frontmatter Date Manager**，然后点击安装。
@@ -87,6 +89,8 @@ _本文档译自[英文 README](README.md)。发现错误？欢迎参与改进�
 
 ## 设置
 
+所有选项都可以通过 Obsidian 的设置搜索找到。Gitignore 风格的跳过规则以及高级选项（新文件延迟、缓存、更新后命令）位于插件设置标签页内各自独立的子页面中。
+
 | 设置                               | 默认值                  | 说明                                                                             |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | 记录创建日期                       | `true`                  | 为尚无创建日期的笔记添加一个创建日期                                              |
@@ -102,7 +106,7 @@ _本文档译自[英文 README](README.md)。发现错误？欢迎参与改进�
 | 纯数字日期不加引号保存             | `false`                 | 对纯数字格式输出数字而非带引号的文本                                              |
 | 自动更新                           | `true`                  | 当你编辑笔记时自动更新日期                                                        |
 | 更新之间的最小间隔（秒）           | `30`                    | 两次日期更新之间的最小间隔                                                        |
-| 要跳过的文件和文件夹               | `""`（所有文件）        | Gitignore 风格规则：每行为排除，`!` 重新包含，`#` 为注释                          |
+| 要跳过的文件和文件夹               | `""`（所有文件）        | Gitignore 风格规则：每行为排除，`!` 重新包含，`#` 为注释（独立子页面）                          |
 | 变更检测（内容哈希）               | `true`                  | 仅在内容真正变化时才写入日期（SHA-256 哈希）                                      |
 | 何为变更                           | `body`                  | 何种变化会触发更新：`body`、`frontmatter` 或 `both`                              |
 | 忽略这些属性                       | `[]`                    | 在变更检测中忽略的属性；可用逗号分隔一次添加多个                                  |
@@ -162,7 +166,7 @@ LIMIT 20
 
 > 我使用 Templater / Daily Notes / QuickAdd。插件会和它们冲突吗？
 
-不会。插件在处理新建文件前会等待 5 秒（可配置：设置 → 行为 → 高级 → 新文件延迟），给模板插件留出完成的时间。
+不会。插件在处理新建文件前会等待 5 秒（可配置：设置 → 高级 → 新文件延迟），给模板插件留出完成的时间。
 
 > 我需要先手动给每篇笔记添加属性吗？
 

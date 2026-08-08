@@ -35,7 +35,7 @@ The repo ships an `obsidian-plugin-release` skill that drives the full gated flo
 5. Commit, then push the bare `N.N.N` tag so `release.yml` publishes assets.
 6. After the release is created, replace the auto-generated notes with the curated changelog and verify links.
 
-> Note: `minAppVersion` (currently 1.11.0, raised from 1.4.11 for the i18n `getLanguage()` floor) and the pinned `obsidian` types (`~1.12.3`) must not be advanced to 1.13+ - that breaks every public install. See `CLAUDE.md` -> Target note.
+> Note: `minAppVersion` is currently 1.13.0 (raised from 1.11.0 for the declarative `getSettingDefinitions()` settings API) and the pinned `obsidian` types are `~1.13.1`. Before using any API newer than that pin, verify it exists in BOTH the published npm types and the current public Obsidian release - don't advance past what's actually public. See `CLAUDE.md` -> Target note.
 
 ## Manual / local verification before release
 

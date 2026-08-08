@@ -28,7 +28,7 @@ Concrete rules enforced throughout the code:
 | Category | Technology | Version | Why |
 | --- | --- | --- | --- |
 | Language | TypeScript (strict, `noUncheckedIndexedAccess`) | 6.0.3 | Type safety; `noUncheckedIndexedAccess` forces `arr[i]` to be `T \| undefined`. |
-| Plugin API | obsidian | ~1.12.3 | Pinned with tilde to avoid pulling 1.13 early-access types that would break the public install base. Target `minAppVersion` 1.11.0 (raised from 1.4.11 for `getLanguage()`, `@since 1.8.7`). |
+| Plugin API | obsidian | ~1.13.1 | Pinned with tilde; any API newer than this must be verified against both the published npm types and the current public Obsidian release before use. Target `minAppVersion` 1.13.0 (raised from 1.11.0 for the declarative `getSettingDefinitions()` settings API). |
 | Dates | date-fns v4 + @date-fns/tz | 4.4.0 / ^1.5.0 | Timezone-anchored formatting/parsing via `TZDate`. |
 | Hashing | js-sha256 | ^0.11.1 | Content hashing for change detection. |
 | Glob | picomatch v4 (`picomatch/posix`) | ^4.0.4 | Gitignore-style filter rules. |
@@ -127,11 +127,13 @@ The five modals (each extends `PhaseModal`, composes the blocks):
 
 ### Destructive operation UX (invariant)
 
-Every data-mutating bulk op presents a **mandatory dry-run preview** showing **every** changed row (paginated, not truncated) before Run is reachable, plus a neutral "Download full preview" (TSV). Run button color is the contract: **red** iff the op replaces/deletes existing user values; **blue** iff it only adds missing values or touches sidecar data. Use `.setWarning()` for red (`ButtonComponent.setDestructive()` is 1.13-only and forbidden). On per-file failure the modal shows a `File | Error` table - never "check the console" (the console is empty in production; `logError` is gated behind `__DEV_MODE__`).
+Every data-mutating bulk op presents a **mandatory dry-run preview** showing **every** changed row (paginated, not truncated) before Run is reachable, plus a neutral "Download full preview" (TSV). Run button color is the contract: **red** iff the op replaces/deletes existing user values; **blue** iff it only adds missing values or touches sidecar data. Use `.setDestructive()` for red (`ButtonComponent.setWarning()` is deprecated as of the 1.13 API). On per-file failure the modal shows a `File | Error` table - never "check the console" (the console is empty in production; `logError` is gated behind `__DEV_MODE__`).
 
 ## 7. Settings & the ingestion boundary
 
 `data.json` is external input (hand-editable, sync-rewritten). `loadSettings()` runs the raw object through pure `sanitizeSettings(raw)`, which coerces every wrong-typed known field back to its `DEFAULT_SETTINGS` default (finite-number checks, `Array.isArray` for the exclude-keys array, explicit enum membership for `hashTrackingMode`/`inversionFixStrategy`) while preserving unknown keys. This single boundary prevents a whole class of "corrupt settings crash onload" bugs. `parseFilterRules` additionally hardens its own input (accepts `unknown`).
+
+The settings tab itself (`FrontmatterDateManagerSettingsTab`) builds a **declarative** tree via `getSettingDefinitions()` instead of an imperative `display()` render - every control is a plain definition object (`type: 'toggle' | 'text' | 'number' | 'dropdown' | 'list' | 'page' | ...`) that Obsidian renders and diffs itself, which makes every setting searchable from the app's own settings search. All value reads/writes funnel through one `setControlValue` helper so validation and persistence stay centralized. The former "Ignore these properties" chip list is now a native `type: 'list'` control, and the old Advanced/filter-rules collapsible sections became declarative sub-pages (`type: 'page'`) reached by clicking a named row. The plugin keeps the built tab instance on `this.settingsTab`; because the declarative tree is a point-in-time snapshot, `onExternalSettingsChange()` calls `settingsTab.update()` to rebuild it after settings change outside the UI (e.g. sync rewriting `data.json`).
 
 ## 8. Date handling - parse must invert format
 
@@ -153,13 +155,13 @@ getLanguage()  [obsidian]
 - **`i18n/format.ts`** is the pure `{token}` substituter (no Obsidian dependency, unit-tested). Static strings are plain properties; dynamic ones are `{token}` templates resolved by `format()` (unknown/missing tokens render the literal `{key}` - loud, not silent).
 - **`i18n/index.ts`** owns detection + the deep-merge and re-exports `format` + `LANGUAGE_MAP`. `LANGUAGE_MAP` keys on exact codes plus explicit aliases (`zh`/`zh-CN`/`zh_cn` -> Simplified, `zh-TW`/`zh_tw` -> Traditional, `pt-BR` -> Brazilian); codes are never "normalized". `strings` is **read-only** - merge returns untouched subtrees by reference from `STRINGS_EN`, so assigning to `strings.*` would mutate the English source.
 - **RTL:** `styles.css` uses logical CSS properties (`*-inline-start`/`-end`, `text-align: start`) so the `ar`/`fa` locales mirror correctly; lightningcss downlevels them to direction-aware `:lang()` rules at build.
-- **Floor:** detection relies on `getLanguage()` (`@since 1.8.7`), which is why `minAppVersion` was raised `1.4.11 -> 1.11.0`.
+- **Floor:** detection relies on `getLanguage()` (`@since 1.8.7`), comfortably below the current `minAppVersion` floor of 1.13.0 (raised `1.11.0 -> 1.13.0` for the declarative settings API, not for i18n).
 - **Out of scope (kept English):** `manifest.json` name/description, note content/frontmatter values (safety invariant), the marketing-screenshots pipeline, and `filterRules.ts` parse-error messages (the module is Obsidian-free; only its error *wrapper* is translated). The three files that already import date-fns `format` (`main.ts`, `ReformatDateModal.ts`, `Settings.ts`) import the i18n helper aliased as `t`.
 
 ## 10. Testing strategy
 
 - **Unit (vitest, 36 spec files in `src/__tests__/`):** all pure logic and testable seams - date parse/format, filter rules, inversion detect/prevent, sanitizeSettings, hash cache, debounce, `handleFileChange` entry point, each modal's `compute*`/`rebuildAll`, the bulk blocks (`write`, `scan`, `executePhase`, `pagination`, `export`), and the i18n layer (`format.test.ts`; `i18n.test.ts` adds locale key-coverage plus value-integrity guards - no empty-string overrides, every translated value keeps English's exact `{token}` set). The `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, now including a `getLanguage()` stub); DOM rendering is not unit-tested (the mock no-ops DOM).
-- **E2E (WebdriverIO + real Obsidian, pinned 1.12.7, in `e2e/`):** only the seams the unit mock cannot reach - real `processFrontMatter` serialization (body/key-order/comments survive), number-vs-string on disk, self-trigger suppression on real `mtime`, the five bulk modals via real DOM clicks, and the settings exclude-list UI. Manual/pre-release, not in CI. Requires Node <= 22.
+- **E2E (WebdriverIO + real Obsidian, pinned 1.13.4, in `e2e/`):** only the seams the unit mock cannot reach - real `processFrontMatter` serialization (body/key-order/comments survive), number-vs-string on disk, self-trigger suppression on real `mtime`, the five bulk modals via real DOM clicks, and the native settings exclude-list UI. Manual/pre-release, not in CI. Requires Node <= 22.
 
 See [Development Guide](./development-guide.md) for commands.
 

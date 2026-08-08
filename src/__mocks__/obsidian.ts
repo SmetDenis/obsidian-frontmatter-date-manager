@@ -88,6 +88,10 @@ export class PluginSettingTab {
   constructor(app: any, _plugin: any) {
     this.app = app;
   }
+  // 1.13 declarative-settings surface: no-ops so tab code (onDelete handlers,
+  // render callbacks) can call them in unit tests.
+  update() {}
+  refreshDomState() {}
 }
 
 export class Setting {

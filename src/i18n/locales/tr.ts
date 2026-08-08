@@ -63,6 +63,11 @@ export const STRINGS_TR: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Bir özellik adı girin.',
+      counterNameCollision:
+        'Bu ad zaten yukarıdaki başka bir özellik tarafından kullanılıyor.',
+    },
     description: {
       syncIntro:
         'Eşitleme hizmetleri, yedekleme araçları ve diğer eklentiler dosyaları içeriklerini değiştirmeden sık sık yeniden yazar - bu da diskteki dosya tarihlerini sıfırlar. Bu yüzden bir notu gerçekte en son ne zaman düzenlediğinizi anlamak imkansız hale gelir.',
@@ -70,7 +75,6 @@ export const STRINGS_TR: Strings = {
         'Bu eklenti, oluşturma ve son düzenleme tarihlerini doğrudan her notun özelliklerine yazar ve içeriği karşılaştırarak gerçek değişiklikleri algılar; böylece tarihleriniz eşitleme kalıntılarını değil, gerçek düzenlemeleri yansıtır.',
     },
     dates: {
-      heading: 'İzlenecek tarihler',
       enableNoneHint:
         'Eklentiyi kurmak için yukarıdaki tarihlerden en az birini açın.',
       created: {
@@ -119,6 +123,7 @@ export const STRINGS_TR: Strings = {
         desc: 'Tarihler yazılırken kullanılan saat dilimi. Cihazınızın saat dilimini ({localTz}) kullanmak için boş bırakın.',
         placeholder: 'Yerel ({localTz})',
         resetTooltip: 'Yerel saat dilimine sıfırla',
+        invalidTimezone: 'Bilinmeyen saat dilimi adı.',
       },
       numberProperties: {
         name: 'Yalnızca sayı olan tarihleri tırnaksız kaydet',
@@ -137,10 +142,7 @@ export const STRINGS_TR: Strings = {
       },
       changeDetection: {
         name: 'Değişiklik algılama (içerik özetleme)',
-        descEnabled:
-          'Son düzenleme tarihi yalnızca notun içeriği gerçekten değiştiğinde yazılır - bu, eşitleme eklentilerinden gelen yanlış güncellemeleri önler.',
-        descDisabled:
-          'Kapalı - son düzenleme tarihi, hiçbir şey değişmese bile her kaydetmede yazılır.',
+        desc: 'Etkinleştirildiğinde, son düzenleme tarihi yalnızca notun içeriği gerçekten değiştiğinde yazılır - bu, eşitleme eklentilerinden gelen yanlış güncellemeleri önler.',
       },
       hashTrackingMode: {
         name: 'Neyin değişiklik sayılacağı',
@@ -156,11 +158,14 @@ export const STRINGS_TR: Strings = {
         desc: 'Bu özellikleri düzenlemek tarihi güncellemez. Birden fazlasını virgülle ayırarak aynı anda ekleyebilirsiniz. created, updated ve viewed özellikleri her zaman otomatik olarak yok sayılır.',
         placeholder: 'tags gibi bir özellik adı',
         addTooltip: 'Özellik ekle',
-        chipRemoveAriaLabel: '{entry} öğesini kaldır',
+        emptyState: 'Yok sayılan özellik yok.',
       },
     },
     filterRules: {
       name: 'Atlanacak dosya ve klasörler',
+      pageDesc:
+        'Otomatik tarih güncellemesi hiç almayacak dosya veya klasörleri seçin.',
+      ruleCount: 'Kurallar: {count}',
       descIntro:
         'Dokunulmayacak dosyaları veya klasörleri seçin (otomatik tarih güncellemesi yok). ',
       descOnePerLine: 'Her satıra bir desen. Şununla başlayan satırlar: ',
@@ -251,7 +256,8 @@ export const STRINGS_TR: Strings = {
       },
     },
     advanced: {
-      summary: 'Gelişmiş',
+      pageName: 'Gelişmiş',
+      pageDesc: 'Zamanlama, önbellek ve otomasyon seçenekleri.',
       newFileDelay: {
         name: 'Yeni dosya gecikmesi',
         desc: 'Yeni oluşturulan bir nota tarih damgalamadan önce bu kadar milisaniye bekle. Şablon eklentileriyle çakışmaları önlemeye yardımcı olur. Kapatmak için 0 yapın.',

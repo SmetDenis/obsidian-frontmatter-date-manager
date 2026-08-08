@@ -69,6 +69,11 @@ export const STRINGS_JA: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'プロパティ名を入力してください。',
+      counterNameCollision:
+        'この名前は上の別のプロパティですでに使われています。',
+    },
     description: {
       syncIntro:
         '同期サービスやバックアップツール、その他のプラグインは、内容を変えずにファイルを書き換えることがよくあります。これによりディスク上のファイルの日付がリセットされ、実際にいつ最後にノートを編集したのか分からなくなってしまいます。',
@@ -76,7 +81,6 @@ export const STRINGS_JA: Strings = {
         'このプラグインは作成日と最終編集日を各ノートのプロパティに直接書き込み、内容を比較して実際の変更を検出します。そのため日付は同期によるものではなく、実際の編集を反映します。',
     },
     dates: {
-      heading: '追跡する日付',
       enableNoneHint:
         'プラグインを設定するには、上の日付を少なくとも1つ有効にしてください。',
       created: {
@@ -125,6 +129,7 @@ export const STRINGS_JA: Strings = {
         desc: '日付を書き込むときに使用するタイムゾーン。空欄にするとデバイスのタイムゾーン ({localTz}) を使用します。',
         placeholder: 'ローカル ({localTz})',
         resetTooltip: 'ローカルのタイムゾーンにリセット',
+        invalidTimezone: '不明なタイムゾーン名です。',
       },
       numberProperties: {
         name: '数字のみの日付を引用符なしで保存',
@@ -143,10 +148,7 @@ export const STRINGS_JA: Strings = {
       },
       changeDetection: {
         name: '変更検出 (内容のハッシュ化)',
-        descEnabled:
-          'ノートの内容が実際に変わったときだけ最終編集日が書き込まれます。これにより同期プラグインによる誤った更新を防ぎます。',
-        descDisabled:
-          '無効です。何も変わっていなくても、保存のたびに最終編集日が書き込まれます。',
+        desc: '有効にすると、ノートの内容が実際に変わったときだけ最終編集日が書き込まれます。これにより同期プラグインによる誤った更新を防ぎます。',
       },
       hashTrackingMode: {
         name: '何を変更とみなすか',
@@ -162,11 +164,13 @@ export const STRINGS_JA: Strings = {
         desc: 'これらのプロパティを編集しても日付は更新されません。カンマで区切って一度に複数追加できます。created、updated、viewed のプロパティは常に自動的に無視されます。',
         placeholder: 'プロパティ名 (例: tags)',
         addTooltip: 'プロパティを追加',
-        chipRemoveAriaLabel: '{entry} を削除',
+        emptyState: '無視しているプロパティはありません。',
       },
     },
     filterRules: {
       name: 'スキップするファイルとフォルダ',
+      pageDesc: '日付が自動更新されないファイルやフォルダを選びます。',
+      ruleCount: 'ルール: {count}',
       descIntro:
         'そのままにしておく (日付を自動更新しない) ファイルやフォルダを選びます。',
       descOnePerLine: '1行につき1つのパターン。先頭が ',
@@ -253,7 +257,8 @@ export const STRINGS_JA: Strings = {
       },
     },
     advanced: {
-      summary: '詳細設定',
+      pageName: '詳細設定',
+      pageDesc: 'タイミング、キャッシュ、自動化に関するオプション。',
       newFileDelay: {
         name: '新規ファイルの遅延',
         desc: '新しく作成したノートに日付を書き込むまで、この値 (ミリ秒) だけ待ちます。テンプレートプラグインとの競合を避けるのに役立ちます。0 にすると無効になります。',

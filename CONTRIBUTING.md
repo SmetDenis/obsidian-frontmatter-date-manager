@@ -44,7 +44,7 @@ The architecture map (entry point, bulk modals, pure helpers, key patterns) live
 
 This plugin ships to the Obsidian community store, which gates submissions. Do not:
 
-- Bump the `obsidian` types past `~1.12.3` or adopt 1.13+ APIs (e.g. `getSettingDefinitions()`, `ButtonComponent.setDestructive()`) - it breaks every public install. Target is `minAppVersion` 1.11.0.
+- Use an API newer than what's pinned (`obsidian` types `~1.13.1`) without first verifying it exists in BOTH the published npm types and the current public Obsidian release - an API only in early-access/insider builds breaks every public install. Keep the tilde pin. Target is `minAppVersion` 1.13.0.
 - Disable any `obsidianmd/*` ESLint rule - the review scanner forbids `eslint-disable` of its rules and `make lint` mirrors that. Fix the code instead.
 - Let the linter pin go stale - the bot always runs the latest `eslint-plugin-obsidianmd`.
 

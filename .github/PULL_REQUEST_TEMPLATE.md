@@ -21,4 +21,4 @@
 - [ ] Added or updated unit tests for any logic change.
 - [ ] Updated docs where behavior changed (`README.md`, `CLAUDE.md`, `e2e/README.md`).
 - [ ] Regenerated screenshots (`make screenshots`) if a captured surface changed.
-- [ ] Did not bump `obsidian` past `~1.12.3` or disable any `obsidianmd/*` rule.
+- [ ] Kept the `obsidian` types on the tilde pin (`~1.13.1`; verify any newer API against the current public Obsidian release) and did not disable any `obsidianmd/*` rule.

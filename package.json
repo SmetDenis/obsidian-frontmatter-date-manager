@@ -37,7 +37,7 @@
     "globals": "14.0.0",
     "jiti": "2.7.0",
     "lightningcss": "^1.32.0",
-    "obsidian": "~1.12.3",
+    "obsidian": "~1.13.1",
     "prettier": "3.8.3",
     "tslib": "2.8.1",
     "typescript": "6.0.3",

@@ -63,6 +63,11 @@ export const STRINGS_ID: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Masukkan nama properti.',
+      counterNameCollision:
+        'Nama ini sudah digunakan oleh properti lain di atas.',
+    },
     description: {
       syncIntro:
         'Layanan sinkronisasi, alat cadangan, dan plugin lain sering menulis ulang berkas tanpa mengubah isinya - yang mengatur ulang tanggal berkas di disk. Ini membuat tidak mungkin mengetahui kapan Anda benar-benar terakhir mengedit sebuah catatan.',
@@ -70,7 +75,6 @@ export const STRINGS_ID: Strings = {
         'Plugin ini menulis tanggal dibuat dan terakhir diedit langsung ke dalam properti setiap catatan, dan mendeteksi perubahan nyata dengan membandingkan isi, sehingga tanggal Anda mencerminkan suntingan yang sebenarnya - bukan artefak sinkronisasi.',
     },
     dates: {
-      heading: 'Tanggal yang dilacak',
       enableNoneHint:
         'Aktifkan setidaknya satu tanggal di atas untuk menyiapkan plugin.',
       created: {
@@ -120,6 +124,7 @@ export const STRINGS_ID: Strings = {
         desc: 'Zona waktu yang digunakan saat menulis tanggal. Biarkan kosong untuk memakai zona waktu perangkat Anda ({localTz}).',
         placeholder: 'Lokal ({localTz})',
         resetTooltip: 'Atur ulang ke zona waktu lokal',
+        invalidTimezone: 'Nama zona waktu tidak dikenal.',
       },
       numberProperties: {
         name: 'Simpan tanggal angka saja tanpa tanda kutip',
@@ -138,10 +143,7 @@ export const STRINGS_ID: Strings = {
       },
       changeDetection: {
         name: 'Deteksi perubahan (hashing isi)',
-        descEnabled:
-          'Tanggal terakhir diedit hanya ditulis ketika isi catatan benar-benar berubah - ini mencegah pembaruan palsu dari plugin sinkronisasi.',
-        descDisabled:
-          'Nonaktif - tanggal terakhir diedit ditulis pada setiap penyimpanan, meski tidak ada yang berubah.',
+        desc: 'Jika diaktifkan, tanggal terakhir diedit hanya ditulis ketika isi catatan benar-benar berubah - ini mencegah pembaruan palsu dari plugin sinkronisasi.',
       },
       hashTrackingMode: {
         name: 'Apa yang dianggap perubahan',
@@ -157,11 +159,14 @@ export const STRINGS_ID: Strings = {
         desc: 'Mengedit properti ini tidak akan memperbarui tanggal. Anda dapat menambahkan beberapa sekaligus, dipisahkan dengan koma. Properti created, updated, dan viewed selalu diabaikan otomatis.',
         placeholder: 'Nama properti seperti tags',
         addTooltip: 'Tambah properti',
-        chipRemoveAriaLabel: 'Hapus {entry}',
+        emptyState: 'Tidak ada properti yang diabaikan.',
       },
     },
     filterRules: {
       name: 'Berkas dan folder yang dilewati',
+      pageDesc:
+        'Pilih berkas atau folder yang tidak pernah mendapat pembaruan tanggal otomatis.',
+      ruleCount: 'Aturan: {count}',
       descIntro:
         'Pilih berkas atau folder yang dibiarkan saja (tanpa pembaruan tanggal otomatis). ',
       descOnePerLine: 'Satu pola per baris. Baris yang diawali dengan ',
@@ -253,7 +258,8 @@ export const STRINGS_ID: Strings = {
       },
     },
     advanced: {
-      summary: 'Lanjutan',
+      pageName: 'Lanjutan',
+      pageDesc: 'Opsi waktu, cache, dan otomatisasi.',
       newFileDelay: {
         name: 'Penundaan berkas baru',
         desc: 'Tunggu sekian milidetik sebelum menstempel tanggal pada catatan yang baru dibuat. Membantu menghindari konflik dengan plugin templat. Atur ke 0 untuk mematikan.',

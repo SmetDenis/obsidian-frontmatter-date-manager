@@ -112,10 +112,13 @@ here.
 
 **Group C - settings UI:**
 
-- `specs/settings-exclude-chips.e2e.ts` - "Ignore these properties": a
-  comma-separated entry splits into separate chips (S1), input dedupes against
-  existing keys and drops empty segments (S2), and a chip's remove control
-  deletes a single key (S3).
+- `specs/settings-exclude-list.e2e.ts` - "Ignore these properties" (native
+  Obsidian 1.13 `type: 'list'` control): a comma-separated entry splits into
+  separate list rows (S1), input dedupes against existing keys and drops
+  empty segments (S2), and a row's native delete control removes a single key
+  (S3). S1 and S3 also pin the render-row cleanup invariant: an in-place
+  `update()` (add/delete commits) must not duplicate `settingEl` children
+  (asserted via a single `-plugin-description` element).
 
 **Marketing screenshots (manual; NOT a test):** `specs/marketing-screenshots.e2e.ts`
 generates the README / store screenshots (`make screenshots` - runs the spec, then
@@ -131,11 +134,19 @@ when to refresh them - lives in `CLAUDE.md` under "Store screenshots (marketing)
 - `helpers/` - `frontmatter.ts` (raw-text parsing for assertions), `vault.ts`
   (per-test note create/read/append + `waitForKey`), `settings.ts`
   (programmatic plugin-settings patch).
-- `pageobjects/` - `settingsTab.ts` (open settings, click a bulk button by its
-  stable class, and drive the "Ignore these properties" exclude list - comma
-  input + chips) and `bulkModal.ts` (drive the shared `PhaseModal` chrome:
-  dropdowns, primary/footer buttons, preview table, pager). All DOM coupling
-  lives here, so a UI drift is fixed in one place.
+- `pageobjects/` - `settingsTab.ts` (forces `settingsPopoutWindow=false` via
+  vault config so Obsidian 1.13's settings open in-window instead of a
+  separate OS window - required for every selector below to stay in the main
+  webdriver context; opens settings, clicks a bulk button by its stable
+  class, drives the "Ignore these properties" native list - comma input +
+  rows, and `openSubPage(name)`/`backFromSubPage()` to navigate the
+  declarative Filter rules / Advanced sub-pages by their visible row name,
+  the only way to reach them since sub-pages carry no class hook) and
+  `bulkModal.ts` (drive the shared `PhaseModal` chrome: dropdowns,
+  primary/footer buttons, preview table, pager). All DOM coupling lives
+  here, so a UI drift is fixed in one place. Interaction is visible-element-
+  only throughout - the settings modal keeps other tabs'/pages' DOM around
+  hidden, so helpers filter to `isDisplayed()` elements before clicking.
 - `tsconfig.json` - types for the specs; type-checked by `npm run typecheck:e2e`.
 
 ## Run

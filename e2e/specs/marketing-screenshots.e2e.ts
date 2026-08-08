@@ -441,6 +441,8 @@ describe('marketing screenshots (manual; staged, not characterization)', functio
 
     await settingsTab.open();
     await browser.pause(500);
+    // The filter-rules editor lives on its own declarative sub-page now.
+    await settingsTab.openSubPage('Files and folders to skip');
     await $('.frontmatter-date-manager-filter-setting').waitForExist({
       timeout: 5_000,
     });

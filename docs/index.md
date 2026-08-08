@@ -7,12 +7,12 @@
 - **Type:** Obsidian plugin (editor extension) - monolith, single part
 - **Primary language:** TypeScript (strict)
 - **Architecture:** event-driven plugin with a hash-gated write pipeline + opt-in dry-run-gated bulk subsystem
-- **Version:** 1.1.1 - **Min Obsidian:** 1.11.0 - **Mobile:** supported
+- **Version:** 1.2.1 - **Min Obsidian:** 1.13.0 - **Mobile:** supported
 
 ## Quick reference
 
 - **Entry point:** `src/main.ts` (`FrontmatterDateManagerPlugin extends Plugin`)
-- **Settings UI:** `src/Settings.ts` (`FrontmatterDateManagerSettingsTab.display()`)
+- **Settings UI:** `src/Settings.ts` (`FrontmatterDateManagerSettingsTab.getSettingDefinitions()`, declarative)
 - **Bulk tools:** five `*Modal.ts` files composing `src/bulk/` blocks
 - **Tech stack:** TypeScript 6, date-fns 4 + @date-fns/tz, js-sha256, picomatch 4, esbuild, vitest, WebdriverIO
 - **Build:** esbuild -> `dist/main.js` (CJS, ES2018)

@@ -64,6 +64,11 @@ export const STRINGS_VI: Strings = {
     progressCounter: '{count}/{max}',
   },
   settings: {
+    validation: {
+      propertyNameRequired: 'Nhập tên thuộc tính.',
+      counterNameCollision:
+        'Tên này đã được dùng bởi một thuộc tính khác ở trên.',
+    },
     description: {
       syncIntro:
         'Các dịch vụ đồng bộ, công cụ sao lưu và các plugin khác thường ghi lại tệp mà không thay đổi nội dung - điều này đặt lại ngày của tệp trên đĩa. Việc đó khiến không thể biết được lần cuối bạn thực sự chỉnh sửa một ghi chú là khi nào.',
@@ -71,7 +76,6 @@ export const STRINGS_VI: Strings = {
         'Plugin này ghi ngày tạo và ngày chỉnh sửa cuối thẳng vào thuộc tính của mỗi ghi chú, và phát hiện thay đổi thật bằng cách so sánh nội dung, nên ngày của bạn phản ánh các chỉnh sửa thực tế - không phải tạo tác của đồng bộ.',
     },
     dates: {
-      heading: 'Các ngày cần theo dõi',
       enableNoneHint: 'Bật ít nhất một ngày ở trên để thiết lập plugin.',
       created: {
         enableName: 'Theo dõi ngày tạo',
@@ -119,6 +123,7 @@ export const STRINGS_VI: Strings = {
         desc: 'Múi giờ dùng khi ghi ngày. Để trống để dùng múi giờ của thiết bị ({localTz}).',
         placeholder: 'Địa phương ({localTz})',
         resetTooltip: 'Đặt lại về múi giờ địa phương',
+        invalidTimezone: 'Không nhận dạng được tên múi giờ.',
       },
       numberProperties: {
         name: 'Lưu ngày chỉ gồm số không có dấu ngoặc kép',
@@ -137,10 +142,7 @@ export const STRINGS_VI: Strings = {
       },
       changeDetection: {
         name: 'Phát hiện thay đổi (băm nội dung)',
-        descEnabled:
-          'Ngày chỉnh sửa cuối chỉ được ghi khi nội dung ghi chú thực sự thay đổi - điều này ngăn các cập nhật sai từ plugin đồng bộ.',
-        descDisabled:
-          'Đã tắt - ngày chỉnh sửa cuối được ghi mỗi lần lưu, ngay cả khi không có gì thay đổi.',
+        desc: 'Khi được bật, ngày chỉnh sửa cuối chỉ được ghi khi nội dung ghi chú thực sự thay đổi - điều này ngăn các cập nhật sai từ plugin đồng bộ.',
       },
       hashTrackingMode: {
         name: 'Điều gì được tính là thay đổi',
@@ -156,11 +158,14 @@ export const STRINGS_VI: Strings = {
         desc: 'Chỉnh sửa các thuộc tính này sẽ không cập nhật ngày. Bạn có thể thêm nhiều thuộc tính cùng lúc, cách nhau bằng dấu phẩy. Các thuộc tính created, updated và viewed luôn được bỏ qua tự động.',
         placeholder: 'Tên thuộc tính như tags',
         addTooltip: 'Thêm thuộc tính',
-        chipRemoveAriaLabel: 'Xóa {entry}',
+        emptyState: 'Không có thuộc tính nào bị bỏ qua.',
       },
     },
     filterRules: {
       name: 'Tệp và thư mục cần bỏ qua',
+      pageDesc:
+        'Chọn tệp hoặc thư mục sẽ không bao giờ được cập nhật ngày tự động.',
+      ruleCount: 'Quy tắc: {count}',
       descIntro:
         'Chọn các tệp hoặc thư mục để không động đến (không tự động cập nhật ngày). ',
       descOnePerLine: 'Mỗi mẫu một dòng. Các dòng bắt đầu bằng ',
@@ -248,7 +253,8 @@ export const STRINGS_VI: Strings = {
       },
     },
     advanced: {
-      summary: 'Nâng cao',
+      pageName: 'Nâng cao',
+      pageDesc: 'Tùy chọn về thời gian, bộ nhớ đệm và tự động hóa.',
       newFileDelay: {
         name: 'Độ trễ cho tệp mới',
         desc: 'Chờ bao nhiêu mili giây trước khi đóng dấu ngày lên một ghi chú vừa được tạo. Giúp tránh xung đột với các plugin mẫu. Đặt 0 để tắt.',
