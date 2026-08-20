@@ -33,7 +33,20 @@ export const STRINGS_KO: Strings = {
     timestampsUpdated: '날짜가 업데이트되었습니다.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: '플러그인 설정에 의해 무시되는 파일입니다.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '날짜를 업데이트하지 못했습니다: {reason}',
     failedToUpdate: '날짜를 업데이트하지 못했습니다.',
     autoUpdateEnabled: '자동 업데이트 켜짐',
@@ -60,6 +73,8 @@ export const STRINGS_KO: Strings = {
     skippedTableIntro: '{count}개의 노트를 건너뛰어 변경하지 않았습니다:',
     skippedUnsavedChanges:
       '이 노트에는 열려 있는 편집기에 저장되지 않은 변경 사항이 있습니다. 저장하거나 닫은 후 새 미리보기를 실행하세요.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -137,6 +152,10 @@ export const STRINGS_KO: Strings = {
       minSeconds: {
         name: '업데이트 사이 최소 초',
         desc: '입력하거나 노트를 전환하는 동안 날짜가 너무 자주 업데이트되는 것을 막습니다.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: '변경 감지 (내용 해싱)',
@@ -220,7 +239,8 @@ export const STRINGS_KO: Strings = {
         obsidianDailyFolderDesc: '일일 노트 폴더',
         obsidianAttachmentsDesc: '첨부 파일 / 미디어 폴더',
         obsidianCanvasDesc: '모든 캔버스 파일',
-        obsidianExcalidrawDesc: '모든 Excalidraw 그림',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: '받은 편지함 / 임시 메모 폴더',
         obsidianArchiveDesc: '보관된 노트',
         sectionAllowlist: '허용 목록 모드 (특정 폴더만 추적)',

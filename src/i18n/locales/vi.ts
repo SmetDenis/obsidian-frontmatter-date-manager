@@ -33,7 +33,20 @@ export const STRINGS_VI: Strings = {
     timestampsUpdated: 'Đã cập nhật ngày.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'Tệp bị bỏ qua bởi cài đặt của plugin.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Không thể cập nhật ngày: {reason}',
     failedToUpdate: 'Không thể cập nhật ngày.',
     autoUpdateEnabled: 'Đã bật tự động cập nhật',
@@ -61,6 +74,8 @@ export const STRINGS_VI: Strings = {
       'Đã bỏ qua {count} ghi chú và giữ nguyên không thay đổi:',
     skippedUnsavedChanges:
       'Ghi chú có các thay đổi chưa lưu trong trình soạn thảo đang mở. Hãy lưu hoặc đóng ghi chú, sau đó chạy bản xem trước mới.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -139,6 +154,10 @@ export const STRINGS_VI: Strings = {
       minSeconds: {
         name: 'Số giây tối thiểu giữa các lần cập nhật',
         desc: 'Tránh cập nhật ngày quá thường xuyên khi bạn đang gõ hoặc chuyển giữa các ghi chú.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'Phát hiện thay đổi (băm nội dung)',
@@ -226,7 +245,8 @@ export const STRINGS_VI: Strings = {
         obsidianDailyFolderDesc: 'Thư mục ghi chú hàng ngày',
         obsidianAttachmentsDesc: 'Thư mục tệp đính kèm / phương tiện',
         obsidianCanvasDesc: 'Tất cả tệp canvas',
-        obsidianExcalidrawDesc: 'Tất cả bản vẽ Excalidraw',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'Thư mục hộp thư đến / ghi nháp',
         obsidianArchiveDesc: 'Ghi chú lưu trữ',
         sectionAllowlist:

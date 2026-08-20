@@ -106,6 +106,7 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 | Save number-only dates without quotes | `false`              | Output numbers instead of quoted text for digit-only formats                     |
 | Auto-update                        | `true`                  | Automatically update dates when you edit a note                                  |
 | Minimum seconds between updates    | `30`                    | Minimum interval between date updates                                            |
+| Include Excalidraw drawings        | `true`                  | Add dates to Excalidraw drawings too; turn off to leave drawings alone           |
 | Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments (own sub-page) |
 | Change detection (content hashing) | `true`                  | Write the date only when content actually changes (SHA-256 hashing)             |
 | What counts as a change            | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                          |
@@ -185,6 +186,10 @@ Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) f
 > I enabled "viewed" timestamps but they don't appear in some notes.
 
 The viewed timestamp is only written when you open a file. Notes you haven't opened since enabling the feature won't have the field yet. The same filter rules and minimum-interval setting apply to viewed writes, and the stamp is skipped for that opening if the note has unsaved changes in another open editor. Note that writing this date does change the file, so with the feature enabled, opening a note updates its modification time on disk.
+
+> What about Excalidraw drawings?
+
+Excalidraw drawings are ordinary notes with an `excalidraw-plugin` property, so they get dates like any other note. Turn off **Include Excalidraw drawings** in the settings to leave them alone. Two details are deliberate: the plugin never writes into a drawing that has unsaved changes (Excalidraw would reload the file from disk and discard your strokes) - the date lands right after Excalidraw saves; and the last-opened date is never written to drawings, because that write happens at the riskiest moment (opening an idle drawing). Rename key and Reformat dates always cover every Markdown note, drawings included, regardless of the toggle.
 
 > While I type, `updated` doesn't change right away. Why?
 

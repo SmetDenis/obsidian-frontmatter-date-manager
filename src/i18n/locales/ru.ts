@@ -38,7 +38,20 @@ export const STRINGS_RU: Strings = {
     timestampsUpdated: 'Даты обновлены.',
     timestampsAlreadyCurrent: 'Даты уже актуальны.',
     timestampsUpdateScheduled: 'Даты скоро обновятся.',
-    fileIgnored: 'Файл исключён настройками плагина.',
+    ignoredExcalidraw:
+      'Рисунки Excalidraw исключены. Включите "Учитывать рисунки Excalidraw" в настройках плагина, чтобы добавлять им даты.',
+    ignoredByFilterRule:
+      'Файл исключён правилом в "Файлы и папки для пропуска".',
+    ignoredCanvas: 'Файлы Canvas не поддерживаются.',
+    ignoredEmpty: 'Файл пуст, датировать нечего.',
+    ignoredUnchanged: 'С последнего обновления содержимое не менялось.',
+    ignoredNoDateKeys:
+      'В настройках плагина не задано ни одного имени свойства даты.',
+    ignoredInvalidFileTimes:
+      'Не удалось прочитать время создания или изменения файла.',
+    ignoredNotMarkdown: 'Свойства с датами получают только Markdown-заметки.',
+    excalidrawHasUnsavedChanges:
+      'В рисунке есть несохранённые изменения - даты обновятся после того, как Excalidraw его сохранит.',
     failedToUpdateWithReason: 'Не удалось обновить даты: {reason}',
     failedToUpdate: 'Не удалось обновить даты.',
     autoUpdateEnabled: 'Автообновление включено',
@@ -65,6 +78,8 @@ export const STRINGS_RU: Strings = {
     skippedTableIntro: '{count} заметок пропущено и оставлено без изменений:',
     skippedUnsavedChanges:
       'В заметке есть несохранённые изменения в открытом редакторе. Сохраните или закройте её, затем запустите новый предпросмотр.',
+    skippedExcalidrawUnsaved:
+      'В рисунке Excalidraw есть несохранённые изменения или идёт сохранение. Сохраните или закройте его, затем запустите новый предпросмотр.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -145,6 +160,10 @@ export const STRINGS_RU: Strings = {
       minSeconds: {
         name: 'Минимум секунд между обновлениями',
         desc: 'Не даёт обновлять дату слишком часто, пока вы печатаете или переключаетесь между заметками.',
+      },
+      trackExcalidraw: {
+        name: 'Учитывать рисунки Excalidraw',
+        desc: 'Добавлять даты рисункам Excalidraw, как обычным заметкам. Запись в рисунок с несохранёнными изменениями никогда не выполняется, а дата последнего открытия рисункам не записывается. "Переименовать свойство" и "Привести даты к одному формату" всегда охватывают все заметки.',
       },
       changeDetection: {
         name: 'Распознавание изменений (хеширование содержимого)',
@@ -233,7 +252,8 @@ export const STRINGS_RU: Strings = {
         obsidianDailyFolderDesc: 'Папка ежедневных заметок',
         obsidianAttachmentsDesc: 'Папка вложений / медиа',
         obsidianCanvasDesc: 'Все файлы холстов',
-        obsidianExcalidrawDesc: 'Все рисунки Excalidraw',
+        obsidianExcalidrawDesc:
+          'Рисунки Excalidraw по имени файла (совпадает только стандартный суффикс; надёжный способ - переключатель "Учитывать рисунки Excalidraw")',
         obsidianInboxDesc: 'Папка входящих / черновиков',
         obsidianArchiveDesc: 'Архивные заметки',
         sectionAllowlist:

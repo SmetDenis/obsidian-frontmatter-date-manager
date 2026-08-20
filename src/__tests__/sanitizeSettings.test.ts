@@ -171,6 +171,18 @@ describe('sanitizeSettings (pure)', () => {
         sanitizeSettings({ enableAutoUpdate: false }).enableAutoUpdate,
       ).toBe(false);
     });
+
+    it('coerces wrong-typed trackExcalidraw to its default (true)', () => {
+      expect(
+        sanitizeSettings({ trackExcalidraw: 'off' as never }).trackExcalidraw,
+      ).toBe(true);
+    });
+
+    it('preserves trackExcalidraw: false (the opt-out)', () => {
+      expect(sanitizeSettings({ trackExcalidraw: false }).trackExcalidraw).toBe(
+        false,
+      );
+    });
   });
 
   describe('enum fields', () => {

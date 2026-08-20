@@ -6,7 +6,7 @@
 
 | Component | File | Type | Responsibility |
 | --- | --- | --- | --- |
-| `FrontmatterDateManagerPlugin` | `src/main.ts` | `Plugin` | Entry point. Event handlers (`create`/`modify`/`rename`/`delete`/`file-open`), per-file debounce + lock, content hashing, hash-cache lifecycle, pause/resume + status bar, 3 commands, self-trigger suppression, the dirty-editor-buffer write guard (`hasUnsavedEditorChanges` - never write into a leaf with unsaved changes; defer, or drop the `viewed` stamp), inversion prevention. |
+| `FrontmatterDateManagerPlugin` | `src/main.ts` | `Plugin` | Entry point. Event handlers (`create`/`modify`/`rename`/`delete`/`file-open`), per-file debounce + lock, content hashing, hash-cache lifecycle, pause/resume + status bar, 3 commands, self-trigger suppression, the write-safety gate (`getWriteBlock` = `hasUnsavedEditorChanges` for Markdown leaves + `excalidrawWriteBlock` for open Excalidraw drawing views - never write into a buffer/drawing with unsaved changes; Markdown defers, Excalidraw drops the pass, `viewed` is dropped), three-valued Excalidraw classification (`classifyExcalidraw` + `isExcalidrawContent` fallback for a metadataCache miss), typed ignore reasons + `ignoreReasonToNotice`, inversion prevention. |
 | `FrontmatterDateManagerSettingsTab` | `src/Settings.ts` | `PluginSettingTab` | The entire settings UI via the declarative `getSettingDefinitions()` tree (Obsidian 1.13 - no `display()` override), making every setting searchable. All value reads/writes funnel through one `setControlValue` write funnel. Sections: Dates to track, Date formatting, Behavior (with a declarative Filter rules sub-page), Modified-before-created, an Advanced sub-page, and Bulk operations. The tab instance is kept on `plugin.settingsTab` so `onExternalSettingsChange()` can call `settingsTab.update()` to rebuild the tree (a point-in-time snapshot) after an out-of-band settings change. |
 
 ## Settings & validation
@@ -31,6 +31,7 @@
 | `isTFile` / `onlyUniqueArray` / `isGlobPattern` / `matchesPathPattern` | `src/utils.ts` | Type guard, dedup, glob detect, path match (picomatch for globs, prefix for plain folders). |
 | `MODIFY_DEBOUNCE_MS` | `src/constants.ts` | The per-file modify debounce (2000ms). |
 | `FRESHNESS_SEC` | `src/constants.ts` | Freshness margin (5s) for the automatic `updated`/`viewed` no-op-write guard. |
+| `EXCALIDRAW_FRONTMATTER_KEY` / `EXCALIDRAW_VIEW_TYPE` | `src/constants.ts` | The `excalidraw-plugin` frontmatter marker and the `excalidraw` workspace view type, used to classify drawings and find their open views. |
 
 ## Bulk subsystem - shared blocks (`src/bulk/`)
 

@@ -1,4 +1,4 @@
-// Shared numeric constants with no Obsidian dependency.
+// Shared constants with no Obsidian dependency.
 //
 // Kept in their own module (rather than inlined in main.ts) so tests can assert
 // against the exact production value instead of a drifting literal, without
@@ -15,3 +15,17 @@ export const MODIFY_DEBOUNCE_MS = 2000;
 // near-no-op write. Kept small so `minSecondsBetweenSaves` still governs edit-time
 // throttling. See computeFrontmatterUpdates / handleFileOpen in main.ts.
 export const FRESHNESS_SEC = 5;
+
+// Frontmatter key the Excalidraw plugin stamps on every drawing note
+// (`excalidraw-plugin: parsed` / `raw`). A truthy value under this key is
+// exactly how Excalidraw itself classifies a file as a drawing
+// (FileManager.isExcalidrawFile in obsidian-excalidraw-plugin), so FDM mirrors
+// that check via metadataCache instead of relying on the ExcalidrawAutomate
+// global - see isExcalidrawFile in main.ts. Verified against
+// obsidian-excalidraw-plugin 2.26.4 src/constants/constants.ts.
+export const EXCALIDRAW_FRONTMATTER_KEY = 'excalidraw-plugin';
+
+// Workspace view type of Excalidraw's drawing editor (VIEW_TYPE_EXCALIDRAW in
+// obsidian-excalidraw-plugin). Used by the write guard to find open drawing
+// views, which getLeavesOfType('markdown') cannot see.
+export const EXCALIDRAW_VIEW_TYPE = 'excalidraw';

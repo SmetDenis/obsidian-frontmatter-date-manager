@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as obsidian from 'obsidian';
 import { TFile } from 'obsidian';
-import FrontmatterDateManagerPlugin from '../main';
+import FrontmatterDateManagerPlugin, { ignoreReasonToNotice } from '../main';
 import { DEFAULT_SETTINGS, FrontmatterDateManagerSettings } from '../Settings';
+import { strings } from '../i18n';
 
 // Direct unit coverage for `handleFileChange` - the core auto-stamping entry
 // point. It wires together three data-safety-critical guards (self-trigger
@@ -32,6 +33,21 @@ interface SetupOpts {
   // non-boolean simulates API drift and drives the public fallback comparison.
   // `viewData` feeds that fallback (compared against `diskData`).
   leaves?: Array<{ dirty?: unknown; viewData?: string; throwOnRead?: boolean }>;
+  // One entry per open Excalidraw view. Field shapes mirror the public members
+  // of ExcalidrawView the guard reads through `unknown` casts; the sentinel
+  // values simulate API drift, which must fail closed.
+  excalidrawLeaves?: Array<{
+    path?: string | number;
+    isDirty?: boolean | 'missing' | 'throws' | 'non-boolean';
+    saving?: boolean;
+    autosaving?: boolean;
+    // 'missing' = the field is absent, 'null' = explicitly null, 'empty' = an
+    // object without the semaphore fields (partial API drift). All must block.
+    semaphores?: 'missing' | 'null' | 'empty';
+    // 'missing' = excalidrawAPI absent/null (view not mounted yet),
+    // 'primitive' = present but not an object (drift). Both must block.
+    api?: 'missing' | 'primitive';
+  }>;
   // What vault.cachedRead returns for the fallback comparison.
   diskData?: string;
   processFrontMatterImpl?: (
@@ -89,6 +105,39 @@ function setup(opts: SetupOpts = {}) {
     return { view };
   });
 
+  // Simulate open Excalidraw drawing views (view type 'excalidraw'). The view
+  // objects are plain shapes - the guard reads them structurally through
+  // `unknown` casts, exactly as in production.
+  const excalidrawLeaves = (opts.excalidrawLeaves ?? []).map((spec) => {
+    const view: Record<string, unknown> = {
+      file: { path: spec.path ?? file.path },
+    };
+    if (spec.semaphores === 'null') {
+      view.semaphores = null;
+    } else if (spec.semaphores === 'empty') {
+      view.semaphores = {};
+    } else if (spec.semaphores !== 'missing') {
+      view.semaphores = {
+        saving: spec.saving ?? false,
+        autosaving: spec.autosaving ?? false,
+      };
+    }
+    if (spec.api === 'primitive') {
+      view.excalidrawAPI = 'mounted';
+    } else if (spec.api !== 'missing') {
+      view.excalidrawAPI = {};
+    }
+    const dirtySpec = spec.isDirty ?? false;
+    if (dirtySpec !== 'missing') {
+      view.isDirty = () => {
+        if (dirtySpec === 'throws') throw new Error('view unloaded');
+        if (dirtySpec === 'non-boolean') return 'maybe';
+        return dirtySpec;
+      };
+    }
+    return { view };
+  });
+
   plugin.app = {
     vault: {
       read: vi
@@ -98,7 +147,17 @@ function setup(opts: SetupOpts = {}) {
     },
     fileManager: { processFrontMatter },
     metadataCache: { getFileCache: () => ({ frontmatter }) },
-    workspace: { getLeavesOfType: vi.fn(() => openLeaves) },
+    workspace: {
+      // Type-aware, like the real workspace: Markdown leaves must never be
+      // handed to the Excalidraw guard branch (it would fail closed on them).
+      getLeavesOfType: vi.fn((type: string) =>
+        type === 'markdown'
+          ? openLeaves
+          : type === 'excalidraw'
+            ? excalidrawLeaves
+            : [],
+      ),
+    },
   } as unknown as FrontmatterDateManagerPlugin['app'];
 
   // Avoid real hash-cache I/O; these tests do not assert cache contents.
@@ -379,6 +438,128 @@ describe('handleFileChange', () => {
     });
   });
 
+  // A dirty/busy/unknown Excalidraw view of the file DROPS the pass (no write,
+  // no hash refresh, NO retry timer) - Excalidraw can stay dirty for hours, so
+  // a fixed-interval retry would read+hash the file forever; its own next save
+  // fires `modify` and re-triggers the pipeline. The danger being guarded: an
+  // external write into a drawing idle > 5 min triggers Excalidraw's
+  // reload(true) + clearDirty(), discarding unsaved strokes.
+  describe('open Excalidraw view blocks the write', () => {
+    it('writes when the only Excalidraw view of the file is mounted, idle, and clean', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        excalidrawLeaves: [{ isDirty: false }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['dirty view', { isDirty: true }],
+      ['isDirty missing (API drift)', { isDirty: 'missing' }],
+      ['isDirty throwing (view unloading)', { isDirty: 'throws' }],
+      ['isDirty returning a non-boolean', { isDirty: 'non-boolean' }],
+      ['semaphores missing (API drift)', { semaphores: 'missing' }],
+      ['semaphores null', { semaphores: 'null' }],
+      ['semaphores present but empty (partial drift)', { semaphores: 'empty' }],
+      ['view not mounted (excalidrawAPI null)', { api: 'missing' }],
+      ['excalidrawAPI not an object', { api: 'primitive' }],
+      ['view.file.path not a string', { path: 42 }],
+    ] as const)(
+      'drops the pass without a timer on a %s',
+      async (_label, leaf) => {
+        const { plugin, processFrontMatter, file, timers } = setup({
+          excalidrawLeaves: [
+            leaf as NonNullable<SetupOpts['excalidrawLeaves']>[0],
+          ],
+        });
+        const populate = (
+          plugin as unknown as {
+            populateCacheForFile: ReturnType<typeof vi.fn>;
+          }
+        ).populateCacheForFile;
+
+        const result = await plugin.handleFileChange(file);
+
+        expect(result).toEqual({
+          status: 'ok',
+          wrote: false,
+          blocked: 'excalidraw',
+        });
+        expect(processFrontMatter).not.toHaveBeenCalled();
+        // No hash refresh: the pending change must stay detectable for the pass
+        // Excalidraw's own next save triggers.
+        expect(populate).not.toHaveBeenCalled();
+        // No retry timer: the resume is modify-driven, not polled.
+        expect(timers.has(file.path)).toBe(false);
+      },
+    );
+
+    // A save in flight is short-lived, and the `modify` of that very save may
+    // already have been delivered - so this state DEFERS on the normal timer
+    // instead of dropping, or the update could be stranded until the next edit.
+    it.each([
+      ['saving semaphore', { saving: true }],
+      ['autosaving semaphore', { autosaving: true }],
+    ] as const)(
+      'defers with a timer while the drawing is %s',
+      async (_label, leaf) => {
+        const { plugin, processFrontMatter, file, timers } = setup({
+          excalidrawLeaves: [
+            leaf as NonNullable<SetupOpts['excalidrawLeaves']>[0],
+          ],
+        });
+
+        const result = await plugin.handleFileChange(file);
+
+        expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+        expect(processFrontMatter).not.toHaveBeenCalled();
+        expect(timers.has(file.path)).toBe(true);
+      },
+    );
+
+    it('ignores an Excalidraw view showing a different file', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        excalidrawLeaves: [{ path: 'other/drawing.md', isDirty: true }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks when Markdown leaves are clean but an Excalidraw view is dirty', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        leaves: [{ dirty: false }],
+        excalidrawLeaves: [{ isDirty: true }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({
+        status: 'ok',
+        wrote: false,
+        blocked: 'excalidraw',
+      });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('a dirty Markdown leaf wins over the Excalidraw block (defers with a timer)', async () => {
+      const { plugin, file, timers } = setup({
+        leaves: [{ dirty: true }],
+        excalidrawLeaves: [{ isDirty: true }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: false, deferred: true });
+      expect(timers.has(file.path)).toBe(true);
+    });
+  });
+
   // The "out-of-order dates were detected and fixed" notice must follow a real
   // write, never precede it: computeFrontmatterUpdates only flags the fix.
   describe('inversion notice follows the write', () => {
@@ -513,8 +694,76 @@ describe('handleFileChange', () => {
 
       const result = await plugin.handleFileChange(png);
 
-      expect(result).toEqual({ status: 'ignored' });
+      expect(result).toEqual({ status: 'ignored', reason: 'not-markdown' });
       expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('returns reason no-date-keys when both date property names are blank', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        settings: { headerCreated: '  ', headerUpdated: '' },
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ignored', reason: 'no-date-keys' });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
+    it('returns reason invalid-file-times when file timestamps cannot be parsed', async () => {
+      const { plugin, processFrontMatter, file } = setup({});
+      file.stat = { ctime: NaN, mtime: NaN, size: 50 };
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({
+        status: 'ignored',
+        reason: 'invalid-file-times',
+      });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+  });
+
+  // Each ignore cause maps to its own honest notice - the shared "ignored by
+  // plugin settings" text was the misleading half of issue #15. Exhaustive: a
+  // new reason without a dedicated string is a compile error in main.ts, and
+  // this table pins each existing mapping.
+  describe('ignoreReasonToNotice', () => {
+    it.each([
+      ['excalidraw', strings.notices.ignoredExcalidraw],
+      ['filter-rule', strings.notices.ignoredByFilterRule],
+      ['canvas', strings.notices.ignoredCanvas],
+      ['empty', strings.notices.ignoredEmpty],
+      ['unchanged', strings.notices.ignoredUnchanged],
+      ['no-date-keys', strings.notices.ignoredNoDateKeys],
+      ['invalid-file-times', strings.notices.ignoredInvalidFileTimes],
+      ['no-path', strings.notices.ignoredNotMarkdown],
+      ['not-markdown', strings.notices.ignoredNotMarkdown],
+      ['not-a-file', strings.notices.ignoredNotMarkdown],
+    ] as const)('maps %s to its dedicated notice', (reason, expected) => {
+      expect(ignoreReasonToNotice(reason)).toBe(expected);
+    });
+
+    // The blocked result is not an ignore reason - it is an 'ok' pass that
+    // wrote nothing - so the command picks its notice from `blocked`. Pinned
+    // here so the two never drift apart (only e2e X6 covered it before).
+    it('reports a blocked Excalidraw pass with its own notice, not a false success', async () => {
+      const { plugin, file } = setup({
+        excalidrawLeaves: [{ isDirty: true }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({
+        status: 'ok',
+        wrote: false,
+        blocked: 'excalidraw',
+      });
+      // Mirrors the command's mapping in setupCommands().
+      const notice =
+        result.status === 'ok' && result.blocked === 'excalidraw'
+          ? strings.notices.excalidrawHasUnsavedChanges
+          : strings.notices.timestampsAlreadyCurrent;
+      expect(notice).toBe(strings.notices.excalidrawHasUnsavedChanges);
     });
   });
 

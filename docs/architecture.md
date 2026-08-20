@@ -55,10 +55,17 @@ vault 'modify' event
   -> processFileWithLock()  (processingFiles Set prevents concurrent writes)
   -> handleFileChange()
        -> self-trigger check: lastPluginWriteMtime matches file.stat.mtime? skip
-       -> shouldFileBeIgnored(): extension, Canvas.md, Excalidraw, filter rules,
-          empty file, then SHA-256 hash vs cache
-       -> hasUnsavedEditorChanges(): any Markdown leaf of this file dirty?
-          -> yes: defer the whole pass (no write, no hash refresh), reschedule
+       -> shouldFileBeIgnored(): extension, Canvas.md, Excalidraw (only when
+          trackExcalidraw is off), filter rules, empty file, then SHA-256 hash
+          vs cache - returns a typed { ignored, reason } the manual command
+          turns into a per-cause notice (ignoreReasonToNotice)
+       -> getWriteBlock(): 'markdown' (a dirty Markdown leaf of this file) or
+          'excalidraw-busy' (a drawing mid-save; short-lived)
+          -> defer the whole pass (no write, no hash refresh), reschedule
+          'excalidraw' (an open drawing view that is dirty, or whose state
+          cannot be established)
+          -> DROP the pass (no write, no hash refresh, NO timer); Excalidraw's
+             own next save fires `modify` and re-triggers processing
        -> computeFrontmatterUpdates(): decide created/updated values
        -> processFrontMatter() writes ONLY changed keys (no write options)
        -> store lastPluginWriteMtime, re-hash file, mark cache dirty
@@ -71,7 +78,7 @@ After every automated write the code stores `file.stat.mtime` in `lastPluginWrit
 
 ### 5.1a Dirty-editor-buffer write guard (issue #10)
 
-Obsidian's `TextFileView` 3-way-merges any vault write of its own file into the live buffer - fuzzy diff-match-patch, per-hunk failure flags discarded - and shows "modified externally, merging changes automatically", **iff the view's private `dirty` flag is set** when the `modify` arrives. mtime is never consulted there. So `hasUnsavedEditorChanges(file)` gates every write path: it checks **every** Markdown leaf showing the file (one can be clean while another is dirty), reads `dirty` through an `unknown` cast, and **fails closed** - a non-boolean `dirty` falls back to `getViewData() !== cachedRead()`, and an unreadable buffer counts as dirty.
+Obsidian's `TextFileView` 3-way-merges any vault write of its own file into the live buffer - fuzzy diff-match-patch, per-hunk failure flags discarded - and shows "modified externally, merging changes automatically", **iff the view's private `dirty` flag is set** when the `modify` arrives. mtime is never consulted there. So `hasUnsavedEditorChanges(file)` - the Markdown half of the `getWriteBlock(file)` gate every write path consults - works like this: it checks **every** Markdown leaf showing the file (one can be clean while another is dirty), reads `dirty` through an `unknown` cast, and **fails closed** - a non-boolean `dirty` falls back to `getViewData() !== cachedRead()`, and an unreadable buffer counts as dirty. The other half, `excalidrawWriteBlock(file)`, does the same for open Excalidraw drawing views - idle and mounted must be PROVEN (`file.path` a string, both semaphores exactly `false`, `excalidrawAPI` an object, `isDirty()` returning exactly `false`), all read through `unknown` casts and failing closed - a dirty drawing reloads from disk on an external write and would lose the user's unsaved strokes.
 
 Per path: `handleFileChange` defers the whole pass (no write, no hash refresh, one coalesced timer, no cap - Obsidian's 2 s autosave clears `dirty` shortly after typing stops); `handleFileOpen` **drops** the `viewed` stamp (it means "at open", so a later write would record a false time); bulk throws `BulkSkipped` and the modal reports the file as skipped. The manual command routes through `processFileWithLock` (which returns the result) so it cannot race the automatic path.
 

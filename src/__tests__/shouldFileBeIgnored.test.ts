@@ -14,12 +14,19 @@ function createTFile(path: string): TFile {
 function createPluginWithVaultRead(
   settings: Parameters<typeof createPlugin>[0] = {},
   fileContent = 'some content',
+  // What metadataCache.getFileCache returns: a frontmatter object, or null to
+  // simulate a cache miss (file not indexed yet).
+  cachedFrontmatter: Record<string, unknown> | null = {},
 ) {
   const plugin = createPlugin(settings);
   plugin.recompileFilterRules();
   plugin.app = {
     vault: {
       read: vi.fn().mockResolvedValue(fileContent),
+    },
+    metadataCache: {
+      getFileCache: () =>
+        cachedFrontmatter === null ? null : { frontmatter: cachedFrontmatter },
     },
   };
   return plugin;
@@ -193,6 +200,166 @@ describe('shouldFileBeIgnored - Canvas.md handling', () => {
   });
 });
 
+describe('shouldFileBeIgnored - Excalidraw drawings', () => {
+  // A drawing = truthy `excalidraw-plugin` frontmatter marker, read from
+  // metadataCache - the exact check Excalidraw itself uses (issue #15).
+  const DRAWING = { 'excalidraw-plugin': 'parsed' };
+
+  it('tracks drawings by default (trackExcalidraw defaults to true)', async () => {
+    const plugin = createPluginWithVaultRead({}, 'some content', DRAWING);
+    const result = await plugin.shouldFileBeIgnored(
+      createTFile('art/sketch.md'),
+    );
+    expect(result.ignored).toBe(false);
+  });
+
+  it('skips drawings with reason "excalidraw" when the toggle is off', async () => {
+    const plugin = createPluginWithVaultRead(
+      { trackExcalidraw: false },
+      'some content',
+      DRAWING,
+    );
+    const result = await plugin.shouldFileBeIgnored(
+      createTFile('art/sketch.md'),
+    );
+    expect(result).toEqual({ ignored: true, reason: 'excalidraw' });
+  });
+
+  it.each([
+    ['false marker', { 'excalidraw-plugin': false }],
+    ['empty-string marker', { 'excalidraw-plugin': '' }],
+    ['no marker', {}],
+  ])(
+    'does not treat a note with %s as a drawing',
+    async (_label, frontmatter) => {
+      const plugin = createPluginWithVaultRead(
+        { trackExcalidraw: false },
+        'some content',
+        frontmatter as Record<string, unknown>,
+      );
+      const result = await plugin.shouldFileBeIgnored(
+        createTFile('notes/plain.md'),
+      );
+      expect(result.ignored).toBe(false);
+    },
+  );
+
+  // A metadataCache miss (file not indexed yet, e.g. right after startup) must
+  // not silently reclassify a drawing as an ordinary note: with the toggle off
+  // that would write into a drawing the user excluded. The file text settles
+  // it precisely - and an ordinary unindexed note must still be tracked.
+  it('resolves a metadataCache miss from the file text - drawing stays excluded', async () => {
+    const plugin = createPluginWithVaultRead(
+      { trackExcalidraw: false },
+      '---\nexcalidraw-plugin: parsed\n---\n\ndrawing body',
+      null,
+    );
+    expect(
+      await plugin.shouldFileBeIgnored(createTFile('art/unindexed.md')),
+    ).toEqual({ ignored: true, reason: 'excalidraw' });
+  });
+
+  it('resolves a metadataCache miss from the file text - ordinary note stays tracked', async () => {
+    const plugin = createPluginWithVaultRead(
+      { trackExcalidraw: false },
+      '---\ntitle: plain\n---\n\nbody',
+      null,
+    );
+    expect(
+      (await plugin.shouldFileBeIgnored(createTFile('notes/unindexed.md')))
+        .ignored,
+    ).toBe(false);
+  });
+
+  it('does not treat a cache-missed drawing as excluded while tracking is on', async () => {
+    const plugin = createPluginWithVaultRead(
+      {},
+      '---\nexcalidraw-plugin: parsed\n---\n\ndrawing body',
+      null,
+    );
+    expect(
+      (await plugin.shouldFileBeIgnored(createTFile('art/unindexed.md')))
+        .ignored,
+    ).toBe(false);
+  });
+
+  it.each([
+    ['empty value', '---\nexcalidraw-plugin:\n---\nbody'],
+    ['false value', '---\nexcalidraw-plugin: false\n---\nbody'],
+    ['no frontmatter at all', 'just body text'],
+    ['marker only in the body', 'body\nexcalidraw-plugin: parsed\n'],
+  ])(
+    'isExcalidrawContent does not match %s',
+    async (_label, content: string) => {
+      const plugin = createPluginWithVaultRead(
+        { trackExcalidraw: false },
+        content,
+        null,
+      );
+      expect(
+        (await plugin.shouldFileBeIgnored(createTFile('notes/x.md'))).ignored,
+      ).toBe(false);
+    },
+  );
+
+  it('reports "excalidraw" (not "filter-rule") for a toggle-off drawing in an excluded folder', async () => {
+    // The Excalidraw check runs before filter rules, matching today's order.
+    const plugin = createPluginWithVaultRead(
+      { trackExcalidraw: false, filterRules: 'art/' },
+      'some content',
+      DRAWING,
+    );
+    const result = await plugin.shouldFileBeIgnored(
+      createTFile('art/sketch.md'),
+    );
+    expect(result).toEqual({ ignored: true, reason: 'excalidraw' });
+  });
+});
+
+describe('shouldFileBeIgnored - ignore reasons', () => {
+  it.each([
+    ['no-path', ''],
+    ['not-markdown', 'notes/image.png'],
+    ['canvas', 'Canvas.md'],
+  ] as const)('reports reason %s', async (reason, path) => {
+    const plugin = createPluginWithVaultRead();
+    const file = createTFile(path);
+    if (reason === 'canvas') file.extension = 'md';
+    expect(await plugin.shouldFileBeIgnored(file)).toEqual({
+      ignored: true,
+      reason,
+    });
+  });
+
+  it('reports reason filter-rule for an excluded path', async () => {
+    const plugin = createPluginWithVaultRead({ filterRules: 'excluded/' });
+    expect(
+      await plugin.shouldFileBeIgnored(createTFile('excluded/note.md')),
+    ).toEqual({ ignored: true, reason: 'filter-rule' });
+  });
+
+  it('reports reason empty for a whitespace-only file', async () => {
+    const plugin = createPluginWithVaultRead({}, '   \n  ');
+    expect(
+      await plugin.shouldFileBeIgnored(createTFile('notes/blank.md')),
+    ).toEqual({ ignored: true, reason: 'empty' });
+  });
+
+  it('reports reason unchanged when the content hash matches the cache', async () => {
+    const plugin = createPluginWithVaultRead({ enableContentHashCheck: true });
+    const file = createTFile('notes/cached.md');
+    const content = 'some content';
+    plugin.hashCache[file.path] = {
+      hash: plugin.hashString(plugin.getContentForHashing(content)),
+      lastAccessed: 0,
+    };
+    expect(await plugin.shouldFileBeIgnored(file)).toEqual({
+      ignored: true,
+      reason: 'unchanged',
+    });
+  });
+});
+
 describe('shouldFileBeIgnored - performance: filter rules before file read', () => {
   it('does not read file when excluded by filter rules', async () => {
     const readSpy = vi.fn().mockResolvedValue('some content');
@@ -200,7 +367,10 @@ describe('shouldFileBeIgnored - performance: filter rules before file read', () 
       filterRules: 'excluded',
     });
     plugin.recompileFilterRules();
-    plugin.app = { vault: { read: readSpy } };
+    plugin.app = {
+      vault: { read: readSpy },
+      metadataCache: { getFileCache: () => ({ frontmatter: {} }) },
+    };
     const file = createTFile('excluded/test.md');
     await plugin.shouldFileBeIgnored(file);
     expect(readSpy).not.toHaveBeenCalled();
@@ -212,7 +382,10 @@ describe('shouldFileBeIgnored - performance: filter rules before file read', () 
       filterRules: '**\n!Projects/',
     });
     plugin.recompileFilterRules();
-    plugin.app = { vault: { read: readSpy } };
+    plugin.app = {
+      vault: { read: readSpy },
+      metadataCache: { getFileCache: () => ({ frontmatter: {} }) },
+    };
     const file = createTFile('Random/note.md');
     await plugin.shouldFileBeIgnored(file);
     expect(readSpy).not.toHaveBeenCalled();

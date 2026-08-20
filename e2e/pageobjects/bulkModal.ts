@@ -1,4 +1,4 @@
-import { $ } from '@wdio/globals';
+import { $, $$, browser } from '@wdio/globals';
 
 const M = '.modal';
 const PRIMARY = `${M} .frontmatter-date-manager-bulk-primary`;
@@ -51,9 +51,39 @@ export const bulkModal = {
     await $(NEXT).click();
   },
 
-  /** Close the modal via its footer (Cancel/Close) button. */
+  /** Wait until the execute phase finished (the "Done!" header is rendered). */
+  async waitForDone(timeout = 60_000): Promise<void> {
+    await browser.waitUntil(
+      async () => {
+        // The settings window is a `.modal` too, and a modal left over by an
+        // earlier failure keeps its DOM - so scan every h2 of every DISPLAYED
+        // modal rather than taking the first match.
+        const headers = await $$(`${M} h2`).getElements();
+        for (const h of headers) {
+          if ((await h.isDisplayed()) && /Done!/.test(await h.getText())) {
+            return true;
+          }
+        }
+        return false;
+      },
+      {
+        timeout,
+        interval: 300,
+        timeoutMsg: 'the execute phase never reached its Done header',
+      },
+    );
+  },
+
+  /** Close the modal via its footer (Cancel/Close) button. Only DISPLAYED
+   * buttons are clicked: a modal left over by a previous failure keeps its DOM
+   * around and a bare selector would hit the hidden one. */
   async close(): Promise<void> {
-    const btn = $(FOOTER);
-    if (await btn.isExisting()) await btn.click();
+    const buttons = await $$(FOOTER).getElements();
+    for (const btn of buttons) {
+      if (await btn.isDisplayed()) {
+        await btn.click();
+        return;
+      }
+    }
   },
 };

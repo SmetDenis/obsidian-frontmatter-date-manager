@@ -33,7 +33,20 @@ export const STRINGS_TR: Strings = {
     timestampsUpdated: 'Tarihler güncellendi.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'Dosya, eklenti ayarlarınca yok sayılıyor.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Tarihler güncellenemedi: {reason}',
     failedToUpdate: 'Tarihler güncellenemedi.',
     autoUpdateEnabled: 'Otomatik güncelleme açık',
@@ -60,6 +73,8 @@ export const STRINGS_TR: Strings = {
     skippedTableIntro: '{count} not atlandı ve değiştirilmedi:',
     skippedUnsavedChanges:
       'Notta açık bir düzenleyicide kaydedilmemiş değişiklikler var. Kaydedin veya kapatın, ardından yeni bir önizleme çalıştırın.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -139,6 +154,10 @@ export const STRINGS_TR: Strings = {
       minSeconds: {
         name: 'Güncellemeler arasındaki en az saniye',
         desc: 'Yazarken veya notlar arasında geçiş yaparken tarihin çok sık güncellenmesini önler.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'Değişiklik algılama (içerik özetleme)',
@@ -227,7 +246,8 @@ export const STRINGS_TR: Strings = {
         obsidianDailyFolderDesc: 'Günlük notlar klasörü',
         obsidianAttachmentsDesc: 'Ekler / medya klasörü',
         obsidianCanvasDesc: 'Tüm tuval dosyaları',
-        obsidianExcalidrawDesc: 'Tüm Excalidraw çizimleri',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'Gelen kutusu / karalama klasörü',
         obsidianArchiveDesc: 'Arşivlenmiş notlar',
         sectionAllowlist:

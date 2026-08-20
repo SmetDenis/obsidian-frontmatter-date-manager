@@ -38,7 +38,20 @@ export const STRINGS_JA: Strings = {
     timestampsUpdated: '日付を更新しました。',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'このファイルはプラグインの設定により除外されています。',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '日付の更新に失敗しました: {reason}',
     failedToUpdate: '日付の更新に失敗しました。',
     autoUpdateEnabled: '自動更新を有効にしました',
@@ -66,6 +79,8 @@ export const STRINGS_JA: Strings = {
       '{count} 件のノートはスキップされ、変更されませんでした:',
     skippedUnsavedChanges:
       'このノートには開いているエディタに未保存の変更があります。保存するか閉じてから、新しいプレビューを実行してください。',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -145,6 +160,10 @@ export const STRINGS_JA: Strings = {
       minSeconds: {
         name: '更新間隔の最小秒数',
         desc: '入力中やノートを切り替えている間に、日付が頻繁に更新されすぎるのを防ぎます。',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: '変更検出 (内容のハッシュ化)',
@@ -231,7 +250,8 @@ export const STRINGS_JA: Strings = {
         obsidianDailyFolderDesc: 'デイリーノートのフォルダ',
         obsidianAttachmentsDesc: '添付ファイル / メディアのフォルダ',
         obsidianCanvasDesc: 'すべてのキャンバスファイル',
-        obsidianExcalidrawDesc: 'すべての Excalidraw の図',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: '受信トレイ / 下書きのフォルダ',
         obsidianArchiveDesc: 'アーカイブされたノート',
         sectionAllowlist: '許可リストモード (特定のフォルダのみ追跡)',
