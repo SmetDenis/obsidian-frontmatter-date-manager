@@ -18,7 +18,8 @@ Obsidian's submission and release rules change over time. Anchored to today's da
 
 - Preferred sources: the official Obsidian developer docs via `context7` (resolve `obsidianmd/obsidian-developer-docs` or the `obsidian` docs), or the Jina/Tavily/Firecrawl MCP tools pointed at `docs.obsidian.md`.
 - Pages to check:
-  - "Submission requirements for plugins" (https://docs.obsidian.md/Plugins/Releasing/Submission+requirements+for+plugins)
+  - "Submission requirements for plugins" (https://docs.obsidian.md/community-directory/submission-requirements-for-plugins - moved here from `Plugins/Releasing/`, where the URL now 404s; verified 2026-08-09)
+  - "Frequently asked questions" (https://docs.obsidian.md/community-directory/faq) - carries the scanner's build-script order and its fixed ignore-path list
   - "Release your plugin with GitHub Actions" / "Releasing" (https://docs.obsidian.md/Plugins/Releasing/Release+your+plugin+with+GitHub+Actions)
   - "Plugin guidelines" (https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)
 - Also confirm the latest published versions of `obsidian` (types) and `eslint-plugin-obsidianmd` on npm, since the community review bot always runs the latest linter.
