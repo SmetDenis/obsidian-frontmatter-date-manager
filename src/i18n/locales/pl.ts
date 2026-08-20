@@ -33,7 +33,20 @@ export const STRINGS_PL: Strings = {
     timestampsUpdated: 'Daty zaktualizowane.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'Plik jest pomijany przez ustawienia wtyczki.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Nie udało się zaktualizować dat: {reason}',
     failedToUpdate: 'Nie udało się zaktualizować dat.',
     autoUpdateEnabled: 'Automatyczna aktualizacja włączona',
@@ -60,6 +73,8 @@ export const STRINGS_PL: Strings = {
     skippedTableIntro: '{count} notatek pominięto i pozostawiono bez zmian:',
     skippedUnsavedChanges:
       'Notatka ma niezapisane zmiany w otwartym edytorze. Zapisz ją lub zamknij, a następnie uruchom nowy podgląd.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -144,6 +159,10 @@ export const STRINGS_PL: Strings = {
       minSeconds: {
         name: 'Minimalna liczba sekund między aktualizacjami',
         desc: 'Zapobiega zbyt częstej aktualizacji daty podczas pisania lub przełączania między notatkami.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'Wykrywanie zmian (haszowanie treści)',
@@ -234,7 +253,8 @@ export const STRINGS_PL: Strings = {
         obsidianDailyFolderDesc: 'Folder notatek dziennych',
         obsidianAttachmentsDesc: 'Folder załączników / mediów',
         obsidianCanvasDesc: 'Wszystkie pliki kanw',
-        obsidianExcalidrawDesc: 'Wszystkie rysunki Excalidraw',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'Folder skrzynki / brudnopisu',
         obsidianArchiveDesc: 'Zarchiwizowane notatki',
         sectionAllowlist:

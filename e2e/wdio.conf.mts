@@ -30,7 +30,17 @@ export const config: WebdriverIO.Config = {
         // Oldest installer compatible with the app version - fastest to grab.
         installerVersion: 'earliest',
         // Built plugin dir: esbuild outputs main.js + manifest.json here.
-        plugins: [path.resolve(repoRoot, 'dist')],
+        // The real Excalidraw community plugin is installed alongside but
+        // starts DISABLED - only excalidraw.e2e.ts enables it (and disables it
+        // again), so every other spec runs exactly as before. Version pinned
+        // for reproducibility (it is the version whose sources the write-guard
+        // analysis was verified against); bump deliberately, re-running the
+        // excalidraw spec. First run downloads the release into the launcher
+        // cache (network required).
+        plugins: [
+          path.resolve(repoRoot, 'dist'),
+          { id: 'obsidian-excalidraw-plugin', version: '2.26.4', enabled: false },
+        ],
         // Vault fixture; copied per run, so tests never touch the original.
         vault: path.resolve(dirname, 'vaults', 'simple'),
       },

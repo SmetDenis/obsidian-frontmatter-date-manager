@@ -112,6 +112,7 @@ describe('getSettingDefinitions structure', () => {
         'enableNumberProperties',
         'enableAutoUpdate',
         'minSecondsBetweenSaves',
+        'trackExcalidraw',
         'enableContentHashCheck',
         'hashTrackingMode',
         'inversionFixStrategy',

@@ -108,6 +108,7 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 | Nur-Zahlen-Datumsangaben ohne Anführungszeichen speichern | `false` | Gibt für reine Ziffernformate Zahlen statt Text in Anführungszeichen aus       |
 | Automatische Aktualisierung        | `true`                  | Aktualisiert Datumsangaben automatisch, wenn du eine Notiz bearbeitest           |
 | Mindestsekunden zwischen Aktualisierungen | `30`             | Mindestintervall zwischen Datumsaktualisierungen                                |
+| Excalidraw-Zeichnungen einbeziehen | `true`           | Auch Excalidraw-Zeichnungen mit Datumsangaben versehen; ausschalten, um Zeichnungen unangetastet zu lassen |
 | Zu überspringende Dateien und Ordner | `""` (alle Dateien)   | Regeln im Gitignore-Stil: Zeilen schließen aus, `!` schließt wieder ein, `#` für Kommentare (eigene Unterseite) |
 | Änderungserkennung (Inhalts-Hashing) | `true`                | Schreibt das Datum nur, wenn sich der Inhalt tatsächlich ändert (SHA-256-Hashing) |
 | Was als Änderung gilt              | `body`                  | Was Aktualisierungen auslöst: `body`, `frontmatter` oder `both`                  |

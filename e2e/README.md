@@ -120,6 +120,72 @@ here.
   `update()` (add/delete commits) must not duplicate `settingEl` children
   (asserted via a single `-plugin-description` element).
 
+**Group D - real Excalidraw integration (`specs/excalidraw.e2e.ts`):**
+
+The only spec that drives a THIRD-PARTY plugin: `wdio.conf.mts` installs the
+real `obsidian-excalidraw-plugin` (pinned to `2.26.4`) as an installed-but-
+DISABLED community plugin, and this spec enables it in `before` / disables it in
+`after`, so every other spec runs exactly as before. The first run downloads the
+release into `e2e/.obsidian-cache/` (network required).
+
+Why it exists: drawings are ordinary `.md` notes with an `excalidraw-plugin`
+property, and Excalidraw answers an external write into a drawing that has been
+dirty for > 5 minutes with `reload(true)` + `clearDirty()` - discarding unsaved
+strokes. No mock can reproduce that; this spec is where the drawing-aware write
+guard (`getWriteBlock`) is proven against the real thing.
+
+- X1 closed drawing gets `created`/`updated` from the manual command; the
+  `# Excalidraw Data` payload stays byte-identical and the scene still loads.
+- X2 with `trackExcalidraw: false` the command explains the exclusion and writes
+  nothing.
+- X3 an unchanged tracked drawing answers honestly (hash gate or freshness
+  guard) and never claims a false "Timestamps updated".
+- X4 an Excalidraw save stamps `updated`; a following no-op save does NOT revert
+  it, and no "modified externally" notice appears.
+- X5 panning the canvas does not move the date.
+- X6 a dirty drawing blocks the write (`getWriteBlock` -> `'excalidraw'`, the
+  pass returns `blocked` and writes nothing, the command says so), and the
+  stamp lands after Excalidraw saves - modify-driven, no polling.
+- X7 **the core safety scenario**: for a drawing dirty for > 5 min (via
+  `ageDrawing`) the shared write gate blocks, nothing is written, and the
+  unsaved rectangle survives. X7b is the control (saved drawing -> a real bulk
+  run writes, scene and payload intact).
+- X8 the last-opened date is never written to a drawing (a plain note still
+  gets it).
+- X9 Rename key covers drawings even with the toggle off (documented contract).
+- X10 filter rules still exclude a drawing while tracking is on.
+- X11 the marker is honoured with Excalidraw disabled (detection reads
+  `metadataCache`, not the `ExcalidrawAutomate` global).
+
+Two Excalidraw behaviours shape how these are written, and both bit earlier
+drafts of this spec:
+
+- **Excalidraw force-saves on a window `blur`** (`registerDomEvent(ownerWindow,
+  "blur", ... -> forceSave)`), ignoring its own autosave setting. So a scenario
+  cannot keep a drawing dirty while clicking through modal UI - the click blurs
+  the window and cleans the state under test. That is why X6/X7 assert on
+  `fdmWriteBlock` / `fdmHandleFileChange` (the exact gate `applyFrontmatterWrite`
+  consults) instead of driving the bulk modal; the modal's skipped-table UI is
+  covered for Markdown notes by `editor-dirty-merge.e2e.ts` (D5). Scenarios that
+  need a dirty drawing also call `setExcalidrawAutosave(false)` and re-arm
+  `markDrawingDirty()` right before each assertion; the spec's `afterEach`
+  restores autosave, `filterRules` and the toggle so a mid-scenario failure
+  cannot poison the rest of the file.
+- **A dirty view and a mid-save view are different blocks.** `saving`/
+  `autosaving` yields `'excalidraw-busy'`, which DEFERS on the normal timer;
+  only a dirty (or unverifiable) view drops the pass. X6 asserts the dirty
+  path; the busy path is unit-tested.
+- **The hash gate runs before the write guard.** Once a file's hash is cached
+  and its on-disk body is unchanged, `shouldFileBeIgnored` answers `unchanged`
+  and the guard is never consulted (correct - there is nothing to write). X6
+  therefore dirties the drawing BEFORE it ever gets a cache entry.
+
+All Excalidraw coupling lives in `helpers/excalidraw.ts` (create/open drawings
+via `ExcalidrawAutomate`, `addRectToOpenDrawing`, `forceSaveDrawing`,
+`isDrawingDirty`, `markDrawingDirty`, `ageDrawing`, `sceneElementCount`,
+`panZoomDrawing`, `setExcalidrawAutosave`, plus `fdmWriteBlock` /
+`fdmHandleFileChange` for gate-level assertions).
+
 **Marketing screenshots (manual; NOT a test):** `specs/marketing-screenshots.e2e.ts`
 generates the README / store screenshots (`make screenshots` - runs the spec, then
 downscales to the Obsidian store spec of exactly 1200x800, 3:2).
@@ -186,8 +252,7 @@ pipeline.
 
 ### Before release
 
-- [ ] Run `npm run test:e2e` locally and confirm all Group A and Group B specs
-      pass.
+- [ ] Run `npm run test:e2e` locally and confirm all Group A-D specs pass.
 
 ## Notes
 

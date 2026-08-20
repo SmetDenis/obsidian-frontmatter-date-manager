@@ -33,6 +33,7 @@ export interface FrontmatterDateManagerSettings {
   postUpdateCommand: string;
   filterRules?: string;
   enableModifiedTime?: boolean;
+  trackExcalidraw?: boolean;
 
   enableLastViewed?: boolean;
   headerLastViewed?: string;
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   postUpdateCommand: '',
   filterRules: '',
   enableModifiedTime: true,
+  trackExcalidraw: true,
   enableLastViewed: false,
   headerLastViewed: 'viewed',
   countUpdatesEnabled: false,
@@ -483,6 +485,15 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
             min: 5,
             max: 300,
             step: 5,
+          },
+        },
+        {
+          name: b.trackExcalidraw.name,
+          desc: b.trackExcalidraw.desc,
+          control: {
+            type: 'toggle',
+            key: 'trackExcalidraw',
+            defaultValue: true,
           },
         },
         this.filterRulesPage(),

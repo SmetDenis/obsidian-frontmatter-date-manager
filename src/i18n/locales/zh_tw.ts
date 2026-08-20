@@ -33,7 +33,20 @@ export const STRINGS_ZH_TW: Strings = {
     timestampsUpdated: '日期已更新。',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: '此檔案已被外掛設定略過。',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '更新日期失敗：{reason}',
     failedToUpdate: '更新日期失敗。',
     autoUpdateEnabled: '自動更新已開啟',
@@ -58,6 +71,8 @@ export const STRINGS_ZH_TW: Strings = {
     skippedTableIntro: '{count} 個筆記已略過且未被變更:',
     skippedUnsavedChanges:
       '該筆記在開啟的編輯器中有未儲存的變更。請儲存或關閉它，然後執行新的預覽。',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -135,6 +150,10 @@ export const STRINGS_ZH_TW: Strings = {
       minSeconds: {
         name: '更新之間的最小秒數',
         desc: '避免在您打字或在筆記之間切換時過於頻繁地更新日期。',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: '變更偵測（內容雜湊）',
@@ -216,7 +235,8 @@ export const STRINGS_ZH_TW: Strings = {
         obsidianDailyFolderDesc: '每日筆記資料夾',
         obsidianAttachmentsDesc: '附件／媒體資料夾',
         obsidianCanvasDesc: '所有畫布檔案',
-        obsidianExcalidrawDesc: '所有 Excalidraw 圖畫',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: '收件匣／草稿資料夾',
         obsidianArchiveDesc: '已封存的筆記',
         sectionAllowlist: '白名單模式（只追蹤特定資料夾）',

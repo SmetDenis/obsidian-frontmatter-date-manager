@@ -27,21 +27,87 @@ import {
   isInversion,
   InversionFixStrategy,
 } from './inversionDetection';
-import { FRESHNESS_SEC, MODIFY_DEBOUNCE_MS } from './constants';
+import {
+  EXCALIDRAW_FRONTMATTER_KEY,
+  EXCALIDRAW_VIEW_TYPE,
+  FRESHNESS_SEC,
+  MODIFY_DEBOUNCE_MS,
+} from './constants';
 
 export interface HashCacheEntry {
   hash: string;
   lastAccessed: number;
 }
 
+// Why shouldFileBeIgnored skipped a file. Carried up to the manual command so
+// the user sees the actual cause instead of a one-size "ignored by settings"
+// notice (issue #15: the shared text implied a configurable exclusion where
+// none existed).
+export type IgnoreReason =
+  | 'no-path'
+  | 'not-markdown'
+  | 'canvas'
+  | 'excalidraw'
+  | 'filter-rule'
+  | 'empty'
+  | 'unchanged';
+
+// IgnoreReason plus the causes handleFileChange itself can produce before/after
+// the shouldFileBeIgnored check.
+export type FileChangeIgnoreReason =
+  | IgnoreReason
+  | 'not-a-file'
+  | 'no-date-keys'
+  | 'invalid-file-times';
+
+// What blocked a write this pass.
+// - 'markdown': a Markdown editor buffer holds unsaved changes -> defer via
+//   the 2 s retry timer (Obsidian autosaves shortly after typing stops).
+// - 'excalidraw-busy': the drawing is mid-save (saving/autosaving) -> also a
+//   short-lived state, so defer with the same timer rather than dropping: the
+//   in-flight save's own `modify` may already have been delivered, so waiting
+//   for "the next one" could strand the update until the user edits again.
+// - 'excalidraw': the drawing is dirty (or its state cannot be established) ->
+//   DROP the pass without a timer; that state can last hours, and Excalidraw's
+//   own next save fires `modify` and re-triggers the pipeline.
+export type WriteBlock = 'markdown' | 'excalidraw-busy' | 'excalidraw';
+
 // Result of one handleFileChange pass. `wrote` is true only when
 // processFrontMatter actually ran; `deferred` is true only when a real change
 // is pending and will be written by a scheduled retry (rate limit, dirty
-// editor buffer, or a concurrent pass holding the lock).
+// editor buffer, or a concurrent pass holding the lock). `blocked` is set when
+// a dirty/busy Excalidraw view blocked the pass: no write happened and no
+// retry timer exists - the next Excalidraw save re-triggers processing.
 export type FileChangeResult =
-  | { status: 'ok'; wrote: boolean; deferred?: boolean }
+  | { status: 'ok'; wrote: boolean; deferred?: boolean; blocked?: 'excalidraw' }
   | { status: 'error'; error: unknown }
-  | { status: 'ignored' };
+  | { status: 'ignored'; reason: FileChangeIgnoreReason };
+
+// Maps an ignore reason to the notice string shown by the manual
+// "Update timestamps for current file" command. Exhaustive on purpose - a new
+// reason must get its own honest text, never a generic fallback (issue #15).
+export function ignoreReasonToNotice(reason: FileChangeIgnoreReason): string {
+  switch (reason) {
+    case 'excalidraw':
+      return strings.notices.ignoredExcalidraw;
+    case 'filter-rule':
+      return strings.notices.ignoredByFilterRule;
+    case 'canvas':
+      return strings.notices.ignoredCanvas;
+    case 'empty':
+      return strings.notices.ignoredEmpty;
+    case 'unchanged':
+      return strings.notices.ignoredUnchanged;
+    case 'no-date-keys':
+      return strings.notices.ignoredNoDateKeys;
+    case 'invalid-file-times':
+      return strings.notices.ignoredInvalidFileTimes;
+    case 'no-path':
+    case 'not-markdown':
+    case 'not-a-file':
+      return strings.notices.ignoredNotMarkdown;
+  }
+}
 
 const HASH_CACHE_FILE = 'hash-cache.json';
 const HASH_CACHE_DEFAULT_MAX_SIZE = 10_000;
@@ -241,10 +307,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
                       ? strings.notices.timestampsUpdated
                       : result.deferred
                         ? strings.notices.timestampsUpdateScheduled
-                        : strings.notices.timestampsAlreadyCurrent,
+                        : result.blocked === 'excalidraw'
+                          ? strings.notices.excalidrawHasUnsavedChanges
+                          : strings.notices.timestampsAlreadyCurrent,
                   );
                 } else if (result.status === 'ignored') {
-                  new Notice(strings.notices.fileIgnored);
+                  new Notice(ignoreReasonToNotice(result.reason));
                 } else {
                   // handleFileChange already shows a detailed Notice for
                   // malformed YAML; for any other failure surface the real
@@ -429,21 +497,35 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   async shouldFileBeIgnored(
     file: TFile,
     options?: { skipHashCheck?: boolean },
-  ): Promise<{ ignored: boolean; fileContent?: string }> {
+  ): Promise<
+    | { ignored: true; reason: IgnoreReason }
+    | { ignored: false; fileContent: string }
+  > {
     if (!file.path) {
-      return { ignored: true };
+      return { ignored: true, reason: 'no-path' };
     }
     if (file.extension !== 'md') {
-      return { ignored: true };
+      return { ignored: true, reason: 'not-markdown' };
     }
     // Canvas files are created as 'Canvas.md',
     // so the plugin will update "frontmatter" and break the file when it gets created
     if (file.name.toLowerCase() === 'canvas.md') {
-      return { ignored: true };
+      return { ignored: true, reason: 'canvas' };
     }
 
-    if (this.isExcalidrawFile(file)) {
-      return { ignored: true };
+    // Excalidraw drawings are tracked by default (they are regular Markdown
+    // notes); the toggle is the one-click opt-out. A glob filter rule is not a
+    // substitute for it: the `.excalidraw.md` suffix is an Excalidraw setting,
+    // while the frontmatter marker is how Excalidraw itself classifies files.
+    //
+    // Only the CACHED classification is consulted here, before the file is
+    // read. A cache miss is resolved further down from the file text instead
+    // of guessing: guessing "drawing" would silently stop dating an ordinary
+    // note that Obsidian has not indexed yet.
+    const trackExcalidraw = this.settings.trackExcalidraw ?? true;
+    const excalidrawClass = this.classifyExcalidraw(file);
+    if (!trackExcalidraw && excalidrawClass === 'drawing') {
+      return { ignored: true, reason: 'excalidraw' };
     }
 
     // Filter rules check BEFORE reading file to avoid unnecessary I/O
@@ -451,14 +533,25 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       this._compiledRules.length > 0 &&
       isFileExcluded(file.path, this._compiledRules)
     ) {
-      return { ignored: true };
+      return { ignored: true, reason: 'filter-rule' };
     }
 
     // All path-based checks passed - now read the file
     const fileContent = (await this.app.vault.read(file)).trim();
 
     if (fileContent.length === 0) {
-      return { ignored: true };
+      return { ignored: true, reason: 'empty' };
+    }
+
+    // Cache-miss resolution for the opt-out: now that the text is in hand, the
+    // marker can be read directly instead of trusting an index that has not
+    // caught up yet.
+    if (
+      !trackExcalidraw &&
+      excalidrawClass === 'unknown' &&
+      this.isExcalidrawContent(fileContent)
+    ) {
+      return { ignored: true, reason: 'excalidraw' };
     }
 
     if (this.settings.enableContentHashCheck && !options?.skipHashCheck) {
@@ -469,7 +562,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         const sha = this.hashString(contentToHash);
         if (sha === entry.hash) {
           this.log('Ignoring file - SHA is the same');
-          return { ignored: true };
+          return { ignored: true, reason: 'unchanged' };
         }
       }
     }
@@ -484,23 +577,58 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return isAfter(currentMtime, nextUpdate);
   }
 
-  isExcalidrawFile(file: TFile): boolean {
-    // ExcalidrawAutomate is injected into the main window by the Excalidraw plugin.
-    // Use `window` (not `activeWindow`): the global lives on the main window, so a
-    // popout's `activeWindow` would not see it. Plugin code runs in the main context.
-    const mainWindow = window as unknown as Record<string, unknown>;
-    const ea = mainWindow['ExcalidrawAutomate'];
-    if (
-      ea != null &&
-      typeof ea === 'object' &&
-      'isExcalidrawFile' in ea &&
-      typeof (ea as Record<string, unknown>)['isExcalidrawFile'] === 'function'
-    ) {
-      return (
-        ea as { isExcalidrawFile: (f: TFile) => boolean }
-      ).isExcalidrawFile(file);
+  // A drawing is a note whose frontmatter carries a truthy `excalidraw-plugin`
+  // marker - the exact check Excalidraw's own FileManager.isExcalidrawFile
+  // performs (its `.excalidraw`-extension branch is unreachable here: the
+  // extension gate above admits only .md files). Read from metadataCache
+  // directly instead of the ExcalidrawAutomate global so classification is
+  // sync, unit-testable, and independent of whether/when the Excalidraw plugin
+  // loads.
+  //
+  // Three-valued on purpose. A metadataCache MISS ('unknown') is NOT "not a
+  // drawing": right after startup, or for a file Obsidian has not indexed yet,
+  // the marker is invisible - and treating that as "ordinary note" would let
+  // the `viewed` stamp (the one write aimed at an idle drawing) or a
+  // toggle-off write through. Callers resolve 'unknown' explicitly: from the
+  // file text when they have it (isExcalidrawContent), or by failing closed.
+  classifyExcalidraw(file: TFile): 'drawing' | 'not-drawing' | 'unknown' {
+    const cache = this.app.metadataCache.getFileCache(file);
+    if (!cache) return 'unknown';
+    const frontmatter: Record<string, unknown> | undefined = cache.frontmatter;
+    return frontmatter?.[EXCALIDRAW_FRONTMATTER_KEY]
+      ? 'drawing'
+      : 'not-drawing';
+  }
+
+  // Resolve an 'unknown' classification from the raw file text: the same
+  // truthy-marker rule, applied to the frontmatter block. Deliberately
+  // conservative - a key with an empty value is not a drawing, exactly like
+  // the cached check.
+  isExcalidrawContent(fileContent: string): boolean {
+    const fm = fileContent.match(/^---\r?\n([\s\S]*?\r?\n)?---/);
+    if (!fm?.[1]) return false;
+    for (const line of fm[1].split(/\r?\n/)) {
+      const match = line.match(
+        new RegExp(`^${EXCALIDRAW_FRONTMATTER_KEY}\\s*:\\s*(.*)$`),
+      );
+      if (match) {
+        const value = (match[1] ?? '').trim().replace(/^["']|["']$/g, '');
+        return value.length > 0 && value !== 'false' && value !== 'null';
+      }
     }
     return false;
+  }
+
+  // True when this file is known to be an Excalidraw drawing. `fileContent`
+  // resolves a metadataCache miss precisely; without it an unindexed file is
+  // treated as a drawing (fail closed) - the caller is about to skip a write,
+  // and a skipped write is always recoverable.
+  isExcalidrawFile(file: TFile, fileContent?: string): boolean {
+    const classified = this.classifyExcalidraw(file);
+    if (classified !== 'unknown') return classified === 'drawing';
+    return fileContent === undefined
+      ? true
+      : this.isExcalidrawContent(fileContent);
   }
 
   async getAllFilesPossiblyAffected(options?: { skipHashCheck?: boolean }) {
@@ -582,7 +710,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // fails CLOSED: when `dirty` is not a boolean (API drift), fall back to
   // comparing the buffer with the file on disk, and treat an unreadable buffer
   // as unsafe. A delayed stamp is recoverable; a merge into the user's live
-  // buffer is not. Public because bulk writes (src/bulk/write.ts) share it.
+  // buffer is not.
   async hasUnsavedEditorChanges(file: TFile): Promise<boolean> {
     for (const view of this.markdownViewsFor(file)) {
       const flag = (view as unknown as { dirty?: unknown }).dirty;
@@ -599,6 +727,88 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
     }
     return false;
+  }
+
+  // Excalidraw-side write block. An open drawing view of this file blocks the
+  // write unless it is provably mounted, idle, and clean. The danger this
+  // guards is NOT the Markdown merge popup: when a drawing had no save for
+  // > 5 minutes, Excalidraw reacts to an external vault write with a full
+  // reload(true) + clearDirty() (FileManager.modifyEventHandler in
+  // obsidian-excalidraw-plugin) - discarding the user's unsaved strokes. A
+  // drawing CAN stay dirty that long: Excalidraw skips autosave while a text
+  // element / new element / freedraw is active, and autosave can be disabled.
+  // A CLEAN open drawing is safe to write to: Obsidian core refreshes the
+  // view's buffer (TextFileView.onModify -> loadFileInternal -> setData,
+  // verified in obsidian-1.13.7.asar) and Excalidraw only syncs scene
+  // elements.
+  //
+  // isDirty()/semaphores are public members of ExcalidrawView (2.26.4) but not
+  // a stable cross-plugin API, so every read goes through `unknown` casts and
+  // fails CLOSED on any drift: semaphores missing/malformed, isDirty missing /
+  // throwing / returning a non-boolean, or the view not mounted yet
+  // (excalidrawAPI null) all count as blocked.
+  private excalidrawWriteBlock(file: TFile): 'dirty' | 'busy' | null {
+    for (const leaf of this.app.workspace.getLeavesOfType(
+      EXCALIDRAW_VIEW_TYPE,
+    )) {
+      const view = leaf.view as unknown as {
+        file?: { path?: unknown };
+        isDirty?: unknown;
+        semaphores?: unknown;
+        excalidrawAPI?: unknown;
+      };
+
+      // A view whose `file` is not a usable string is either still mounting or
+      // drifted; it can neither be matched nor cleared, so it blocks every
+      // write rather than being skipped. That window is milliseconds long
+      // (view construction), and the cost of being wrong is a delayed stamp.
+      const path: unknown = view.file?.path;
+      if (typeof path !== 'string') return 'dirty';
+      if (path !== file.path) continue;
+
+      // Idle must be PROVEN: both semaphores exactly false. `{}` (partial API
+      // drift) leaves them undefined - "not true" is not the same as "false",
+      // and treating it as idle is exactly the fail-open this guard exists to
+      // prevent.
+      const sem = view.semaphores;
+      if (sem === null || typeof sem !== 'object') return 'dirty';
+      const { saving, autosaving } = sem as {
+        saving?: unknown;
+        autosaving?: unknown;
+      };
+      if (saving === true || autosaving === true) return 'busy';
+      if (saving !== false || autosaving !== false) return 'dirty';
+
+      // Mounted must be proven too: the API is an object, not just non-null.
+      const api = view.excalidrawAPI;
+      if (api === null || typeof api !== 'object') return 'dirty';
+
+      if (typeof view.isDirty !== 'function') return 'dirty';
+      try {
+        const dirty = (view.isDirty as () => unknown).call(leaf.view);
+        if (dirty !== false) return 'dirty';
+      } catch {
+        return 'dirty';
+      }
+    }
+    return null;
+  }
+
+  // The single write-safety gate every write path consults. 'markdown' means a
+  // Markdown editor buffer of the file holds unsaved changes (defer via the
+  // 2 s retry - Obsidian's own autosave clears it shortly after typing stops).
+  // 'excalidraw' means an open drawing view is dirty/busy/unknown; callers
+  // must DROP the pass without a retry timer: Excalidraw can stay dirty for
+  // hours, and its own next save fires `modify`, which re-triggers the
+  // pipeline (the hash is not refreshed on a blocked pass, so the pending
+  // change stays detectable). Public because bulk writes (src/bulk/write.ts)
+  // share it.
+  async getWriteBlock(file: TFile): Promise<WriteBlock | null> {
+    if (await this.hasUnsavedEditorChanges(file)) return 'markdown';
+    const excalidraw = this.excalidrawWriteBlock(file);
+    if (excalidraw === 'busy') return 'excalidraw-busy';
+    if (excalidraw === 'dirty') return 'excalidraw';
+    return null;
   }
 
   private computeFrontmatterUpdates(file: TFile): {
@@ -619,10 +829,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const updatedKey = this.settings.headerUpdated.trim();
     const createdKey = this.settings.headerCreated.trim();
 
-    if (!updatedKey && !createdKey) {
-      return null;
-    }
-
+    // Blank keys are pre-checked in handleFileChange (-> 'no-date-keys'), so a
+    // null return here means exactly one thing: unparseable file timestamps.
     const mTime = this.parseDate(file.stat.mtime);
     const cTime = this.parseDate(file.stat.ctime);
 
@@ -742,7 +950,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
   async handleFileChange(file: TAbstractFile): Promise<FileChangeResult> {
     if (!isTFile(file)) {
-      return { status: 'ignored' };
+      return { status: 'ignored', reason: 'not-a-file' };
     }
 
     // Detect self-triggered modify events: after processFrontMatter writes,
@@ -758,21 +966,42 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     const checkResult = await this.shouldFileBeIgnored(file);
     if (checkResult.ignored) {
-      return { status: 'ignored' };
+      return { status: 'ignored', reason: checkResult.reason };
     }
 
     // Never write while an editor buffer of this file has unsaved changes -
     // Obsidian would merge the write into the live buffer and pop the
-    // "modified externally" notice (see hasUnsavedEditorChanges). Defer the
-    // WHOLE pass exactly like the rate-limit branch below: no write, no hash
-    // refresh (the pending change must stay detectable), one coalesced timer.
-    // Obsidian's own 2 s autosave clears `dirty` shortly after typing stops,
-    // so the deferral cannot starve - and a cap that eventually forced a write
-    // would reintroduce the merge, so there deliberately is none. Placed
-    // BEFORE computeFrontmatterUpdates: the compute would be wasted work for
-    // a pass that must not write.
-    if (await this.hasUnsavedEditorChanges(file)) {
-      this.log('Editor buffer has unsaved changes - deferring');
+    // "modified externally" notice (see hasUnsavedEditorChanges) - or while an
+    // open Excalidraw view of it is dirty/busy (an external write into a
+    // drawing idle > 5 min triggers Excalidraw's reload(true) + clearDirty(),
+    // discarding unsaved strokes; see excalidrawWriteBlock). Placed BEFORE
+    // computeFrontmatterUpdates: the compute would be wasted work for a pass
+    // that must not write. Neither branch refreshes the hash - the pending
+    // change must stay detectable.
+    //
+    // 'markdown' defers via one coalesced 2 s timer: Obsidian's own autosave
+    // clears `dirty` shortly after typing stops, so the deferral cannot starve
+    // - and a cap that eventually forced a write would reintroduce the merge,
+    // so there deliberately is none.
+    //
+    // 'excalidraw-busy' (a save in flight) defers on the same timer - a
+    // short-lived state, and the in-flight save's own `modify` may already
+    // have been delivered, so waiting for "the next one" could strand the
+    // update.
+    //
+    // 'excalidraw' (dirty, or a state that cannot be established) is dropped
+    // WITHOUT a timer: a drawing can stay dirty for hours (autosave pauses
+    // during text editing/freedraw and can be disabled entirely), so a
+    // fixed-interval retry would read+hash the file forever. Excalidraw's own
+    // next save fires `modify`, which re-triggers this pipeline and lands the
+    // stamp then.
+    const block = await this.getWriteBlock(file);
+    if (block === 'markdown' || block === 'excalidraw-busy') {
+      this.log(
+        block === 'markdown'
+          ? 'Editor buffer has unsaved changes - deferring'
+          : 'Excalidraw view is mid-save - deferring',
+      );
       if (!this.modifyTimers.has(file.path)) {
         const timer = window.setTimeout(() => {
           this.modifyTimers.delete(file.path);
@@ -782,11 +1011,25 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
       return { status: 'ok', wrote: false, deferred: true };
     }
+    if (block === 'excalidraw') {
+      this.log('Open Excalidraw view is dirty or busy - dropping this pass');
+      return { status: 'ok', wrote: false, blocked: 'excalidraw' };
+    }
+
+    // Blank date-property names mean there is nothing to compute or write.
+    // Checked here (not inside the compute) so the compute's null return keeps
+    // a single meaning: unparseable file timestamps.
+    if (
+      !this.settings.headerUpdated.trim() &&
+      !this.settings.headerCreated.trim()
+    ) {
+      return { status: 'ignored', reason: 'no-date-keys' };
+    }
 
     const updates = this.computeFrontmatterUpdates(file);
 
     if (updates === null) {
-      return { status: 'ignored' };
+      return { status: 'ignored', reason: 'invalid-file-times' };
     }
 
     // A pending rate-limit retry takes precedence over writing this pass.
@@ -958,18 +1201,29 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // opening a file does not change its content, so the hash would always match
     // the cache and the file would be wrongly ignored. The viewed stamp is
     // rate-limited via shouldUpdateValue below instead.
-    if (
-      (await this.shouldFileBeIgnored(file, { skipHashCheck: true })).ignored
-    ) {
+    const check = await this.shouldFileBeIgnored(file, { skipHashCheck: true });
+    if (check.ignored) {
       return;
     }
 
-    // Any dirty editor buffer of this file blocks the viewed stamp - and the
-    // stamp is DROPPED for this open, not retried: `viewed` means "at open", so
-    // a deferred write would record a false time and fire after the user moved
-    // on. The just-opened leaf is clean by definition, but ANOTHER leaf showing
-    // the same file can hold unsaved changes (the D4 scenario).
-    if (await this.hasUnsavedEditorChanges(file)) return;
+    // Excalidraw drawings never get a `viewed` stamp, even when tracking is
+    // on: the file-open write is the ONLY FDM write that can land on a drawing
+    // idle > 5 minutes, and Excalidraw reacts to that with a full reload(true)
+    // (flash, scene re-parse). `updated` never hits that path - it always
+    // follows a fresh Excalidraw save. Deliberate scope cut; revisit on user
+    // demand. The file text from the ignore check resolves a metadataCache
+    // miss precisely, so a drawing Obsidian has not indexed yet is recognized
+    // too (without it, the very first open of a drawing after startup could
+    // stamp it).
+    if (this.isExcalidrawFile(file, check.fileContent)) return;
+
+    // Any write block (dirty Markdown buffer OR a dirty/busy Excalidraw view
+    // of this file) drops the viewed stamp - DROPPED for this open, not
+    // retried: `viewed` means "at open", so a deferred write would record a
+    // false time and fire after the user moved on. The just-opened leaf is
+    // clean by definition, but ANOTHER leaf showing the same file can hold
+    // unsaved changes (the D4 scenario).
+    if ((await this.getWriteBlock(file)) !== null) return;
 
     // Rate-limiting via shouldUpdateValue
     const cached: Record<string, unknown> | undefined =

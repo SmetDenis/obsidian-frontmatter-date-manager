@@ -33,7 +33,20 @@ export const STRINGS_TH: Strings = {
     timestampsUpdated: 'อัปเดตวันที่แล้ว',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'ไฟล์ถูกข้ามตามการตั้งค่าปลั๊กอิน',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'อัปเดตวันที่ไม่สำเร็จ: {reason}',
     failedToUpdate: 'อัปเดตวันที่ไม่สำเร็จ',
     autoUpdateEnabled: 'เปิดการอัปเดตอัตโนมัติแล้ว',
@@ -60,6 +73,8 @@ export const STRINGS_TH: Strings = {
     skippedTableIntro: 'ข้าม {count} โน้ตและปล่อยไว้โดยไม่เปลี่ยนแปลง:',
     skippedUnsavedChanges:
       'โน้ตนี้มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึกในตัวแก้ไขที่เปิดอยู่ บันทึกหรือปิดโน้ต แล้วเรียกใช้ตัวอย่างใหม่',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -138,6 +153,10 @@ export const STRINGS_TH: Strings = {
       minSeconds: {
         name: 'จำนวนวินาทีขั้นต่ำระหว่างการอัปเดต',
         desc: 'ป้องกันไม่ให้อัปเดตวันที่บ่อยเกินไปขณะที่คุณพิมพ์หรือสลับระหว่างโน้ต',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'การตรวจจับการเปลี่ยนแปลง (การแฮชเนื้อหา)',
@@ -223,7 +242,8 @@ export const STRINGS_TH: Strings = {
         obsidianDailyFolderDesc: 'โฟลเดอร์โน้ตประจำวัน',
         obsidianAttachmentsDesc: 'โฟลเดอร์ไฟล์แนบ / สื่อ',
         obsidianCanvasDesc: 'ไฟล์ canvas ทั้งหมด',
-        obsidianExcalidrawDesc: 'ภาพวาด Excalidraw ทั้งหมด',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'โฟลเดอร์กล่องเข้า / กระดาษทด',
         obsidianArchiveDesc: 'โน้ตที่เก็บถาวร',
         sectionAllowlist: 'โหมดรายการอนุญาต (ติดตามเฉพาะโฟลเดอร์ที่ระบุ)',

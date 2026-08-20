@@ -33,7 +33,20 @@ export const STRINGS_UK: Strings = {
     timestampsUpdated: 'Дати оновлено.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'Файл виключено налаштуваннями плагіна.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Не вдалося оновити дати: {reason}',
     failedToUpdate: 'Не вдалося оновити дати.',
     autoUpdateEnabled: 'Автооновлення увімкнено',
@@ -60,6 +73,8 @@ export const STRINGS_UK: Strings = {
     skippedTableIntro: '{count} нотаток пропущено та залишено без змін:',
     skippedUnsavedChanges:
       'У нотатці є незбережені зміни у відкритому редакторі. Збережіть або закрийте її, а потім запустіть новий попередній перегляд.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -141,6 +156,10 @@ export const STRINGS_UK: Strings = {
       minSeconds: {
         name: 'Мінімум секунд між оновленнями',
         desc: 'Не дає оновлювати дату надто часто, поки ви друкуєте або перемикаєтеся між нотатками.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'Розпізнавання змін (хешування вмісту)',
@@ -230,7 +249,8 @@ export const STRINGS_UK: Strings = {
         obsidianDailyFolderDesc: 'Тека щоденних нотаток',
         obsidianAttachmentsDesc: 'Тека вкладень / медіа',
         obsidianCanvasDesc: 'Усі файли полотен',
-        obsidianExcalidrawDesc: 'Усі малюнки Excalidraw',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'Тека вхідних / чернеток',
         obsidianArchiveDesc: 'Архівні нотатки',
         sectionAllowlist: 'Режим білого списку (відстежувати лише певні теки)',

@@ -33,7 +33,20 @@ export const STRINGS_FA: Strings = {
     timestampsUpdated: 'تاریخ‌ها به‌روزرسانی شدند.',
     timestampsAlreadyCurrent: 'Timestamps are already up to date.',
     timestampsUpdateScheduled: 'Timestamps will update shortly.',
-    fileIgnored: 'این پرونده بر اساس تنظیمات افزونه نادیده گرفته شده است.',
+    ignoredExcalidraw:
+      "Excalidraw drawings are excluded. Turn on 'Include Excalidraw drawings' in the plugin settings to add dates to them.",
+    ignoredByFilterRule:
+      "This file is excluded by a rule in 'Files and folders to skip'.",
+    ignoredCanvas: 'Canvas files are not supported.',
+    ignoredEmpty: 'This file is empty, so there is nothing to date.',
+    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredNoDateKeys:
+      'No date property names are configured in the plugin settings.',
+    ignoredInvalidFileTimes:
+      "The file's creation or modification time could not be read.",
+    ignoredNotMarkdown: 'Only Markdown notes get date properties.',
+    excalidrawHasUnsavedChanges:
+      'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'به‌روزرسانی تاریخ‌ها ناموفق بود: {reason}',
     failedToUpdate: 'به‌روزرسانی تاریخ‌ها ناموفق بود.',
     autoUpdateEnabled: 'به‌روزرسانی خودکار فعال شد',
@@ -60,6 +73,8 @@ export const STRINGS_FA: Strings = {
     skippedTableIntro: '{count} یادداشت رد شد و بدون تغییر باقی ماند:',
     skippedUnsavedChanges:
       'این یادداشت تغییرات ذخیره‌نشده‌ای در یک ویرایشگر باز دارد. آن را ذخیره یا ببندید، سپس پیش‌نمایش جدیدی اجرا کنید.',
+    skippedExcalidrawUnsaved:
+      'The Excalidraw drawing has unsaved changes or is busy saving. Save or close it, then run a new preview.',
     progressCounter: '{count}/{max}',
   },
   settings: {
@@ -140,6 +155,10 @@ export const STRINGS_FA: Strings = {
       minSeconds: {
         name: 'حداقل ثانیه بین به‌روزرسانی‌ها',
         desc: 'از به‌روزرسانی بیش از حد تاریخ هنگام تایپ یا جابه‌جایی میان یادداشت‌ها جلوگیری می‌کند.',
+      },
+      trackExcalidraw: {
+        name: 'Include Excalidraw drawings',
+        desc: 'Add dates to Excalidraw drawings like to any note. A drawing is never written to while it has unsaved changes, and the last-opened date is never written to drawings. Rename key and Reformat dates always cover every note.',
       },
       changeDetection: {
         name: 'تشخیص تغییر (هش‌کردن محتوا)',
@@ -228,7 +247,8 @@ export const STRINGS_FA: Strings = {
         obsidianDailyFolderDesc: 'پوشه یادداشت‌های روزانه',
         obsidianAttachmentsDesc: 'پوشه پیوست‌ها / رسانه',
         obsidianCanvasDesc: 'همه پرونده‌های بوم',
-        obsidianExcalidrawDesc: 'همه نقاشی‌های Excalidraw',
+        obsidianExcalidrawDesc:
+          "Excalidraw drawings by file name (matches only the default suffix; the 'Include Excalidraw drawings' toggle is the reliable switch)",
         obsidianInboxDesc: 'پوشه صندوق ورودی / چرک‌نویس',
         obsidianArchiveDesc: 'یادداشت‌های بایگانی‌شده',
         sectionAllowlist: 'حالت فهرست مجاز (ردیابی فقط پوشه‌های مشخص)',

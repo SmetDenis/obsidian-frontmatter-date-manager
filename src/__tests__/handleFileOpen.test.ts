@@ -21,6 +21,19 @@ function setupOpenPlugin(
   overrides: Partial<FrontmatterDateManagerSettings> = {},
   openFile?: TFile,
   leafDirty: unknown[] = [],
+  opts: {
+    // `null` simulates a metadataCache miss (file not indexed yet).
+    frontmatter?: Record<string, unknown> | null;
+    // Raw text vault.read returns - the cache-miss fallback reads it.
+    fileContent?: string;
+    // Open Excalidraw views: shapes mirroring the public ExcalidrawView
+    // members the guard reads. Sentinels simulate API drift (fails closed).
+    excalidrawLeaves?: Array<{
+      path?: string;
+      isDirty?: boolean | 'missing';
+      saving?: boolean;
+    }>;
+  } = {},
 ) {
   const plugin = createPlugin({ timezone: 'UTC', ...overrides });
   plugin.recompileFilterRules();
@@ -47,14 +60,40 @@ function setupOpenPlugin(
         }),
       }))
     : [];
+  const excalidrawLeaves = (opts.excalidrawLeaves ?? []).map((spec) => {
+    const view: Record<string, unknown> = {
+      file: { path: spec.path ?? openFile?.path },
+      semaphores: { saving: spec.saving ?? false, autosaving: false },
+      excalidrawAPI: {},
+    };
+    if (spec.isDirty !== 'missing') {
+      view.isDirty = () => spec.isDirty ?? false;
+    }
+    return { view };
+  });
   plugin.app = {
     vault: {
-      read: vi.fn().mockResolvedValue('# note body'),
-      cachedRead: vi.fn().mockResolvedValue('# note body'),
+      read: vi.fn().mockResolvedValue(opts.fileContent ?? '# note body'),
+      cachedRead: vi.fn().mockResolvedValue(opts.fileContent ?? '# note body'),
     },
     fileManager: { processFrontMatter },
-    metadataCache: { getFileCache: () => ({ frontmatter: {} }) },
-    workspace: { getLeavesOfType: vi.fn(() => openLeaves) },
+    metadataCache: {
+      getFileCache: () =>
+        opts.frontmatter === null
+          ? null
+          : { frontmatter: opts.frontmatter ?? {} },
+    },
+    workspace: {
+      // Type-aware like the real workspace: Markdown leaves must never reach
+      // the Excalidraw guard branch (it would fail closed on them).
+      getLeavesOfType: vi.fn((type: string) =>
+        type === 'markdown'
+          ? openLeaves
+          : type === 'excalidraw'
+            ? excalidrawLeaves
+            : [],
+      ),
+    },
   } as any;
   // enableContentHashCheck defaults to true → handleFileOpen refreshes the
   // hash cache after writing. Stub it so the test does not touch real cache I/O.
@@ -114,6 +153,92 @@ describe('handleFileOpen - viewed stamping respects shouldFileBeIgnored', () => 
       .mockResolvedValue('different on disk');
     await (plugin as any).handleFileOpen(file);
     expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+});
+
+describe('handleFileOpen - Excalidraw drawings never get a viewed stamp', () => {
+  // The file-open write is the ONLY FDM write that can land on a drawing idle
+  // > 5 min, which triggers Excalidraw's full reload(true) (flash, scene
+  // re-parse, undo loss). So `viewed` is excluded for drawings regardless of
+  // the trackExcalidraw toggle - a deliberate scope cut.
+  const DRAWING = { 'excalidraw-plugin': 'parsed' };
+
+  it.each([[true], [false]])(
+    'does not stamp a drawing when trackExcalidraw is %s',
+    async (trackExcalidraw) => {
+      const file = createTFile('art/sketch.md');
+      const { plugin, processFrontMatter } = setupOpenPlugin(
+        { trackExcalidraw },
+        file,
+        [],
+        { frontmatter: DRAWING },
+      );
+      await (plugin as any).handleFileOpen(file);
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    },
+  );
+
+  it('does not stamp a drawing whose marker is not in metadataCache yet', async () => {
+    // Cold cache right after startup: the marker is invisible to
+    // metadataCache, so classification falls back to the file text. Without
+    // that fallback the first open of a drawing after a restart would stamp
+    // it - the one write aimed at an idle drawing.
+    const file = createTFile('art/unindexed.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      frontmatter: null,
+      fileContent: '---\nexcalidraw-plugin: parsed\n---\n\ndrawing body',
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+
+  it('still stamps an ordinary note whose cache entry is missing', async () => {
+    const file = createTFile('notes/unindexed.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      frontmatter: null,
+      fileContent: '---\ntitle: plain\n---\n\nbody',
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).toHaveBeenCalledOnce();
+  });
+
+  it('still stamps a plain note (control)', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file);
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).toHaveBeenCalledOnce();
+  });
+});
+
+describe('handleFileOpen - Excalidraw views of a note block the viewed stamp', () => {
+  // A Markdown note can also be open in an Excalidraw view only in exotic
+  // setups, but the guard is shared (getWriteBlock): a dirty/unknown drawing
+  // view of the file must drop the stamp, and a clean one must not.
+  it('drops the stamp when a dirty Excalidraw view shows the file', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      excalidrawLeaves: [{ isDirty: true }],
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the Excalidraw view lacks isDirty (API drift)', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      excalidrawLeaves: [{ isDirty: 'missing' }],
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).not.toHaveBeenCalled();
+  });
+
+  it('stamps when the Excalidraw view is mounted, idle, and clean', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      excalidrawLeaves: [{ isDirty: false }],
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).toHaveBeenCalledOnce();
   });
 });
 

@@ -3,6 +3,7 @@ import * as obsidian from 'obsidian';
 import { TFile } from 'obsidian';
 import { createPlugin } from '../helpers';
 import { applyFrontmatterWrite, BulkSkipped } from '../../bulk/write';
+import { strings } from '../../i18n';
 
 function createMockFile(path: string): TFile {
   return {
@@ -91,5 +92,70 @@ describe('applyFrontmatterWrite', () => {
 
     expect(capture.argCount).toBeUndefined();
     expect(plugin.lastPluginWriteMtime.has('c.md')).toBe(false);
+  });
+
+  // Same skip contract for a dirty/busy open Excalidraw view - with its own
+  // reason string, so the skipped table tells the user to save the drawing.
+  it('throws BulkSkipped with the Excalidraw reason when an open drawing view is dirty', async () => {
+    const plugin = createPlugin({ enableContentHashCheck: true });
+    const file = createMockFile('d.md');
+    (plugin as any).app = {
+      workspace: {
+        getLeavesOfType: (type: string) =>
+          type === 'excalidraw'
+            ? [
+                {
+                  view: {
+                    file: { path: file.path },
+                    semaphores: { saving: false, autosaving: false },
+                    excalidrawAPI: {},
+                    isDirty: () => true,
+                  },
+                },
+              ]
+            : [],
+      },
+    };
+    const capture: { argCount?: number } = {};
+    const app = createApp(capture);
+
+    await expect(
+      applyFrontmatterWrite(app, plugin, file, () => {}),
+    ).rejects.toMatchObject({
+      name: 'BulkSkipped',
+      message: strings.bulkChrome.skippedExcalidrawUnsaved,
+    });
+
+    expect(capture.argCount).toBeUndefined();
+    expect(plugin.lastPluginWriteMtime.has('d.md')).toBe(false);
+  });
+
+  it('writes normally when the open Excalidraw view is mounted, idle, and clean', async () => {
+    const plugin = createPlugin({ enableContentHashCheck: false });
+    const file = createMockFile('e.md');
+    (plugin as any).app = {
+      workspace: {
+        getLeavesOfType: (type: string) =>
+          type === 'excalidraw'
+            ? [
+                {
+                  view: {
+                    file: { path: file.path },
+                    semaphores: { saving: false, autosaving: false },
+                    excalidrawAPI: {},
+                    isDirty: () => false,
+                  },
+                },
+              ]
+            : [],
+      },
+    };
+    const capture: { argCount?: number } = {};
+    const app = createApp(capture);
+
+    await applyFrontmatterWrite(app, plugin, file, () => {});
+
+    expect(capture.argCount).toBe(2);
+    expect(plugin.lastPluginWriteMtime.get('e.md')).toBe(2000);
   });
 });
