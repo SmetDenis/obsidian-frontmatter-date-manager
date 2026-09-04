@@ -291,6 +291,10 @@ export const STRINGS_TR: Strings = {
         name: 'En fazla önbellek girişi',
         desc: 'Önbellek bu sınırı aştığında, en eski kullanılmayan girişler kaldırılır. 0 = sınır yok.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Deneysel: bir notu yeniden adlandırdıktan sonra tarihi güncelleme',
+        desc: 'Deneysel. Bir notu yeniden adlandırdığınızda, ona bağlantı veren notlar yeni bir tarih almak yerine mevcut tarihlerini korur. Yalnızca [[wikilink]] biçimindeki bağlantılarla ve tek bir notu yeniden adlandırdığınızda çalışır, klasörlerde çalışmaz. Nadir durumlarda yalnızca bir bağlantıyı değiştiren kendi düzenlemeniz tarihi güncellemeyebilir.',
+      },
       postUpdateCommand: {
         name: 'Güncellemeden sonraki komut',
         desc: 'Bir tarih güncellendikten sonra bir Obsidian komutu çalıştır. Kapatmak için boş bırakın.',

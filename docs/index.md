@@ -29,6 +29,18 @@
 - [Deployment Guide](./deployment-guide.md) - release pipeline, tag convention, version bump checklist
 - [Contribution Guide](./contribution-guide.md) - workflow, commit conventions, store constraints, scope
 
+## Decision records
+
+Investigations whose outcome was "do not build this, and here is exactly why". Read one before re-opening the question it settles.
+
+- [Rename-induced link rewrites and `updated`](./decisions/rename-induced-link-updates.md) - why the plugin stamps `updated` on notes it only link-rewrote after a rename, six candidate designs (five rejected, one - R2 - built), the zero-code workaround, and the reopening criteria (issue #18)
+
+## Plans
+
+Original briefs, kept after the fact. Each names its own kill criteria.
+
+- [Experimental "skip the date after a rename" option](./plans/experimental-rename-link-suppression.md) - **BUILT (2026-09-04)**; narrow forward prediction with exact byte comparison, opt-in and default off, failing open to today's behaviour (issue #18). Maintained record: `CLAUDE.md` -> "Experimental rename-link suppression"
+
 ## Existing documentation (repo root)
 
 - [CLAUDE.md](../CLAUDE.md) - **authoritative** engineering memory (safety, key patterns, review requirements, UI/CSS conventions). Source of truth; this generated set summarizes and indexes it.

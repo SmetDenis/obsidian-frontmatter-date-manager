@@ -297,6 +297,10 @@ export const STRINGS_PT_BR: Strings = {
         name: 'Máximo de entradas no cache',
         desc: 'Quando o cache cresce além deste limite, as entradas mais antigas e sem uso são removidas. 0 = sem limite.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Experimental: não atualizar a data depois de renomear uma nota',
+        desc: 'Experimental. Ao renomear uma nota, as notas que apontam para ela mantêm a data existente em vez de receberem uma nova. Só funciona com links no estilo [[wikilink]] e ao renomear uma única nota, não uma pasta. Em casos raros, uma edição sua que muda apenas um link pode não atualizar a data.',
+      },
       postUpdateCommand: {
         name: 'Comando após a atualização',
         desc: 'Executar um comando do Obsidian depois que uma data é atualizada. Deixe em branco para desativar.',

@@ -5,6 +5,7 @@ import {
   TAbstractFile,
   TFile,
   normalizePath,
+  parseLinktext,
 } from 'obsidian';
 import { format, parse, add, isAfter } from 'date-fns';
 import { tz } from '@date-fns/tz';
@@ -32,7 +33,17 @@ import {
   EXCALIDRAW_VIEW_TYPE,
   FRESHNESS_SEC,
   MODIFY_DEBOUNCE_MS,
+  RENAME_SUPPRESSION_MAX_SOURCES,
 } from './constants';
+import {
+  RefSnapshot,
+  Replacement,
+  hasOverlappingRefs,
+  isPredictable,
+  linkpathTargetsPath,
+  predictContent,
+  rewriteWikilink,
+} from './renamePrediction';
 
 export interface HashCacheEntry {
   hash: string;
@@ -71,6 +82,27 @@ export type FileChangeIgnoreReason =
 //   DROP the pass without a timer; that state can last hours, and Excalidraw's
 //   own next save fires `modify` and re-triggers the pipeline.
 export type WriteBlock = 'markdown' | 'excalidraw-busy' | 'excalidraw';
+
+// One linking note snapshotted for the experimental "skip the date after a
+// rename" feature: its content and link references as they were BEFORE
+// Obsidian rewrote the links.
+interface RenameSuppressionSource {
+  path: string;
+  /** UNTRIMMED file text - metadata-cache offsets index into it. */
+  content: string;
+  refs: RefSnapshot[];
+}
+
+// One armed rename. Created synchronously inside the vault `rename` listener
+// (so a second event in the same batch can cancel it), then filled in
+// asynchronously. `generation` is bumped by cancelRenameSuppression, so every
+// async step can tell whether the world moved on.
+interface ArmedRename {
+  generation: number;
+  oldPath: string;
+  newPath: string;
+  sources: RenameSuppressionSource[];
+}
 
 // Result of one handleFileChange pass. `wrote` is true only when
 // processFrontMatter actually ran; `deferred` is true only when a real change
@@ -138,6 +170,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // file reads and to break the infinite write loop when content hash checking
   // is disabled.
   lastPluginWriteMtime = new Map<string, number>();
+  // Experimental "skip the date after a rename" state. At most one rename is
+  // ever armed: a second rename event (i.e. a folder move, which fires one
+  // event per moved child) cancels instead of queueing.
+  private renameSuppression: ArmedRename | null = null;
+  private renameGeneration = 0;
   private _hashCacheDirty = false;
   private _hashCacheSaveTimer: number | null = null;
   private _hashCacheFirstDirtyAt: number | null = null;
@@ -1291,6 +1328,289 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Experimental: skip the date update caused by a rename's link rewrites
+  //
+  // When a note is renamed, Obsidian rewrites the [[wikilinks]] that pointed at
+  // it inside every other note. Those notes genuinely change on disk, so the
+  // normal pipeline stamps `updated` on notes the user never opened (issue #18).
+  //
+  // The rewrite is applied with a plain `vault.process` - no flag, no dedicated
+  // event - so it cannot be DETECTED. It can, however, be PREDICTED: snapshot
+  // each linking note before the rewrite, compute the exact bytes Obsidian is
+  // about to write, and compare the result byte for byte. Only an exact match
+  // refreshes the content hash (which makes the already-scheduled pass find
+  // "unchanged" and stamp nothing).
+  //
+  // The governing rule is that this must fail toward stamping: an extra
+  // `updated` is cosmetic and visible, a missing one is silent and gone. Every
+  // branch below therefore does nothing on the slightest doubt - a wrong
+  // prediction costs coverage, never data.
+  // ---------------------------------------------------------------------------
+
+  // Drop any armed rename and invalidate the in-flight async steps. Called on
+  // unload, on a second rename event, and whenever the setting changes.
+  cancelRenameSuppression(): void {
+    this.renameGeneration++;
+    this.renameSuppression = null;
+  }
+
+  // The `updateQueue.promise` to wait on, or null when this rename will not
+  // rewrite any link.
+  //
+  // Both reads are undocumented internals, so both go through an `unknown` cast
+  // inside try/catch and fail toward "do nothing":
+  // - `fileManager.inProgressUpdates` is null at rest and an ARRAY for the span
+  //   of a link-updating rename, so it distinguishes `FileManager.renameFile`
+  //   (rewrites links) from a plugin calling `Vault.rename` (never does).
+  //   Verified on a live Obsidian 1.13.4, not just read from the bundle.
+  // - `updateQueue.promise` is a MUTABLE field reassigned by every queue() call,
+  //   so it must be read exactly once, here, at arming time. The whole rename
+  //   operation - including an indefinite wait on the "update links?" modal - is
+  //   queued onto it, so the value read now settles after the rewrites land.
+  //   It can reject; callers must await it inside try/catch.
+  private renameLinkUpdatePromise(): Promise<unknown> | null {
+    try {
+      const fileManager = this.app.fileManager as unknown as {
+        inProgressUpdates?: unknown;
+        updateQueue?: { promise?: unknown };
+      };
+      if (!Array.isArray(fileManager.inProgressUpdates)) return null;
+      const promise = fileManager.updateQueue?.promise;
+      return promise instanceof Promise ? promise : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Notes that linked to `oldPath`, read from the still-pre-rename
+  // resolvedLinks index. null means "too many - arm nothing".
+  private renameCandidateSources(oldPath: string): TFile[] | null {
+    const out: TFile[] = [];
+    const resolved = this.app.metadataCache.resolvedLinks;
+    for (const sourcePath of Object.keys(resolved)) {
+      // The renamed note's own self-links are not worth the machinery.
+      if (sourcePath === oldPath) continue;
+      if ((resolved[sourcePath]?.[oldPath] ?? 0) <= 0) continue;
+      const file = this.app.vault.getAbstractFileByPath(sourcePath);
+      if (file === null || !isTFile(file) || file.extension !== 'md') continue;
+      out.push(file);
+      if (out.length > RENAME_SUPPRESSION_MAX_SOURCES) return null;
+    }
+    return out;
+  }
+
+  // Link + embed references with their source offsets, read synchronously so
+  // the snapshot cannot drift while the rewrite runs. null when the file has no
+  // cache entry or any reference lacks offsets.
+  private snapshotRefs(file: TFile): RefSnapshot[] | null {
+    try {
+      const cache = this.app.metadataCache.getFileCache(file);
+      if (!cache) return null;
+      const out: RefSnapshot[] = [];
+      for (const ref of [...(cache.links ?? []), ...(cache.embeds ?? [])]) {
+        const start = ref.position.start.offset;
+        const end = ref.position.end.offset;
+        if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+        out.push({ original: ref.original, link: ref.link, start, end });
+      }
+      return out;
+    } catch {
+      // Called synchronously from the rename listener - a shape drift here must
+      // not break the handler's own cache bookkeeping.
+      return null;
+    }
+  }
+
+  // Phase A. Runs synchronously inside the vault `rename` listener, which fires
+  // BEFORE any link has been rewritten - that is the only window in which the
+  // pre-rewrite state can be captured. Everything that must not race the
+  // rewrite (the internals read, the candidate scan, the reference snapshots,
+  // and issuing the file reads) happens before the first await.
+  armRenameSuppression(file: TAbstractFile, oldPath: string): void {
+    if (this.settings.experimentalSkipRenameLinkUpdates !== true) return;
+    if (!this.settings.enableAutoUpdate) return;
+    if (this.bulkRunning) return;
+    if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
+
+    // A second rename event means a folder move (Obsidian fires one per moved
+    // child). Cancel the batch outright rather than trying to predict it.
+    if (this.renameSuppression !== null) {
+      this.cancelRenameSuppression();
+      return;
+    }
+
+    if (!isTFile(file) || file.extension !== 'md') return;
+
+    const queuePromise = this.renameLinkUpdatePromise();
+    if (queuePromise === null) return;
+
+    const candidates = this.renameCandidateSources(oldPath);
+    if (candidates === null || candidates.length === 0) return;
+
+    // Issue every read now, before any await: with Obsidian's "Automatically
+    // update internal links" turned on the rewrite follows immediately, and a
+    // snapshot taken after it would simply fail the byte comparison later.
+    const pending = candidates.flatMap((source) => {
+      const refs = this.snapshotRefs(source);
+      if (refs === null) return [];
+      return [
+        {
+          file: source,
+          refs,
+          content: this.app.vault.read(source).catch(() => null),
+        },
+      ];
+    });
+    if (pending.length === 0) return;
+
+    const armed: ArmedRename = {
+      generation: this.renameGeneration,
+      oldPath,
+      newPath: file.path,
+      sources: [],
+    };
+    this.renameSuppression = armed;
+    void this.runRenameSuppression(armed, pending, queuePromise);
+  }
+
+  // Phases A (tail) + B + C.
+  private async runRenameSuppression(
+    armed: ArmedRename,
+    pending: Array<{
+      file: TFile;
+      refs: RefSnapshot[];
+      content: Promise<string | null>;
+    }>,
+    queuePromise: Promise<unknown>,
+  ): Promise<void> {
+    try {
+      for (const entry of pending) {
+        const content = await entry.content;
+        if (content === null) continue;
+        if (this.processingFiles.has(entry.file.path)) continue;
+        if ((await this.getWriteBlock(entry.file)) !== null) continue;
+        // The snapshot is only a usable baseline if it is the state the plugin
+        // already knows about: a stale or missing hash-cache entry means an
+        // unprocessed edit is pending, which must still be stamped.
+        const cached = this.hashCache[entry.file.path];
+        if (!cached) continue;
+        const hash = this.hashString(this.getContentForHashing(content.trim()));
+        if (hash !== cached.hash) continue;
+        armed.sources.push({
+          path: entry.file.path,
+          content,
+          refs: entry.refs,
+        });
+      }
+
+      if (!this.isRenameStillArmed(armed) || armed.sources.length === 0) return;
+
+      // Phase B. Settles once the link rewrites are on disk - however long the
+      // "update links?" modal stayed open. It can reject; a rejection just means
+      // suppress nothing.
+      await queuePromise;
+      if (!this.isRenameStillArmed(armed)) return;
+      this.renameSuppression = null;
+
+      const renamed = this.app.vault.getAbstractFileByPath(armed.newPath);
+      if (renamed === null || !isTFile(renamed)) return;
+
+      for (const source of armed.sources) {
+        await this.verifyRenameSuppression(armed, source, renamed);
+      }
+    } catch (e) {
+      this.logError('Rename suppression aborted', e);
+    } finally {
+      // Every early return above (no usable source, a rejected queue, a thrown
+      // internal) must still disarm, or the NEXT rename would see a stale
+      // armed batch, read it as a folder move, and cancel itself - silently
+      // costing the feature every other rename.
+      if (this.renameSuppression === armed) this.renameSuppression = null;
+    }
+  }
+
+  private isRenameStillArmed(armed: ArmedRename): boolean {
+    return (
+      this.renameSuppression === armed &&
+      this.renameGeneration === armed.generation
+    );
+  }
+
+  // Phase C, one linking note. Rebuilds the exact bytes Obsidian should have
+  // written and only refreshes the hash on an exact match.
+  private async verifyRenameSuppression(
+    armed: ArmedRename,
+    source: RenameSuppressionSource,
+    renamed: TFile,
+  ): Promise<void> {
+    try {
+      const file = this.app.vault.getAbstractFileByPath(source.path);
+      if (file === null || !isTFile(file)) return;
+      if (this.processingFiles.has(file.path)) return;
+      if ((await this.getWriteBlock(file)) !== null) return;
+
+      // `links` and `embeds` concatenated are not in document order, and an
+      // overlap (or a span that no longer holds its own text) means the
+      // metadata cache disagrees with the snapshot - no prediction built from
+      // it can be trusted.
+      if (hasOverlappingRefs(source.refs)) return;
+      for (const ref of source.refs) {
+        if (source.content.slice(ref.start, ref.end) !== ref.original) return;
+      }
+
+      const replacements: Replacement[] = [];
+      for (const ref of source.refs) {
+        const parsed = parseLinktext(ref.link);
+        const targetsRenamed = linkpathTargetsPath(parsed.path, armed.oldPath);
+        if (!isPredictable(ref, source.content)) {
+          // Out-of-scope shapes (Markdown links, escaped pipes, embed
+          // dimensions) are harmless unless Obsidian would have rewritten
+          // them - then the whole file is unpredictable.
+          if (targetsRenamed) return;
+          continue;
+        }
+        if (!targetsRenamed) continue;
+
+        // fileToLinktext is Obsidian's own shortest/relative/absolute chooser -
+        // reimplementing it would need the whole vault. Called here, after the
+        // rewrite, so the metadata cache has settled.
+        const newLinktext =
+          this.app.metadataCache.fileToLinktext(renamed, file.path, true) +
+          parsed.subpath;
+        // Obsidian skips a reference whose text would not change; so must the
+        // prediction, or the byte comparison drifts.
+        if (ref.link === newLinktext) continue;
+
+        const text = rewriteWikilink(ref.original, newLinktext);
+        if (text === null) return;
+        replacements.push({ start: ref.start, end: ref.end, text });
+      }
+      if (replacements.length === 0) return;
+
+      const predicted = predictContent(source.content, replacements);
+      if (predicted === null) return;
+
+      const actual = await this.app.vault.read(file);
+      if (actual !== predicted) return;
+
+      // The only difference is the rewrite. Refresh the hash so the pass the
+      // `modify` event already scheduled sees "unchanged" and stamps nothing.
+      //
+      // Deliberately no timer is cleared: modifyTimers is one map serving four
+      // unrelated purposes with no record of which is which, so cancelling one
+      // blindly could drop a real pending update. Passing the content matters
+      // too - without it populateCacheForFile re-reads the file and would hash
+      // a version that was never validated. If a human edit lands after this
+      // refresh, the hash will not match and the note is stamped, which is
+      // exactly right.
+      await this.populateCacheForFile(file, actual.trim());
+      this.log('Rename link rewrite matched prediction, date kept', file.path);
+    } catch (e) {
+      this.logError('Rename suppression check failed', source.path, e);
+    }
+  }
+
   setupOnEditHandler() {
     this.log('Setup handler');
 
@@ -1358,6 +1678,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     this.registerEvent(
       this.app.vault.on('rename', (file, oldPath) => {
+        // Experimental: capture the pre-rewrite state of every note linking to
+        // the renamed one. Must run FIRST and synchronously - this listener is
+        // the only moment before Obsidian rewrites those links.
+        this.armRenameSuppression(file, oldPath);
+
         // Clear pending debounce for the old path
         const oldTimer = this.modifyTimers.get(oldPath);
         if (oldTimer) {
@@ -1418,6 +1743,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     this.recentlyCreated.clear();
     this.processingFiles.clear();
     this.lastPluginWriteMtime.clear();
+    this.cancelRenameSuppression();
     if (this._pauseResumeTimer) {
       window.clearTimeout(this._pauseResumeTimer);
       this._pauseResumeTimer = null;
@@ -1437,6 +1763,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   async onExternalSettingsChange() {
     await this.loadSettings();
     this.updateStatusBar();
+    // The experimental rename suppression may have just been switched off (or
+    // its baseline invalidated) by the synced settings - drop anything armed.
+    this.cancelRenameSuppression();
     // The declarative settings tree (and its search index) is a snapshot taken
     // by update() - without this, externally-synced settings leave the tab
     // showing stale definitions (e.g. the exclude-keys list items). Safe to

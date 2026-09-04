@@ -108,6 +108,16 @@ Template plugins (Templater, Daily Notes) populate a file right after creation. 
 
 Loaded on startup with runtime type validation (mirrors `sanitizeSettings`) + GC of orphaned entries + optional auto-population. Capped-debounce flush (30s debounce, 300s max delay). LRU eviction past `hashCacheMaxSize` (default 10,000).
 
+### 5.7 Experimental rename-link suppression (opt-in, default off)
+
+Renaming note `A` makes Obsidian rewrite the `[[A]]` links inside every note that pointed at it. Those notes really change on disk, so the pipeline stamps `updated` on notes the user never opened (issue #18). The rewrite is a plain `vault.process` - no flag, no operation id, no dedicated event - so it cannot be detected. `experimentalSkipRenameLinkUpdates` instead **predicts** it:
+
+1. **Arm** synchronously inside the existing `vault.on('rename')` listener, the only moment before any link is rewritten. Two undocumented internals gate it, both read through `unknown` casts in `try/catch`: `fileManager.inProgressUpdates` must be an **array** (it is `null` for a plain `Vault.rename`, which never rewrites links - verified on a live Obsidian 1.13.4), and `fileManager.updateQueue.promise` is captured **once** (it is a mutable field, reassigned on every `queue()` call). The candidate scan (`resolvedLinks`), the `getFileCache` reference snapshots and the `vault.read` calls are all issued before the first await, so the snapshot wins the race when Obsidian's "Automatically update internal links" is on. At most one rename is armed; a second `rename` event cancels the batch, which is how folder moves are excluded.
+2. **Wait** on the captured promise - it settles after the rewrites land, however long the "Update links" modal stayed open. A rejection means suppress nothing.
+3. **Verify** per note: rebuild the exact bytes Obsidian should have written (`fileToLinktext` is Obsidian's own link-form chooser and is always called, never reimplemented; the pure grammar lives in `src/renamePrediction.ts`) and compare the whole file byte for byte. Only an exact match calls `populateCacheForFile(file, actual.trim())`, which makes the already-scheduled debounced pass find `unchanged` and stamp nothing. No timer is cleared - `modifyTimers` serves four unrelated purposes with no record of which is which.
+
+The governing rule is **fail toward stamping**: an extra `updated` is cosmetic, a missing one is silent and gone. A wrong prediction therefore costs coverage, never data. v1 covers wikilinks and wiki-embeds only; Markdown links, frontmatter links, embeds with dimensions, folder moves, notes with unsaved editor changes, and renames touching more than `RENAME_SUPPRESSION_MAX_SOURCES` (50) notes all keep today's behaviour. See `CLAUDE.md` -> "Experimental rename-link suppression" for the full decision record.
+
 ## 6. Bulk operations subsystem (`src/bulk/` + modals)
 
 Shared building blocks (no `BaseBulkModal`; composition over inheritance):
@@ -167,8 +177,8 @@ getLanguage()  [obsidian]
 
 ## 10. Testing strategy
 
-- **Unit (vitest, 36 spec files in `src/__tests__/`):** all pure logic and testable seams - date parse/format, filter rules, inversion detect/prevent, sanitizeSettings, hash cache, debounce, `handleFileChange` entry point, each modal's `compute*`/`rebuildAll`, the bulk blocks (`write`, `scan`, `executePhase`, `pagination`, `export`), and the i18n layer (`format.test.ts`; `i18n.test.ts` adds locale key-coverage plus value-integrity guards - no empty-string overrides, every translated value keeps English's exact `{token}` set). The `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, now including a `getLanguage()` stub); DOM rendering is not unit-tested (the mock no-ops DOM).
-- **E2E (WebdriverIO + real Obsidian, pinned 1.13.4, in `e2e/`):** only the seams the unit mock cannot reach - real `processFrontMatter` serialization (body/key-order/comments survive), number-vs-string on disk, self-trigger suppression on real `mtime`, the five bulk modals via real DOM clicks, and the native settings exclude-list UI. Manual/pre-release, not in CI. Requires Node <= 22.
+- **Unit (vitest, 38 spec files in `src/__tests__/`):** all pure logic and testable seams - date parse/format, filter rules, inversion detect/prevent, sanitizeSettings, hash cache, debounce, `handleFileChange` entry point, each modal's `compute*`/`rebuildAll`, the bulk blocks (`write`, `scan`, `executePhase`, `pagination`, `export`), and the i18n layer (`format.test.ts`; `i18n.test.ts` adds locale key-coverage plus value-integrity guards - no empty-string overrides, every translated value keeps English's exact `{token}` set). The `obsidian` module is mocked (`src/__mocks__/obsidian.ts`, now including a `getLanguage()` stub); DOM rendering is not unit-tested (the mock no-ops DOM).
+- **E2E (WebdriverIO + real Obsidian, pinned 1.13.4, in `e2e/`):** only the seams the unit mock cannot reach - real `processFrontMatter` serialization (body/key-order/comments survive), number-vs-string on disk, self-trigger suppression on real `mtime`, the five bulk modals via real DOM clicks, the native settings exclude-list UI, and the experimental rename-link suppression (11 scenarios - its gates are Obsidian internals plus the blocking "Update links" prompt, none of which the mock can reproduce). Manual/pre-release, not in CI. Requires Node <= 22.
 
 See [Development Guide](./development-guide.md) for commands.
 

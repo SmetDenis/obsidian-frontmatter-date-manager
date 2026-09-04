@@ -299,6 +299,10 @@ export const STRINGS_PL: Strings = {
         name: 'Maksymalna liczba wpisów w pamięci podręcznej',
         desc: 'Gdy pamięć podręczna przekroczy ten limit, najstarsze nieużywane wpisy są usuwane. 0 = bez limitu.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Eksperymentalne: nie aktualizuj daty po zmianie nazwy notatki',
+        desc: 'Funkcja eksperymentalna. Po zmianie nazwy notatki notatki, które do niej linkują, zachowują dotychczasową datę zamiast otrzymać nową. Działa tylko z linkami w stylu [[wikilink]] i przy zmianie nazwy pojedynczej notatki, a nie folderu. W rzadkich przypadkach własna edycja zmieniająca tylko link może nie zaktualizować daty.',
+      },
       postUpdateCommand: {
         name: 'Polecenie po aktualizacji',
         desc: 'Uruchom polecenie Obsidian po aktualizacji daty. Pozostaw puste, aby wyłączyć.',

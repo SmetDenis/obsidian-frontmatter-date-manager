@@ -14,9 +14,12 @@ obsidian-frontmatter-date-manager/
 │   │                                 #   + FrontmatterDateManagerSettingsTab (the whole settings UI).
 │   ├── utils.ts                      # Pure helpers: date parsing/formatting, epoch units,
 │   │                                 #   slash-date ambiguity, locale order, property-key parsing.
-│   ├── constants.ts                  # Obsidian-free constants (MODIFY_DEBOUNCE_MS, FRESHNESS_SEC).
+│   ├── constants.ts                  # Obsidian-free constants (MODIFY_DEBOUNCE_MS, FRESHNESS_SEC,
+│   │                                 #   RENAME_SUPPRESSION_MAX_SOURCES).
 │   ├── filterRules.ts                # Gitignore-style filter engine (pure, no Obsidian dep).
 │   ├── inversionDetection.ts         # Pure isInversion() + applyInversionFix() strategies.
+│   ├── renamePrediction.ts           # Pure wikilink-rewrite prediction for the experimental
+│   │                                 #   rename-link suppression (no Obsidian dep).
 │   ├── picomatch.d.ts                # Type decls for picomatch/posix.
 │   │
 │   ├── BulkPopulateTimestampsModal.ts  # Bulk wizard: fill dates from ctime/mtime.
@@ -44,13 +47,15 @@ obsidian-frontmatter-date-manager/
 │   │
 │   ├── __mocks__/
 │   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops; getLanguage stub).
-│   └── __tests__/                    # 36 vitest spec files + helpers/setup (incl. bulk/).
+│   └── __tests__/                    # 38 vitest spec files + helpers/setup (incl. bulk/).
 │
 ├── e2e/                             # WebdriverIO + real Obsidian (1.13.4). Manual, not CI.
 │   ├── specs/                       #   *.e2e.ts (Group A auto path, Group B bulk modals,
 │   │                                #   marketing-screenshots.e2e.ts).
-│   ├── helpers/                     #   Per-test notes, frontmatter parsing, settings patch.
-│   ├── pageobjects/                 #   ALL DOM coupling (settingsTab, bulkModal).
+│   ├── helpers/                     #   Per-test notes, frontmatter parsing, settings patch,
+│   │                                 #   editor probes, rename driving (rename.ts).
+│   ├── pageobjects/                 #   ALL DOM coupling (settingsTab, bulkModal,
+│   │                                 #   linkUpdateModal).
 │   ├── vaults/simple/               #   Seed vault (each spec gets its own copy).
 │   └── README.md                    #   Full e2e scenario list.
 │

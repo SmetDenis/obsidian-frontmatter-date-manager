@@ -288,6 +288,10 @@ export const STRINGS_VI: Strings = {
         name: 'Số mục bộ đệm tối đa',
         desc: 'Khi bộ đệm vượt quá giới hạn này, các mục cũ không dùng nhất sẽ bị xóa. 0 = không giới hạn.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Thử nghiệm: không cập nhật ngày sau khi đổi tên ghi chú',
+        desc: 'Tính năng thử nghiệm. Khi bạn đổi tên một ghi chú, các ghi chú liên kết tới nó giữ nguyên ngày hiện có thay vì nhận ngày mới. Chỉ hoạt động với liên kết kiểu [[wikilink]] và khi đổi tên một ghi chú duy nhất, không phải thư mục. Trong một số trường hợp hiếm, chính sửa đổi của bạn chỉ thay đổi liên kết có thể không cập nhật ngày.',
+      },
       postUpdateCommand: {
         name: 'Lệnh sau khi cập nhật',
         desc: 'Chạy một lệnh Obsidian sau khi cập nhật ngày. Để trống để tắt.',

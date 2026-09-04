@@ -120,6 +120,7 @@ describe('getSettingDefinitions structure', () => {
         'delayForNewFiles',
         'enableAutoPopulateCache',
         'hashCacheMaxSize',
+        'experimentalSkipRenameLinkUpdates',
       ].sort(),
     );
   });

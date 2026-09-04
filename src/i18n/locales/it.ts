@@ -298,6 +298,10 @@ export const STRINGS_IT: Strings = {
         name: 'Numero massimo di voci nella cache',
         desc: 'Quando la cache supera questo limite, le voci inutilizzate più vecchie vengono rimosse. 0 = nessun limite.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Sperimentale: non aggiornare la data dopo aver rinominato una nota',
+        desc: 'Sperimentale. Quando rinomini una nota, le note che la collegano mantengono la data esistente invece di riceverne una nuova. Funziona solo con i collegamenti in stile [[wikilink]] e quando rinomini una singola nota, non una cartella. In rari casi una tua modifica che cambia solo un collegamento potrebbe non aggiornare la data.',
+      },
       postUpdateCommand: {
         name: 'Comando dopo l’aggiornamento',
         desc: 'Esegui un comando di Obsidian dopo l’aggiornamento di una data. Lascia vuoto per disattivare.',

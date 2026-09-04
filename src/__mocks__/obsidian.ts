@@ -57,6 +57,21 @@ export function normalizePath(path: string): string {
   return path;
 }
 
+// Real Obsidian splits a link target into its path and subpath at the first
+// `#` that is not the leading character. Reimplemented here (rather than
+// stubbed) because the rename-suppression tests depend on the split.
+export function parseLinktext(linktext: string): {
+  path: string;
+  subpath: string;
+} {
+  const i = linktext.indexOf('#');
+  if (i > 0) {
+    return { path: linktext.slice(0, i), subpath: linktext.slice(i) };
+  }
+  if (i === 0) return { path: '', subpath: linktext };
+  return { path: linktext, subpath: '' };
+}
+
 export class Modal {
   app: any;
   contentEl: any = {

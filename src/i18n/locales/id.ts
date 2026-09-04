@@ -293,6 +293,10 @@ export const STRINGS_ID: Strings = {
         name: 'Entri cache maksimum',
         desc: 'Ketika cache melebihi batas ini, entri terlama yang tidak terpakai dihapus. 0 = tanpa batas.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Eksperimental: jangan perbarui tanggal setelah mengganti nama catatan',
+        desc: 'Eksperimental. Saat Anda mengganti nama catatan, catatan yang menautkannya tetap memakai tanggal yang ada, bukan tanggal baru. Hanya bekerja dengan tautan bergaya [[wikilink]] dan saat mengganti nama satu catatan, bukan folder. Dalam kasus yang jarang, suntingan Anda sendiri yang hanya mengubah tautan mungkin tidak memperbarui tanggal.',
+      },
       postUpdateCommand: {
         name: 'Perintah setelah pembaruan',
         desc: 'Jalankan perintah Obsidian setelah tanggal diperbarui. Biarkan kosong untuk mematikan.',

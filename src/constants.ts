@@ -29,3 +29,10 @@ export const EXCALIDRAW_FRONTMATTER_KEY = 'excalidraw-plugin';
 // obsidian-excalidraw-plugin). Used by the write guard to find open drawing
 // views, which getLeavesOfType('markdown') cannot see.
 export const EXCALIDRAW_VIEW_TYPE = 'excalidraw';
+
+// Upper bound on how many linking notes one rename may arm the experimental
+// "skip the date after a rename" suppression for. A rename that touches more
+// files than this arms nothing at all: the snapshot + verify work scales with
+// the count, and it has to finish inside the plugin's 2 s modify debounce or
+// the scheduled pass stamps anyway. See armRenameSuppression in main.ts.
+export const RENAME_SUPPRESSION_MAX_SOURCES = 50;
