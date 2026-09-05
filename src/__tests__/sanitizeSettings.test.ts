@@ -183,6 +183,20 @@ describe('sanitizeSettings (pure)', () => {
         false,
       );
     });
+
+    it('coerces a wrong-typed experimentalSkipRenameLinkUpdates to false', () => {
+      expect(
+        sanitizeSettings({ experimentalSkipRenameLinkUpdates: 1 as never })
+          .experimentalSkipRenameLinkUpdates,
+      ).toBe(false);
+    });
+
+    it('preserves experimentalSkipRenameLinkUpdates: true (the opt-in)', () => {
+      expect(
+        sanitizeSettings({ experimentalSkipRenameLinkUpdates: true })
+          .experimentalSkipRenameLinkUpdates,
+      ).toBe(true);
+    });
   });
 
   describe('enum fields', () => {

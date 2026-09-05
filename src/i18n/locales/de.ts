@@ -307,6 +307,10 @@ export const STRINGS_DE: Strings = {
         name: 'Maximale Cache-Einträge',
         desc: 'Wenn der Cache dieses Limit überschreitet, werden die ältesten ungenutzten Einträge entfernt. 0 = keine Begrenzung.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Experimentell: Datum nach dem Umbenennen einer Notiz nicht aktualisieren',
+        desc: 'Experimentell. Wenn Sie eine Notiz umbenennen, behalten die Notizen, die darauf verlinken, ihr bisheriges Datum, statt ein neues zu bekommen. Funktioniert nur mit Links im Stil [[wikilink]] und nur beim Umbenennen einer einzelnen Notiz, nicht eines Ordners. In seltenen Fällen aktualisiert eine eigene Änderung, die nur einen Link betrifft, das Datum nicht. Erfordert, dass "Echte Inhaltsänderungen erkennen" aktiviert bleibt.',
+      },
       postUpdateCommand: {
         name: 'Befehl nach Aktualisierung',
         desc: 'Einen Obsidian-Befehl ausführen, nachdem ein Datum aktualisiert wurde. Leer lassen, um zu deaktivieren.',

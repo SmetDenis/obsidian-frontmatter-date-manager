@@ -303,6 +303,10 @@ export const STRINGS_FR: Strings = {
         name: 'Nombre maximum d’entrées du cache',
         desc: 'Quand le cache dépasse cette limite, les entrées inutilisées les plus anciennes sont supprimées. 0 = pas de limite.',
       },
+      skipRenameLinkUpdates: {
+        name: "Expérimental : ne pas mettre à jour la date après le renommage d'une note",
+        desc: "Expérimental. Lorsque vous renommez une note, les notes qui pointent vers elle conservent leur date actuelle au lieu d'en recevoir une nouvelle. Ne fonctionne qu'avec les liens de type [[wikilink]] et lors du renommage d'une seule note, pas d'un dossier. Dans de rares cas, une modification de votre part qui ne change qu'un lien peut ne pas mettre à jour la date. Nécessite que \"Détecter les vrais changements de contenu\" reste activé.",
+      },
       postUpdateCommand: {
         name: 'Commande après mise à jour',
         desc: 'Exécuter une commande Obsidian après la mise à jour d’une date. Laissez vide pour désactiver.',

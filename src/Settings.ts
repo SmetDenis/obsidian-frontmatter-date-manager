@@ -47,6 +47,8 @@ export interface FrontmatterDateManagerSettings {
   enableAutoPopulateCache?: boolean;
   hashCacheMaxSize?: number;
 
+  experimentalSkipRenameLinkUpdates?: boolean;
+
   inversionFixStrategy?: InversionFixStrategy;
   inversionToleranceSec?: number;
 }
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   frontmatterHashExcludeKeys: [],
   enableAutoPopulateCache: true,
   hashCacheMaxSize: 10_000,
+  experimentalSkipRenameLinkUpdates: false,
   inversionFixStrategy: 'disabled',
   inversionToleranceSec: 0,
 };
@@ -237,6 +240,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         break;
       case 'enableAutoUpdate':
         this.plugin.updateStatusBar();
+        break;
+      case 'experimentalSkipRenameLinkUpdates':
+        // An armed rename holds a snapshot taken under the old setting; drop it
+        // so switching the feature off takes effect immediately.
+        this.plugin.cancelRenameSuppression();
         break;
       case 'hashTrackingMode':
         new Notice(
@@ -626,6 +634,20 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
             step: 1,
             placeholder: '10000',
             defaultValue: 10_000,
+          },
+        },
+        {
+          name: a.skipRenameLinkUpdates.name,
+          desc: a.skipRenameLinkUpdates.desc,
+          // Suppression works only by refreshing the content hash, which
+          // shouldFileBeIgnored reads only when change detection is on. Hidden
+          // rather than shown-and-inert - armRenameSuppression bails on the
+          // same condition, so an offered toggle could never act.
+          visible: () => this.plugin.settings.enableContentHashCheck ?? true,
+          control: {
+            type: 'toggle',
+            key: 'experimentalSkipRenameLinkUpdates',
+            defaultValue: DEFAULT_SETTINGS.experimentalSkipRenameLinkUpdates,
           },
         },
         {

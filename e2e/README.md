@@ -98,6 +98,53 @@ here.
     is re-stamped to a current value **exactly once** (no self-trigger loop);
     `created` and the new body survive.
 
+- `specs/rename-link-suppression.e2e.ts` - the experimental "skip the date after
+  a rename" feature (issue #18). It is the ONLY place the feature can be proven:
+  the whole mechanism hangs off real Obsidian internals the unit `obsidian` mock
+  cannot reproduce (`fileManager.inProgressUpdates`, the mutable
+  `updateQueue.promise`, the blocking "Update links" prompt, and
+  `fileToLinktext`'s shortest-path choice). The pure prediction grammar is
+  unit-tested in `renamePrediction.test.ts` - never duplicate it here.
+  Every scenario seeds its linking note first (one edit to warm the hash cache,
+  then a deliberately stale `updated`), because only a note the plugin already
+  has a matching baseline for can be suppressed.
+  - R1 - "Just once": the linking note keeps its date, and the link really was
+    rewritten (a suppressed stamp, not a no-op).
+  - R2 - the prompt left open for 8 s: still suppressed. Proves the armed
+    `updateQueue.promise` survives an indefinite human wait rather than a
+    guessed time window.
+  - R3 - "Do not update": nothing is rewritten, nothing is stamped, and a later
+    real edit still stamps (a declined rename leaves nothing armed).
+  - R4 - **the most important scenario in the file**: a human edit made while
+    the prompt is open MUST be stamped and MUST survive. If this ever fails the
+    feature is losing a real edit and must be turned off, not worked around.
+  - R5 - alias forms: Obsidian's auto-generated alias is rewritten
+    (`[[Folder/target|target]]` -> `[[...renamed|renamed]]`), a hand-written one
+    is preserved. Both suppressed.
+  - R6 - subpath (`#Section`) and block-reference (`#^blockid`) links.
+  - R7 - a Markdown-link vault (`useMarkdownLinks`, `[text](note.md)`): v1 never
+    predicts those, so the note is stamped exactly as it is today.
+  - R8 - a folder move: the batch is latched shut, so the feature does not fire
+    and the linking note is stamped. The fixture is three children with only
+    the LAST one linked, and that is deliberate - an earlier two-children-both-
+    linked fixture passed for the wrong reason (the two events happened to form
+    an arm/cancel pair) and would not have caught the real defect, where a child
+    with no backlinks stepped aside and let a later child arm.
+  - R9 - a note linking somewhere else is byte-identical afterwards: not
+    rewritten, not stamped, never touched by the suppression pass.
+  - R10 - a linking note with unsaved editor changes is not suppressed (the
+    write guard skips it at snapshot time) and is stamped once the editor
+    flushes.
+  - R11 - with Obsidian's "Automatically update internal links" ON there is no
+    prompt at all, so the snapshot has to win a much tighter race against the
+    rewrite. Turning flaky here means lost coverage (never lost data) for that
+    configuration. This scenario is what caught the real bug in review: an
+    arming batch whose candidates were all skipped stayed armed and made the
+    NEXT rename cancel itself.
+
+  Note the whole spec needs `enableContentHashCheck` on - suppression acts only
+  through the hash cache - so `beforeEach` sets it explicitly.
+
 **Group B - bulk operations (full UI-driven, all five modals):**
 
 - `specs/bulk-populate.e2e.ts` - fill-missing (blue Run) and overwrite-all
@@ -199,7 +246,10 @@ when to refresh them - lives in `CLAUDE.md` under "Store screenshots (marketing)
   per-test via the real vault API and assert only on those).
 - `helpers/` - `frontmatter.ts` (raw-text parsing for assertions), `vault.ts`
   (per-test note create/read/append + `waitForKey`), `settings.ts`
-  (programmatic plugin-settings patch).
+  (programmatic plugin-settings patch), `rename.ts` (vault-side rename driving:
+  Obsidian's own `alwaysUpdateLinks` / `useMarkdownLinks` config, a
+  start/await split around the blocking rename, `onCleanCache`, and frontmatter
+  patching).
 - `pageobjects/` - `settingsTab.ts` (forces `settingsPopoutWindow=false` via
   vault config so Obsidian 1.13's settings open in-window instead of a
   separate OS window - required for every selector below to stay in the main
@@ -209,7 +259,9 @@ when to refresh them - lives in `CLAUDE.md` under "Store screenshots (marketing)
   declarative Filter rules / Advanced sub-pages by their visible row name,
   the only way to reach them since sub-pages carry no class hook) and
   `bulkModal.ts` (drive the shared `PhaseModal` chrome: dropdowns,
-  primary/footer buttons, preview table, pager). All DOM coupling lives
+  primary/footer buttons, preview table, pager), and `linkUpdateModal.ts`
+  (Obsidian's own "Update links" prompt - found by its modal title, then
+  clicked by button label). All DOM coupling lives
   here, so a UI drift is fixed in one place. Interaction is visible-element-
   only throughout - the settings modal keeps other tabs'/pages' DOM around
   hidden, so helpers filter to `isDisplayed()` elements before clicking.

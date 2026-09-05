@@ -299,6 +299,10 @@ export const STRINGS_NL: Strings = {
         name: 'Maximaal aantal cache-items',
         desc: 'Wanneer de cache deze limiet overschrijdt, worden de oudste ongebruikte items verwijderd. 0 = geen limiet.',
       },
+      skipRenameLinkUpdates: {
+        name: 'Experimenteel: datum niet bijwerken na het hernoemen van een notitie',
+        desc: 'Experimenteel. Wanneer je een notitie hernoemt, behouden de notities die ernaar linken hun bestaande datum in plaats van een nieuwe te krijgen. Werkt alleen met links in [[wikilink]]-stijl en bij het hernoemen van een enkele notitie, niet van een map. In zeldzame gevallen werkt een eigen bewerking die alleen een link wijzigt de datum niet bij. Vereist dat "Echte inhoudswijzigingen detecteren" aan blijft.',
+      },
       postUpdateCommand: {
         name: 'Opdracht na update',
         desc: 'Voer een Obsidian-opdracht uit nadat een datum is bijgewerkt. Laat leeg om uit te schakelen.',
