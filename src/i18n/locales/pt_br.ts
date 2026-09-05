@@ -299,7 +299,7 @@ export const STRINGS_PT_BR: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Experimental: não atualizar a data depois de renomear uma nota',
-        desc: 'Experimental. Ao renomear uma nota, as notas que apontam para ela mantêm a data existente em vez de receberem uma nova. Só funciona com links no estilo [[wikilink]] e ao renomear uma única nota, não uma pasta. Em casos raros, uma edição sua que muda apenas um link pode não atualizar a data.',
+        desc: 'Experimental. Ao renomear uma nota, as notas que apontam para ela mantêm a data existente em vez de receberem uma nova. Só funciona com links no estilo [[wikilink]] e ao renomear uma única nota, não uma pasta. Em casos raros, uma edição sua que muda apenas um link pode não atualizar a data. Requer que "Detectar mudanças reais de conteúdo" continue ativado.',
       },
       postUpdateCommand: {
         name: 'Comando após a atualização',

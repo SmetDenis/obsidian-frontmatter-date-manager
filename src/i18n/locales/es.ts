@@ -301,7 +301,7 @@ export const STRINGS_ES: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Experimental: no actualizar la fecha al renombrar una nota',
-        desc: 'Experimental. Al renombrar una nota, las notas que enlazan con ella conservan su fecha actual en lugar de recibir una nueva. Solo funciona con enlaces del tipo [[wikilink]] y al renombrar una sola nota, no una carpeta. En casos raros, una edición tuya que solo cambia un enlace puede no actualizar la fecha.',
+        desc: 'Experimental. Al renombrar una nota, las notas que enlazan con ella conservan su fecha actual en lugar de recibir una nueva. Solo funciona con enlaces del tipo [[wikilink]] y al renombrar una sola nota, no una carpeta. En casos raros, una edición tuya que solo cambia un enlace puede no actualizar la fecha. Requiere que "Detectar cambios reales de contenido" siga activado.',
       },
       postUpdateCommand: {
         name: 'Comando después de actualizar',

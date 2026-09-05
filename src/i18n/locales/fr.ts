@@ -305,7 +305,7 @@ export const STRINGS_FR: Strings = {
       },
       skipRenameLinkUpdates: {
         name: "Expérimental : ne pas mettre à jour la date après le renommage d'une note",
-        desc: "Expérimental. Lorsque vous renommez une note, les notes qui pointent vers elle conservent leur date actuelle au lieu d'en recevoir une nouvelle. Ne fonctionne qu'avec les liens de type [[wikilink]] et lors du renommage d'une seule note, pas d'un dossier. Dans de rares cas, une modification de votre part qui ne change qu'un lien peut ne pas mettre à jour la date.",
+        desc: "Expérimental. Lorsque vous renommez une note, les notes qui pointent vers elle conservent leur date actuelle au lieu d'en recevoir une nouvelle. Ne fonctionne qu'avec les liens de type [[wikilink]] et lors du renommage d'une seule note, pas d'un dossier. Dans de rares cas, une modification de votre part qui ne change qu'un lien peut ne pas mettre à jour la date. Nécessite que \"Détecter les vrais changements de contenu\" reste activé.",
       },
       postUpdateCommand: {
         name: 'Commande après mise à jour',

@@ -116,7 +116,7 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 | Verzögerung für neue Dateien       | `5000` ms               | Wartezeit, bevor neu erstellte Notizen verarbeitet werden                        |
 | Cache beim Start automatisch befüllen | `true`               | Erstellt Änderungserkennungsdaten für nicht zwischengespeicherte Notizen beim Laden des Plugins |
 | Maximale Cache-Einträge            | `10000`                 | Die ältesten ungenutzten Einträge werden entfernt, wenn der Cache dieses Limit überschreitet |
-| Experimentell: Datum nach dem Umbenennen einer Notiz nicht aktualisieren | `false` | Notizen, die auf die umbenannte Notiz verlinken, behalten ihr bisheriges Datum. Nur `[[wikilink]]`-Links und einzelne Notizen |
+| Experimentell: Datum nach dem Umbenennen einer Notiz nicht aktualisieren | `false` | Notizen, die auf die umbenannte Notiz verlinken, behalten ihr bisheriges Datum. Nur `[[wikilink]]`-Links und einzelne Notizen; erfordert aktivierte Änderungserkennung |
 | Befehl nach Aktualisierung         | `""` (keiner)           | Obsidian-Befehl, der nach jeder Datumsaktualisierung ausgeführt wird             |
 
 ### Bearbeitungsdatum vor Erstellungsdatum
@@ -212,9 +212,9 @@ Solche mehrdeutigen Tag/Monat-Datumsangaben bleiben standardmäßig unverändert
 
 > Das Umbenennen einer Notiz aktualisiert `updated` in allen Notizen, die darauf verlinken. Lässt sich das abstellen?
 
-Teilweise, und standardmäßig ist es aus. Beim Umbenennen einer Notiz schreibt Obsidian die Links darauf in anderen Notizen um - diese Notizen ändern sich tatsächlich auf der Festplatte und bekommen ein neues Datum, obwohl Sie sie nie geöffnet haben. Aktivieren Sie **Einstellungen -> Erweitert -> Experimentell: Datum nach dem Umbenennen einer Notiz nicht aktualisieren**, dann behalten diese Notizen ihr bisheriges Datum.
+Teilweise, und standardmäßig ist es aus. Beim Umbenennen einer Notiz schreibt Obsidian die Links darauf in anderen Notizen um - diese Notizen ändern sich tatsächlich auf der Festplatte und bekommen ein neues Datum, obwohl Sie sie nie geöffnet haben. Aktivieren Sie **Einstellungen -> Erweitert -> Experimentell: Datum nach dem Umbenennen einer Notiz nicht aktualisieren**, dann behalten diese Notizen ihr bisheriges Datum. Die Funktion arbeitet über die Änderungserkennung des Plugins und erfordert daher, dass **Änderungserkennung (Inhalts-Hashing)** aktiviert bleibt - bei deaktiviertem Hashing wird der Schalter ausgeblendet, statt als wirkungsloser Schalter angeboten zu werden.
 
-Die Funktion ist bewusst vorsichtig: ein fälschlich behaltenes Datum geht still verloren, ein überflüssiges ist nur kosmetisch. Das Plugin sagt den exakten Text voraus, den Obsidian schreiben wird, und behält das Datum nur bei byteweiser Übereinstimmung. Sie greift daher **nicht** bei: Markdown-Links der Form `[Text](note.md)`, Links in Eigenschaften, dem Umbenennen oder Verschieben eines ganzen Ordners, Notizen mit ungespeicherten Änderungen in einem offenen Editor und Umbenennungen, die mehr als 50 Notizen betreffen. In all diesen Fällen wird das Datum wie bisher aktualisiert. Wenn Sie selbst eine Notiz bearbeiten, während Obsidians Dialog "Update links" offen ist, wird diese Änderung immer erfasst.
+Die Funktion ist bewusst vorsichtig: ein fälschlich behaltenes Datum geht still verloren, ein überflüssiges ist nur kosmetisch. Das Plugin sagt den exakten Text voraus, den Obsidian schreiben wird, und behält das Datum nur bei byteweiser Übereinstimmung. Sie greift daher **nicht** bei: Markdown-Links der Form `[Text](note.md)`, Links in Eigenschaften, dem Umbenennen oder Verschieben eines ganzen Ordners, Notizen mit ungespeicherten Änderungen in einem offenen Editor Umbenennungen, die mehr als 50 Notizen betreffen, und ungewöhnlich großen Notizen. In all diesen Fällen wird das Datum wie bisher aktualisiert. Wenn Sie selbst eine Notiz bearbeiten, während Obsidians Dialog "Update links" offen ist, wird diese Änderung immer erfasst.
 
 > Ich habe die Eigenschaft umbenannt (z. B. `created` → `date_created`). Was ist mit bestehenden Dateien?
 

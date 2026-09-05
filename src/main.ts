@@ -33,6 +33,7 @@ import {
   EXCALIDRAW_VIEW_TYPE,
   FRESHNESS_SEC,
   MODIFY_DEBOUNCE_MS,
+  RENAME_SUPPRESSION_MAX_BYTES,
   RENAME_SUPPRESSION_MAX_SOURCES,
 } from './constants';
 import {
@@ -102,6 +103,12 @@ interface ArmedRename {
   oldPath: string;
   newPath: string;
   sources: RenameSuppressionSource[];
+  // A batch that must suppress nothing, but still OCCUPIES the slot until the
+  // rename's queue settles. Clearing the slot instead would make the exclusion
+  // a toggle rather than a latch: a folder move fires one rename event per
+  // moved child, so the third child would arm again, the fourth cancel, and an
+  // odd number of children would leave the last one armed.
+  blocked: boolean;
 }
 
 // Result of one handleFileChange pass. `wrote` is true only when
@@ -1386,6 +1393,18 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // Notes that linked to `oldPath`, read from the still-pre-rename
   // resolvedLinks index. null means "too many - arm nothing".
   private renameCandidateSources(oldPath: string): TFile[] | null {
+    try {
+      return this.scanRenameCandidates(oldPath);
+    } catch {
+      // Called synchronously from the rename listener, and it runs BEFORE the
+      // handler's own hash-cache migration. An unguarded throw here would skip
+      // that migration and leave the renamed note with a stale entry under the
+      // old path.
+      return null;
+    }
+  }
+
+  private scanRenameCandidates(oldPath: string): TFile[] | null {
     const out: TFile[] = [];
     const resolved = this.app.metadataCache.resolvedLinks;
     for (const sourcePath of Object.keys(resolved)) {
@@ -1430,30 +1449,59 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   armRenameSuppression(file: TAbstractFile, oldPath: string): void {
     if (this.settings.experimentalSkipRenameLinkUpdates !== true) return;
     if (!this.settings.enableAutoUpdate) return;
+    // Suppression works ONLY by refreshing the content hash, and
+    // shouldFileBeIgnored consults that cache only when content-hash change
+    // detection is on. With it off the whole snapshot/predict/verify pass would
+    // run and change nothing, so bail before doing any work. The settings tab
+    // hides the toggle in that configuration for the same reason - an enabled
+    // setting that can never act is worse than an absent one.
+    if (!this.settings.enableContentHashCheck) return;
     if (this.bulkRunning) return;
     if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
 
-    // A second rename event means a folder move (Obsidian fires one per moved
-    // child). Cancel the batch outright rather than trying to predict it.
-    if (this.renameSuppression !== null) {
-      this.cancelRenameSuppression();
+    // A second rename event in the same batch means a folder move (Obsidian
+    // fires one per moved child). LATCH the batch shut rather than clearing the
+    // slot - see ArmedRename.blocked.
+    const current = this.renameSuppression;
+    if (current !== null) {
+      current.blocked = true;
       return;
     }
 
-    if (!isTFile(file) || file.extension !== 'md') return;
-
+    // Read the queue promise before the file-kind check: a blocked batch needs
+    // it too, since that promise is the only signal for when the batch ends.
     const queuePromise = this.renameLinkUpdatePromise();
     if (queuePromise === null) return;
 
+    // A folder (or non-Markdown) rename. Its moved children each fire their own
+    // event, so hold the slot blocked until the batch settles.
+    if (!isTFile(file) || file.extension !== 'md') {
+      this.blockRenameBatch(queuePromise);
+      return;
+    }
+
     const candidates = this.renameCandidateSources(oldPath);
-    if (candidates === null || candidates.length === 0) return;
+    // Nothing to suppress for this file - but the slot is still taken, or a
+    // sibling child of the same folder move would arm on its own.
+    if (candidates === null || candidates.length === 0) {
+      this.blockRenameBatch(queuePromise);
+      return;
+    }
 
     // Issue every read now, before any await: with Obsidian's "Automatically
     // update internal links" turned on the rewrite follows immediately, and a
     // snapshot taken after it would simply fail the byte comparison later.
+    // Oversized notes are skipped BEFORE the read: the contents are held in
+    // memory for as long as the "Update links" prompt stays open, which can be
+    // hours, and a handful of multi-megabyte notes (an Excalidraw drawing is an
+    // ordinary .md file) would otherwise be pinned there.
+    let budget = RENAME_SUPPRESSION_MAX_BYTES;
     const pending = candidates.flatMap((source) => {
+      const size = source.stat.size;
+      if (!Number.isFinite(size) || size > budget) return [];
       const refs = this.snapshotRefs(source);
       if (refs === null) return [];
+      budget -= size;
       return [
         {
           file: source,
@@ -1462,16 +1510,48 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         },
       ];
     });
-    if (pending.length === 0) return;
+    if (pending.length === 0) {
+      this.blockRenameBatch(queuePromise);
+      return;
+    }
 
     const armed: ArmedRename = {
       generation: this.renameGeneration,
       oldPath,
       newPath: file.path,
       sources: [],
+      blocked: false,
     };
     this.renameSuppression = armed;
     void this.runRenameSuppression(armed, pending, queuePromise);
+  }
+
+  // Occupy the rename slot with a batch that suppresses nothing, releasing it
+  // when the rename's own queue settles. This is what makes the folder-move
+  // exclusion a latch instead of a toggle.
+  private blockRenameBatch(queuePromise: Promise<unknown>): void {
+    const blocked: ArmedRename = {
+      generation: this.renameGeneration,
+      oldPath: '',
+      newPath: '',
+      sources: [],
+      blocked: true,
+    };
+    this.renameSuppression = blocked;
+    void this.releaseRenameBatch(blocked, queuePromise);
+  }
+
+  private async releaseRenameBatch(
+    batch: ArmedRename,
+    queuePromise: Promise<unknown>,
+  ): Promise<void> {
+    try {
+      await queuePromise;
+    } catch {
+      // Settled either way - the batch is over.
+    } finally {
+      if (this.renameSuppression === batch) this.renameSuppression = null;
+    }
   }
 
   // Phases A (tail) + B + C.
@@ -1505,18 +1585,26 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
 
       if (!this.isRenameStillArmed(armed) || armed.sources.length === 0) return;
+      // A sibling rename event arriving while the snapshots were being read
+      // latched this batch shut (a folder move).
+      if (armed.blocked) return;
 
       // Phase B. Settles once the link rewrites are on disk - however long the
       // "update links?" modal stayed open. It can reject; a rejection just means
       // suppress nothing.
       await queuePromise;
       if (!this.isRenameStillArmed(armed)) return;
-      this.renameSuppression = null;
 
       const renamed = this.app.vault.getAbstractFileByPath(armed.newPath);
       if (renamed === null || !isTFile(renamed)) return;
 
+      // The batch deliberately stays armed for the whole verify loop: nulling
+      // the slot first would make isRenameStillArmed permanently false, so an
+      // unload or a settings change could no longer stop a loop already in
+      // flight - and a suppression landing after onunload would re-arm the
+      // hash-cache flush timer that unload had just cleared.
       for (const source of armed.sources) {
+        if (!this.isRenameStillArmed(armed)) return;
         await this.verifyRenameSuppression(armed, source, renamed);
       }
     } catch (e) {
@@ -1593,6 +1681,10 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
       const actual = await this.app.vault.read(file);
       if (actual !== predicted) return;
+
+      // Last checkpoint before the only mutation this feature performs. Every
+      // await above could have straddled an unload or a settings change.
+      if (!this.isRenameStillArmed(armed) || armed.blocked) return;
 
       // The only difference is the rewrite. Refresh the hash so the pass the
       // `modify` event already scheduled sees "unchanged" and stamps nothing.

@@ -293,7 +293,7 @@ export const STRINGS_EN = {
       },
       skipRenameLinkUpdates: {
         name: 'Experimental: skip date update after renaming a note',
-        desc: 'Experimental. When you rename a note, the notes that link to it keep their existing date instead of getting a new one. Works only with [[wikilink]] style links and when you rename a single note, not a folder. In rare cases an edit of your own that only changes a link may not update the date.',
+        desc: 'Experimental. When you rename a note, the notes that link to it keep their existing date instead of getting a new one. Works only with [[wikilink]] style links and when you rename a single note, not a folder. In rare cases an edit of your own that only changes a link may not update the date. Needs "Detect real content changes" to stay on.',
       },
       postUpdateCommand: {
         name: 'Command after update',

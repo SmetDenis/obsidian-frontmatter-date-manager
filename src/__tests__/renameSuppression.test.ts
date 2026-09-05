@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from '../main';
 import { DEFAULT_SETTINGS, FrontmatterDateManagerSettings } from '../Settings';
-import { RENAME_SUPPRESSION_MAX_SOURCES } from '../constants';
+import {
+  RENAME_SUPPRESSION_MAX_BYTES,
+  RENAME_SUPPRESSION_MAX_SOURCES,
+} from '../constants';
 
 // Coverage for the experimental "skip the date after a rename" machinery
 // (issue #18): the arming preconditions, every disarm path, and the byte-exact
@@ -139,6 +142,14 @@ function setup(opts: SetupOpts) {
     await new Promise((r) => setTimeout(r, 0));
   };
 
+  // A folder (or non-Markdown) rename event, which carries no TFile.
+  const renameNonFile = (oldPath: string) => {
+    const folder = { path: oldPath, name: oldPath } as unknown as Parameters<
+      typeof plugin.armRenameSuppression
+    >[0];
+    plugin.armRenameSuppression(folder, oldPath);
+  };
+
   const rename = (oldPath: string, newPath: string) => {
     const f = files.get(oldPath);
     if (!f) throw new Error(`no file ${oldPath}`);
@@ -151,7 +162,7 @@ function setup(opts: SetupOpts) {
     plugin.armRenameSuppression(f, oldPath);
   };
 
-  return { plugin, rename, finishRewrite, disk, files };
+  return { plugin, rename, renameNonFile, finishRewrite, disk, files };
 }
 
 /** Does the plugin now consider this file unchanged (i.e. no stamp incoming)? */
@@ -358,6 +369,96 @@ describe('rename suppression - arming preconditions', () => {
     expect(
       (plugin as unknown as { renameSuppression: unknown }).renameSuppression,
     ).toBeNull();
+  });
+
+  it('arms nothing when content-hash change detection is off', async () => {
+    // The only thing suppression does is refresh the hash cache, and
+    // shouldFileBeIgnored reads that cache only when this setting is on - so
+    // with it off the feature could do all the work and still change nothing.
+    const { plugin, rename, finishRewrite, disk } = setup(
+      baseOpts({ settings: { enableContentHashCheck: false } }),
+    );
+    const refresh = vi.spyOn(plugin, 'populateCacheForFile');
+    rename('Old.md', 'New.md');
+    await finishRewrite();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(await isUnchanged(plugin, 'src.md', disk)).toBe(false);
+  });
+
+  it('latches a folder move shut, even when only a later child is linked', async () => {
+    // Regression: the exclusion used to CLEAR the slot instead of latching it,
+    // and a child with no backlinks returned before taking the slot at all. So
+    // in a folder move where the source links only to the LAST child, every
+    // earlier child stepped aside and that child armed and suppressed.
+    const { plugin, rename, finishRewrite, disk } = setup(
+      baseOpts({
+        files: {
+          'F/a.md': { content: '# a\n' },
+          'F/b.md': { content: '# b\n' },
+          'F/c.md': { content: '# c\n' },
+          'src.md': {
+            content: '---\ncreated: 2020-01-01\n---\n\nsee [[F/c]] here\n',
+            after: '---\ncreated: 2020-01-01\n---\n\nsee [[G/c]] here\n',
+          },
+        },
+        resolvedLinks: { 'src.md': { 'F/c.md': 1 } },
+        linktext: 'G/c',
+      }),
+    );
+    rename('F/a.md', 'G/a.md');
+    rename('F/b.md', 'G/b.md');
+    rename('F/c.md', 'G/c.md');
+    await finishRewrite();
+    expect(await isUnchanged(plugin, 'src.md', disk)).toBe(false);
+  });
+
+  it('latches on the folder event itself', async () => {
+    const { plugin, rename, renameNonFile, finishRewrite, disk } = setup(
+      baseOpts({
+        files: {
+          'F/Old.md': { content: '# old\n' },
+          'src.md': {
+            content: '---\ncreated: 2020-01-01\n---\n\nsee [[F/Old]] here\n',
+            after: '---\ncreated: 2020-01-01\n---\n\nsee [[G/Old]] here\n',
+          },
+        },
+        resolvedLinks: { 'src.md': { 'F/Old.md': 1 } },
+        linktext: 'G/Old',
+      }),
+    );
+    // Obsidian fires the folder's own rename event alongside its children.
+    renameNonFile('F');
+    rename('F/Old.md', 'G/Old.md');
+    await finishRewrite();
+    expect(await isUnchanged(plugin, 'src.md', disk)).toBe(false);
+  });
+
+  it('skips a candidate larger than the memory budget', async () => {
+    const { plugin, rename, finishRewrite, disk, files } = setup(baseOpts());
+    files.get('src.md')!.stat.size = RENAME_SUPPRESSION_MAX_BYTES + 1;
+    rename('Old.md', 'New.md');
+    await finishRewrite();
+    expect(await isUnchanged(plugin, 'src.md', disk)).toBe(false);
+  });
+
+  it('aborts mid-verify when the batch is cancelled before the cache write', async () => {
+    // onunload / a settings change must be able to stop a verify loop already
+    // in flight - otherwise a suppression landing after unload re-arms the
+    // hash-cache flush timer that unload had just cleared.
+    const { plugin, rename, finishRewrite, disk } = setup(baseOpts());
+    const real = plugin.getWriteBlock.bind(plugin);
+    let calls = 0;
+    vi.spyOn(plugin, 'getWriteBlock').mockImplementation(async (f) => {
+      calls++;
+      // Call 1 is the arm-time gate; call 2 is Phase C for the same file.
+      if (calls === 2) plugin.cancelRenameSuppression();
+      return real(f);
+    });
+    const refresh = vi.spyOn(plugin, 'populateCacheForFile');
+    rename('Old.md', 'New.md');
+    await finishRewrite();
+    expect(refresh).not.toHaveBeenCalled();
+    expect(await isUnchanged(plugin, 'src.md', disk)).toBe(false);
   });
 
   it('suppresses nothing once the generation is bumped', async () => {

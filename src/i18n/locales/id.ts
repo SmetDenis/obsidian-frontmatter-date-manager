@@ -295,7 +295,7 @@ export const STRINGS_ID: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Eksperimental: jangan perbarui tanggal setelah mengganti nama catatan',
-        desc: 'Eksperimental. Saat Anda mengganti nama catatan, catatan yang menautkannya tetap memakai tanggal yang ada, bukan tanggal baru. Hanya bekerja dengan tautan bergaya [[wikilink]] dan saat mengganti nama satu catatan, bukan folder. Dalam kasus yang jarang, suntingan Anda sendiri yang hanya mengubah tautan mungkin tidak memperbarui tanggal.',
+        desc: 'Eksperimental. Saat Anda mengganti nama catatan, catatan yang menautkannya tetap memakai tanggal yang ada, bukan tanggal baru. Hanya bekerja dengan tautan bergaya [[wikilink]] dan saat mengganti nama satu catatan, bukan folder. Dalam kasus yang jarang, suntingan Anda sendiri yang hanya mengubah tautan mungkin tidak memperbarui tanggal. Memerlukan "Deteksi perubahan konten nyata" tetap aktif.',
       },
       postUpdateCommand: {
         name: 'Perintah setelah pembaruan',

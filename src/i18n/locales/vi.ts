@@ -290,7 +290,7 @@ export const STRINGS_VI: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Thử nghiệm: không cập nhật ngày sau khi đổi tên ghi chú',
-        desc: 'Tính năng thử nghiệm. Khi bạn đổi tên một ghi chú, các ghi chú liên kết tới nó giữ nguyên ngày hiện có thay vì nhận ngày mới. Chỉ hoạt động với liên kết kiểu [[wikilink]] và khi đổi tên một ghi chú duy nhất, không phải thư mục. Trong một số trường hợp hiếm, chính sửa đổi của bạn chỉ thay đổi liên kết có thể không cập nhật ngày.',
+        desc: 'Tính năng thử nghiệm. Khi bạn đổi tên một ghi chú, các ghi chú liên kết tới nó giữ nguyên ngày hiện có thay vì nhận ngày mới. Chỉ hoạt động với liên kết kiểu [[wikilink]] và khi đổi tên một ghi chú duy nhất, không phải thư mục. Trong một số trường hợp hiếm, chính sửa đổi của bạn chỉ thay đổi liên kết có thể không cập nhật ngày. Yêu cầu "Phát hiện thay đổi nội dung thực sự" vẫn được bật.',
       },
       postUpdateCommand: {
         name: 'Lệnh sau khi cập nhật',

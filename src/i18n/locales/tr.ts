@@ -293,7 +293,7 @@ export const STRINGS_TR: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Deneysel: bir notu yeniden adlandırdıktan sonra tarihi güncelleme',
-        desc: 'Deneysel. Bir notu yeniden adlandırdığınızda, ona bağlantı veren notlar yeni bir tarih almak yerine mevcut tarihlerini korur. Yalnızca [[wikilink]] biçimindeki bağlantılarla ve tek bir notu yeniden adlandırdığınızda çalışır, klasörlerde çalışmaz. Nadir durumlarda yalnızca bir bağlantıyı değiştiren kendi düzenlemeniz tarihi güncellemeyebilir.',
+        desc: 'Deneysel. Bir notu yeniden adlandırdığınızda, ona bağlantı veren notlar yeni bir tarih almak yerine mevcut tarihlerini korur. Yalnızca [[wikilink]] biçimindeki bağlantılarla ve tek bir notu yeniden adlandırdığınızda çalışır, klasörlerde çalışmaz. Nadir durumlarda yalnızca bir bağlantıyı değiştiren kendi düzenlemeniz tarihi güncellemeyebilir. "Gerçek içerik değişikliklerini algıla" ayarının açık kalmasını gerektirir.',
       },
       postUpdateCommand: {
         name: 'Güncellemeden sonraki komut',

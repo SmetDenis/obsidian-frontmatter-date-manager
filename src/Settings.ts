@@ -639,6 +639,11 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         {
           name: a.skipRenameLinkUpdates.name,
           desc: a.skipRenameLinkUpdates.desc,
+          // Suppression works only by refreshing the content hash, which
+          // shouldFileBeIgnored reads only when change detection is on. Hidden
+          // rather than shown-and-inert - armRenameSuppression bails on the
+          // same condition, so an offered toggle could never act.
+          visible: () => this.plugin.settings.enableContentHashCheck ?? true,
           control: {
             type: 'toggle',
             key: 'experimentalSkipRenameLinkUpdates',

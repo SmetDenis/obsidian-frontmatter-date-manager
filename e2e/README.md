@@ -124,8 +124,12 @@ here.
   - R6 - subpath (`#Section`) and block-reference (`#^blockid`) links.
   - R7 - a Markdown-link vault (`useMarkdownLinks`, `[text](note.md)`): v1 never
     predicts those, so the note is stamped exactly as it is today.
-  - R8 - a folder move: one rename event per moved child cancels the batch, so
-    the feature does not fire and the linking note is stamped.
+  - R8 - a folder move: the batch is latched shut, so the feature does not fire
+    and the linking note is stamped. The fixture is three children with only
+    the LAST one linked, and that is deliberate - an earlier two-children-both-
+    linked fixture passed for the wrong reason (the two events happened to form
+    an arm/cancel pair) and would not have caught the real defect, where a child
+    with no backlinks stepped aside and let a later child arm.
   - R9 - a note linking somewhere else is byte-identical afterwards: not
     rewritten, not stamped, never touched by the suppression pass.
   - R10 - a linking note with unsaved editor changes is not suppressed (the
@@ -137,6 +141,9 @@ here.
     configuration. This scenario is what caught the real bug in review: an
     arming batch whose candidates were all skipped stayed armed and made the
     NEXT rename cancel itself.
+
+  Note the whole spec needs `enableContentHashCheck` on - suppression acts only
+  through the hash cache - so `beforeEach` sets it explicitly.
 
 **Group B - bulk operations (full UI-driven, all five modals):**
 

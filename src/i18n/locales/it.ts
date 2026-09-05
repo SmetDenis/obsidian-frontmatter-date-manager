@@ -300,7 +300,7 @@ export const STRINGS_IT: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Sperimentale: non aggiornare la data dopo aver rinominato una nota',
-        desc: 'Sperimentale. Quando rinomini una nota, le note che la collegano mantengono la data esistente invece di riceverne una nuova. Funziona solo con i collegamenti in stile [[wikilink]] e quando rinomini una singola nota, non una cartella. In rari casi una tua modifica che cambia solo un collegamento potrebbe non aggiornare la data.',
+        desc: 'Sperimentale. Quando rinomini una nota, le note che la collegano mantengono la data esistente invece di riceverne una nuova. Funziona solo con i collegamenti in stile [[wikilink]] e quando rinomini una singola nota, non una cartella. In rari casi una tua modifica che cambia solo un collegamento potrebbe non aggiornare la data. Richiede che "Rileva modifiche reali al contenuto" resti attivo.',
       },
       postUpdateCommand: {
         name: 'Comando dopo l’aggiornamento',

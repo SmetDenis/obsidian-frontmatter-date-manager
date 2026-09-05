@@ -266,12 +266,16 @@ describe('experimental: skip the date after a rename', function () {
   });
 
   it('R8: a folder move does not fire the feature', async function () {
+    // The fixture links ONLY to the last child on purpose. An earlier draft
+    // linked to both, which made this pass for the wrong reason: the two
+    // children happened to form an arm/cancel pair. With only the last child
+    // linked, the earlier ones have no backlinks at all - so unless the
+    // exclusion LATCHES, they step aside and the last child arms and
+    // suppresses. This fixture is what actually pins the invariant.
     await createNoteAt('r8dir/a.md', '# a\n');
     await createNoteAt('r8dir/b.md', '# b\n');
-    const source = await createNote(
-      'r8-source',
-      BODY('see [[r8dir/a]] and [[r8dir/b]] here'),
-    );
+    await createNoteAt('r8dir/c.md', '# c\n');
+    const source = await createNote('r8-source', BODY('see [[r8dir/c]] here'));
     await seedLinkingNote(source);
     await waitForCleanCache();
 

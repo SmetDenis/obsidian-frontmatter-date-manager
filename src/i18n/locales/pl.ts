@@ -301,7 +301,7 @@ export const STRINGS_PL: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Eksperymentalne: nie aktualizuj daty po zmianie nazwy notatki',
-        desc: 'Funkcja eksperymentalna. Po zmianie nazwy notatki notatki, które do niej linkują, zachowują dotychczasową datę zamiast otrzymać nową. Działa tylko z linkami w stylu [[wikilink]] i przy zmianie nazwy pojedynczej notatki, a nie folderu. W rzadkich przypadkach własna edycja zmieniająca tylko link może nie zaktualizować daty.',
+        desc: 'Funkcja eksperymentalna. Po zmianie nazwy notatki notatki, które do niej linkują, zachowują dotychczasową datę zamiast otrzymać nową. Działa tylko z linkami w stylu [[wikilink]] i przy zmianie nazwy pojedynczej notatki, a nie folderu. W rzadkich przypadkach własna edycja zmieniająca tylko link może nie zaktualizować daty. Wymaga włączonej opcji "Wykrywaj rzeczywiste zmiany treści".',
       },
       postUpdateCommand: {
         name: 'Polecenie po aktualizacji',

@@ -346,3 +346,26 @@ Expect `true` when renaming from the file explorer with link updating enabled, a
 **Deliberately unchanged from the spec:** no timer is cleared; `populateCacheForFile` is always passed the validated content; every internal read goes through an `unknown` cast in `try/catch`; the predictable subset stays wikilinks-and-wiki-embeds only.
 
 **Not done:** the settings screenshot was not regenerated - the toggle lives on the Advanced sub-page, which none of the five store screenshots captures.
+
+---
+
+## 13. Review outcome (2026-09-05)
+
+Four adversarial passes: Codex (`gpt-5.6-sol`/high, two passes), plus one Claude Fable and one Claude Opus reviewer, each working blind from the diff.
+
+**The governing invariant survived.** All four attacked "fail toward stamping" as their primary task; none constructed a case where a genuine user edit is silently swallowed. Three gave a structural reason rather than an impression: `predicted` is derived only from the snapshot plus spans, so a byte match means the file differs from the snapshot in exactly those spans; and `populateCacheForFile` is handed the validated bytes rather than re-reading.
+
+Codex additionally isolated a third window the others did not name separately: an edit landing between Phase C's read and the hash refresh. The byte comparison genuinely does NOT catch it. What catches it is the pair of decisions this spec already mandated - hash the validated content, and clear no timer - so the edit's own `modify` re-arms the debounce and the next pass stamps.
+
+**Defects found and fixed in review** (none of them data-safety; all cost coverage or contradicted the docs):
+
+1. The toggle was a silent no-op whenever `enableContentHashCheck` was off - all four reads and the whole verify pass ran and changed nothing. Named as the single blocking item by every reviewer who looked broadly. Now gated at both ends: `armRenameSuppression` bails, and the settings row carries the same `visible` predicate two neighbouring rows already used.
+2. The folder-move exclusion was a toggle, not a latch, so it was **false as documented in five places**. The cancel cleared the slot, so a third child re-armed; and a child with no backlinks returned before taking the slot at all, so a folder move whose source links only to a later child was suppressed entirely. Fixed with an explicit `blocked` latch released by the batch's own queue promise.
+3. e2e R8 was passing for the wrong reason - its two-child fixture happened to form an arm/cancel pair, so it never pinned the invariant its own comment claimed. Rewritten to three children with only the last one linked, which is the shape that actually fails without the latch.
+4. Cancellation stopped working once Phase C began (the slot was nulled before the loop, making `isRenameStillArmed` permanently false). Worst consequence: a suppression landing after `onunload` called `markHashCacheDirty()` and re-armed a flush timer unload had just cleared, writing `hash-cache.json` from a dead instance. Now re-checked at every await and immediately before the cache write.
+5. The 50-source cap bounded file count but not bytes, and the snapshots stay pinned for as long as the "Update links" prompt is open. Added `RENAME_SUPPRESSION_MAX_BYTES` (4 MB total), checked against `file.stat.size` before reading.
+6. `renameCandidateSources` was the one Phase A step without `try/catch`, and it runs before the handler's own hash-cache migration - a throw there would have skipped that migration. Now guarded.
+
+Documentation corrected in the same pass: section 4 above wrongly lists embeds with dimensions (`![[Note|300]]`) as skipped. They are predicted, correctly - the pipe segment is not an alias, and the alias rule leaves it alone.
+
+Every fix carries a unit test that was verified to FAIL against the pre-fix code.

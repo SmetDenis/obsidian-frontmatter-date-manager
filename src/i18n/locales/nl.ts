@@ -301,7 +301,7 @@ export const STRINGS_NL: Strings = {
       },
       skipRenameLinkUpdates: {
         name: 'Experimenteel: datum niet bijwerken na het hernoemen van een notitie',
-        desc: 'Experimenteel. Wanneer je een notitie hernoemt, behouden de notities die ernaar linken hun bestaande datum in plaats van een nieuwe te krijgen. Werkt alleen met links in [[wikilink]]-stijl en bij het hernoemen van een enkele notitie, niet van een map. In zeldzame gevallen werkt een eigen bewerking die alleen een link wijzigt de datum niet bij.',
+        desc: 'Experimenteel. Wanneer je een notitie hernoemt, behouden de notities die ernaar linken hun bestaande datum in plaats van een nieuwe te krijgen. Werkt alleen met links in [[wikilink]]-stijl en bij het hernoemen van een enkele notitie, niet van een map. In zeldzame gevallen werkt een eigen bewerking die alleen een link wijzigt de datum niet bij. Vereist dat "Echte inhoudswijzigingen detecteren" aan blijft.',
       },
       postUpdateCommand: {
         name: 'Opdracht na update',

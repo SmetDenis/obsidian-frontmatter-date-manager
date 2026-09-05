@@ -114,7 +114,7 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 | New file delay                     | `5000` ms               | Wait before processing newly created notes                                       |
 | Auto-populate cache on startup     | `true`                  | Build change-detection data for uncached notes when the plugin loads             |
 | Maximum cache entries              | `10000`                 | Oldest unused entries are removed when the cache exceeds this limit              |
-| Experimental: skip date update after renaming a note | `false` | Notes linking to a renamed note keep their existing date. `[[wikilink]]` links and single-note renames only |
+| Experimental: skip date update after renaming a note | `false` | Notes linking to a renamed note keep their existing date. `[[wikilink]]` links and single-note renames only; needs change detection on |
 | Command after update               | `""` (none)             | Obsidian command to run after each date update                                   |
 
 ### Modified-before-created dates
@@ -218,9 +218,9 @@ Such ambiguous day/month dates are left unchanged by default - the plugin never 
 
 > Renaming a note bumps `updated` on every note that links to it. Can I stop that?
 
-Partly, and it is off by default. When you rename a note, Obsidian rewrites the links pointing at it inside other notes - those notes really do change on disk, so they get a fresh date even though you never opened them. Turn on **Settings -> Advanced -> Experimental: skip date update after renaming a note** and those notes keep their existing date instead.
+Partly, and it is off by default. When you rename a note, Obsidian rewrites the links pointing at it inside other notes - those notes really do change on disk, so they get a fresh date even though you never opened them. Turn on **Settings -> Advanced -> Experimental: skip date update after renaming a note** and those notes keep their existing date instead. It works through the plugin's change detection, so it needs **Change detection (content hashing)** left on - with hashing off the toggle is hidden rather than offered as a switch that could not do anything.
 
-It is deliberately conservative, because a date that is wrongly kept is lost silently while an extra one is merely cosmetic. The plugin predicts the exact text Obsidian is about to write and keeps the date only when the file matches it byte for byte. So it does **not** apply to: `[text](note.md)` Markdown links, links inside properties, moving or renaming a whole folder, notes with unsaved changes in an open editor, and renames that touch more than 50 notes. In all of those the date updates exactly as it does today. If you edit a note yourself while Obsidian's "Update links" prompt is open, that edit is always recorded.
+It is deliberately conservative, because a date that is wrongly kept is lost silently while an extra one is merely cosmetic. The plugin predicts the exact text Obsidian is about to write and keeps the date only when the file matches it byte for byte. So it does **not** apply to: `[text](note.md)` Markdown links, links inside properties, moving or renaming a whole folder, notes with unsaved changes in an open editor, renames that touch more than 50 notes, and unusually large notes. In all of those the date updates exactly as it does today. If you edit a note yourself while Obsidian's "Update links" prompt is open, that edit is always recorded.
 
 > I renamed the property (e.g. `created` → `date_created`). What about existing files?
 
