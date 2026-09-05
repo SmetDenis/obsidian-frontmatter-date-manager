@@ -1,8 +1,8 @@
 # Obsidian - Frontmatter Date Manager
 
-[English](README.md) | [简体中文](README.zh-CN.md) | **Русский** | [Deutsch](README.de.md) | [日本語](README.ja.md)
+[English](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/blob/main/README.md) | [简体中文](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/blob/main/README.zh-CN.md) | **Русский** | [Deutsch](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/blob/main/README.de.md) | [日本語](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/blob/main/README.ja.md)
 
-_Перевод английского [README](README.md). Заметили ошибку? Будем рады вкладу - см. [CONTRIBUTING.md](CONTRIBUTING.md)._
+_Перевод английского [README](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/blob/main/README.md). Заметили ошибку? Будем рады вкладу - см. [CONTRIBUTING.md](CONTRIBUTING.md)._
 
 [![CI](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/SmetDenis/obsidian-frontmatter-date-manager)](https://github.com/SmetDenis/obsidian-frontmatter-date-manager/releases/latest)
