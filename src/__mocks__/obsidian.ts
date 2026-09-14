@@ -26,12 +26,19 @@ export class App {
   workspace: any = {};
 }
 
+// Stand-in so `leaf.view instanceof FileView` (the Excalidraw write guard's
+// identity check in main.ts) resolves in unit tests. Excalidraw views extend
+// the shared TextFileView, so a test drawing view is built from this class;
+// anything else (a deferred or ghost pane) is a plain object.
+export class FileView {
+  file: any = null;
+}
+
 // Minimal stand-in so `leaf.view instanceof MarkdownView` (used by
 // markdownViewsFor in main.ts) resolves in unit tests. Tests construct one and
 // assign `.file` (plus `dirty` / `getViewData` for the unsaved-changes guard)
 // to simulate an open editor leaf.
-export class MarkdownView {
-  file: any = null;
+export class MarkdownView extends FileView {
   dirty: any = false;
   getViewData(): string {
     return '';

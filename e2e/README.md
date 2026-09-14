@@ -203,6 +203,15 @@ guard (`getWriteBlock`) is proven against the real thing.
 - X10 filter rules still exclude a drawing while tracking is on.
 - X11 the marker is honoured with Excalidraw disabled (detection reads
   `metadataCache`, not the `ExcalidrawAutomate` global).
+- X12 (issue #22) a drawing tab never shown since the layout loaded (a
+  `DeferredView`: type `excalidraw`, no file) blocks nothing - a new note gets
+  its dates automatically, the command reports a real write, and the gate is
+  `null` for both the note and the deferred drawing. Asserts the leaf is still
+  deferred at the end, or the scenario proved nothing.
+- X13 (issue #22) the same with Excalidraw not loaded: the restored tab becomes a
+  ghost pane (not a `FileView`, no file) and still blocks nothing. Both drive
+  `WorkspaceLeaf.setViewState` on a hidden leaf - the branch Obsidian takes for
+  every tab at layout restore - via `openDrawingInHiddenTab`.
 
 Two Excalidraw behaviours shape how these are written, and both bit earlier
 drafts of this spec:

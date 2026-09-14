@@ -29,6 +29,8 @@ function createApp(capture: { argCount?: number; options?: unknown }) {
   } as any;
 }
 
+const DRAWING = { 'excalidraw-plugin': 'parsed' };
+
 describe('applyFrontmatterWrite', () => {
   it('writes without an options argument, sets the self-trigger guard, refreshes cache', async () => {
     const plugin = createPlugin({ enableContentHashCheck: true });
@@ -100,17 +102,19 @@ describe('applyFrontmatterWrite', () => {
     const plugin = createPlugin({ enableContentHashCheck: true });
     const file = createMockFile('d.md');
     (plugin as any).app = {
+      metadataCache: { getFileCache: () => ({ frontmatter: DRAWING }) },
       workspace: {
         getLeavesOfType: (type: string) =>
           type === 'excalidraw'
             ? [
                 {
-                  view: {
+                  isDeferred: false,
+                  view: Object.assign(new obsidian.FileView(), {
                     file: { path: file.path },
                     semaphores: { saving: false, autosaving: false },
                     excalidrawAPI: {},
                     isDirty: () => true,
-                  },
+                  }),
                 },
               ]
             : [],
@@ -134,17 +138,19 @@ describe('applyFrontmatterWrite', () => {
     const plugin = createPlugin({ enableContentHashCheck: false });
     const file = createMockFile('e.md');
     (plugin as any).app = {
+      metadataCache: { getFileCache: () => ({ frontmatter: DRAWING }) },
       workspace: {
         getLeavesOfType: (type: string) =>
           type === 'excalidraw'
             ? [
                 {
-                  view: {
+                  isDeferred: false,
+                  view: Object.assign(new obsidian.FileView(), {
                     file: { path: file.path },
                     semaphores: { saving: false, autosaving: false },
                     excalidrawAPI: {},
                     isDirty: () => false,
-                  },
+                  }),
                 },
               ]
             : [],
@@ -157,5 +163,27 @@ describe('applyFrontmatterWrite', () => {
 
     expect(capture.argCount).toBe(2);
     expect(plugin.lastPluginWriteMtime.get('e.md')).toBe(2000);
+  });
+  // Issue #22: a drawing tab left in the background (a DeferredView, no file)
+  // used to make every bulk run skip the whole vault.
+  it('writes normally while a deferred drawing tab sits in the background', async () => {
+    const plugin = createPlugin({ enableContentHashCheck: false });
+    const file = createMockFile('f.md');
+    (plugin as any).app = {
+      metadataCache: { getFileCache: () => ({ frontmatter: DRAWING }) },
+      workspace: {
+        getLeavesOfType: (type: string) =>
+          type === 'excalidraw'
+            ? [{ isDeferred: true, view: { getViewType: () => 'excalidraw' } }]
+            : [],
+      },
+    };
+    const capture: { argCount?: number } = {};
+    const app = createApp(capture);
+
+    await applyFrontmatterWrite(app, plugin, file, () => {});
+
+    expect(capture.argCount).toBe(2);
+    expect(plugin.lastPluginWriteMtime.get('f.md')).toBe(2000);
   });
 });
