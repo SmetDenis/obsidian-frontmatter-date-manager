@@ -1,4 +1,5 @@
 import {
+  FileView,
   MarkdownView,
   Notice,
   Plugin,
@@ -791,24 +792,36 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // fails CLOSED on any drift: semaphores missing/malformed, isDirty missing /
   // throwing / returning a non-boolean, or the view not mounted yet
   // (excalidrawAPI null) all count as blocked.
+  //
+  // Identity first, safety second (issue #22). Fail-closed applies only to a
+  // view PROVEN to show this file; a leaf that cannot be tied to any file is
+  // skipped, never a block for the whole vault. getLeavesOfType matches on
+  // getViewType(), so it also returns leaves with no file and no scene:
+  // - a DEFERRED leaf (public `isDeferred`, 1.7.2): every background tab that
+  //   was not shown when the layout was restored stays a DeferredView until
+  //   the user activates it - for days, not milliseconds;
+  // - a ghost pane ("This pane doesn't look like anything to me"), left in
+  //   place of a drawing tab when Excalidraw is disabled or fails to load;
+  // - a FileView between construction and loadFile() (`file` is null).
+  // None of them can lose strokes, and Excalidraw's own modifyEventHandler
+  // acts only on views whose `file.path` equals the written file - so a write
+  // cannot reach them. ExcalidrawView extends the shared TextFileView (the
+  // plugin requires the same `obsidian` module), so `instanceof FileView`
+  // holds across plugin bundles.
   private excalidrawWriteBlock(file: TFile): 'dirty' | 'busy' | null {
     for (const leaf of this.app.workspace.getLeavesOfType(
       EXCALIDRAW_VIEW_TYPE,
     )) {
-      const view = leaf.view as unknown as {
-        file?: { path?: unknown };
+      if (leaf.isDeferred) continue;
+      const candidate = leaf.view;
+      if (!(candidate instanceof FileView)) continue;
+      if (candidate.file?.path !== file.path) continue;
+
+      const view = candidate as unknown as {
         isDirty?: unknown;
         semaphores?: unknown;
         excalidrawAPI?: unknown;
       };
-
-      // A view whose `file` is not a usable string is either still mounting or
-      // drifted; it can neither be matched nor cleared, so it blocks every
-      // write rather than being skipped. That window is milliseconds long
-      // (view construction), and the cost of being wrong is a delayed stamp.
-      const path: unknown = view.file?.path;
-      if (typeof path !== 'string') return 'dirty';
-      if (path !== file.path) continue;
 
       // Idle must be PROVEN: both semaphores exactly false. `{}` (partial API
       // drift) leaves them undefined - "not true" is not the same as "false",
@@ -849,6 +862,15 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // share it.
   async getWriteBlock(file: TFile): Promise<WriteBlock | null> {
     if (await this.hasUnsavedEditorChanges(file)) return 'markdown';
+    // Second layer (issue #22): a note known NOT to be a drawing never
+    // consults Excalidraw views, so a future defect in the leaf scan cannot
+    // silently stop dating ordinary notes again. 'unknown' (metadataCache
+    // miss) still runs the scan - fail closed. A live drawing view of a file
+    // the cache calls 'not-drawing' needs something to have written the file
+    // without the marker - a write that already triggers Excalidraw's own
+    // reload - or a plain note forced into an Excalidraw view (accepted
+    // residual, see CLAUDE.md "Excalidraw drawings").
+    if (this.classifyExcalidraw(file) === 'not-drawing') return null;
     const excalidraw = this.excalidrawWriteBlock(file);
     if (excalidraw === 'busy') return 'excalidraw-busy';
     if (excalidraw === 'dirty') return 'excalidraw';

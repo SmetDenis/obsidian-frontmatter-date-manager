@@ -29,6 +29,9 @@ function setupOpenPlugin(
     // Open Excalidraw views: shapes mirroring the public ExcalidrawView
     // members the guard reads. Sentinels simulate API drift (fails closed).
     excalidrawLeaves?: Array<{
+      // 'deferred' = a background tab not activated since layout restore: no
+      // file, no scene, still returned by getLeavesOfType (issue #22).
+      kind?: 'loaded' | 'deferred';
       path?: string;
       isDirty?: boolean | 'missing';
       saving?: boolean;
@@ -61,15 +64,18 @@ function setupOpenPlugin(
       }))
     : [];
   const excalidrawLeaves = (opts.excalidrawLeaves ?? []).map((spec) => {
-    const view: Record<string, unknown> = {
+    if (spec.kind === 'deferred') {
+      return { isDeferred: true, view: { getViewType: () => 'excalidraw' } };
+    }
+    const view = Object.assign(new obsidian.FileView(), {
       file: { path: spec.path ?? openFile?.path },
       semaphores: { saving: spec.saving ?? false, autosaving: false },
       excalidrawAPI: {},
-    };
+    }) as unknown as Record<string, unknown>;
     if (spec.isDirty !== 'missing') {
       view.isDirty = () => spec.isDirty ?? false;
     }
-    return { view };
+    return { isDeferred: false, view };
   });
   plugin.app = {
     vault: {
@@ -213,10 +219,16 @@ describe('handleFileOpen - Excalidraw drawings never get a viewed stamp', () => 
 describe('handleFileOpen - Excalidraw views of a note block the viewed stamp', () => {
   // A Markdown note can also be open in an Excalidraw view only in exotic
   // setups, but the guard is shared (getWriteBlock): a dirty/unknown drawing
-  // view of the file must drop the stamp, and a clean one must not.
+  // view of the file must drop the stamp, and a clean one must not. The scan
+  // runs only while the note's classification is unknown (metadataCache miss,
+  // resolved from its text as "not a drawing" by the viewed check); a note
+  // indexed as not-a-drawing skips it (second layer, issue #22).
+  const UNINDEXED = { frontmatter: null, fileContent: '# note body' };
+
   it('drops the stamp when a dirty Excalidraw view shows the file', async () => {
     const file = createTFile('notes/plain.md');
     const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      ...UNINDEXED,
       excalidrawLeaves: [{ isDirty: true }],
     });
     await (plugin as any).handleFileOpen(file);
@@ -226,6 +238,7 @@ describe('handleFileOpen - Excalidraw views of a note block the viewed stamp', (
   it('fails closed when the Excalidraw view lacks isDirty (API drift)', async () => {
     const file = createTFile('notes/plain.md');
     const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      ...UNINDEXED,
       excalidrawLeaves: [{ isDirty: 'missing' }],
     });
     await (plugin as any).handleFileOpen(file);
@@ -235,10 +248,35 @@ describe('handleFileOpen - Excalidraw views of a note block the viewed stamp', (
   it('stamps when the Excalidraw view is mounted, idle, and clean', async () => {
     const file = createTFile('notes/plain.md');
     const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      ...UNINDEXED,
       excalidrawLeaves: [{ isDirty: false }],
     });
     await (plugin as any).handleFileOpen(file);
     expect(processFrontMatter).toHaveBeenCalledOnce();
+  });
+
+  // Issue #22: a drawing tab left in the background used to drop the viewed
+  // stamp of every note opened in the vault.
+  it('stamps a note while a deferred drawing tab sits in the background', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      ...UNINDEXED,
+      excalidrawLeaves: [{ kind: 'deferred' }],
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).toHaveBeenCalledOnce();
+  });
+
+  it('never scans Excalidraw leaves for a note indexed as not a drawing', async () => {
+    const file = createTFile('notes/plain.md');
+    const { plugin, processFrontMatter } = setupOpenPlugin({}, file, [], {
+      excalidrawLeaves: [{ isDirty: true }],
+    });
+    await (plugin as any).handleFileOpen(file);
+    expect(processFrontMatter).toHaveBeenCalledOnce();
+    expect(plugin.app.workspace.getLeavesOfType).not.toHaveBeenCalledWith(
+      'excalidraw',
+    );
   });
 });
 

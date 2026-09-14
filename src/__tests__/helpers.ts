@@ -9,8 +9,11 @@ export function createPlugin(
   // Minimal app so the dirty-editor guard (hasUnsavedEditorChanges, consulted
   // by every write path incl. bulk) can run: no leaf open -> nothing dirty.
   // Tests that care about editor state replace plugin.app with their own.
+  // metadataCache reports a miss, so getWriteBlock still runs the Excalidraw
+  // leaf scan (a known non-drawing would skip it).
   plugin.app = {
     workspace: { getLeavesOfType: () => [] },
+    metadataCache: { getFileCache: () => null },
   } as unknown as FrontmatterDateManagerPlugin['app'];
   return plugin;
 }

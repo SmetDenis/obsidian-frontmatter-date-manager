@@ -37,7 +37,14 @@ interface SetupOpts {
   // of ExcalidrawView the guard reads through `unknown` casts; the sentinel
   // values simulate API drift, which must fail closed.
   excalidrawLeaves?: Array<{
-    path?: string | number;
+    // 'loaded' (default) = a mounted ExcalidrawView (a FileView). The rest
+    // carry no file and no scene, and getLeavesOfType('excalidraw') still
+    // returns them: 'deferred' = a background tab not activated since the
+    // layout was restored (DeferredView, leaf.isDeferred), 'ghost' = the pane
+    // left behind when Excalidraw is disabled, 'no-file' = a FileView between
+    // construction and loadFile() (file === null). Issue #22.
+    kind?: 'loaded' | 'deferred' | 'ghost' | 'no-file';
+    path?: string;
     isDirty?: boolean | 'missing' | 'throws' | 'non-boolean';
     saving?: boolean;
     autosaving?: boolean;
@@ -109,9 +116,16 @@ function setup(opts: SetupOpts = {}) {
   // objects are plain shapes - the guard reads them structurally through
   // `unknown` casts, exactly as in production.
   const excalidrawLeaves = (opts.excalidrawLeaves ?? []).map((spec) => {
-    const view: Record<string, unknown> = {
-      file: { path: spec.path ?? file.path },
-    };
+    const kind = spec.kind ?? 'loaded';
+    if (kind === 'deferred' || kind === 'ghost') {
+      return {
+        isDeferred: kind === 'deferred',
+        view: { getViewType: () => 'excalidraw' },
+      };
+    }
+    const view = Object.assign(new obsidian.FileView(), {
+      file: kind === 'no-file' ? null : { path: spec.path ?? file.path },
+    }) as unknown as Record<string, unknown>;
     if (spec.semaphores === 'null') {
       view.semaphores = null;
     } else if (spec.semaphores === 'empty') {
@@ -135,7 +149,7 @@ function setup(opts: SetupOpts = {}) {
         return dirtySpec;
       };
     }
-    return { view };
+    return { isDeferred: false, view };
   });
 
   plugin.app = {
@@ -445,8 +459,13 @@ describe('handleFileChange', () => {
   // external write into a drawing idle > 5 min triggers Excalidraw's
   // reload(true) + clearDirty(), discarding unsaved strokes.
   describe('open Excalidraw view blocks the write', () => {
+    // The guard protects drawings: every fixture below is a drawing (truthy
+    // marker in metadataCache) unless a test says otherwise.
+    const DRAWING = { 'excalidraw-plugin': 'parsed' };
+
     it('writes when the only Excalidraw view of the file is mounted, idle, and clean', async () => {
       const { plugin, processFrontMatter, file } = setup({
+        frontmatter: DRAWING,
         excalidrawLeaves: [{ isDirty: false }],
       });
 
@@ -466,11 +485,11 @@ describe('handleFileChange', () => {
       ['semaphores present but empty (partial drift)', { semaphores: 'empty' }],
       ['view not mounted (excalidrawAPI null)', { api: 'missing' }],
       ['excalidrawAPI not an object', { api: 'primitive' }],
-      ['view.file.path not a string', { path: 42 }],
     ] as const)(
       'drops the pass without a timer on a %s',
       async (_label, leaf) => {
         const { plugin, processFrontMatter, file, timers } = setup({
+          frontmatter: DRAWING,
           excalidrawLeaves: [
             leaf as NonNullable<SetupOpts['excalidrawLeaves']>[0],
           ],
@@ -507,6 +526,7 @@ describe('handleFileChange', () => {
       'defers with a timer while the drawing is %s',
       async (_label, leaf) => {
         const { plugin, processFrontMatter, file, timers } = setup({
+          frontmatter: DRAWING,
           excalidrawLeaves: [
             leaf as NonNullable<SetupOpts['excalidrawLeaves']>[0],
           ],
@@ -522,6 +542,7 @@ describe('handleFileChange', () => {
 
     it('ignores an Excalidraw view showing a different file', async () => {
       const { plugin, processFrontMatter, file } = setup({
+        frontmatter: DRAWING,
         excalidrawLeaves: [{ path: 'other/drawing.md', isDirty: true }],
       });
 
@@ -531,8 +552,101 @@ describe('handleFileChange', () => {
       expect(processFrontMatter).toHaveBeenCalledTimes(1);
     });
 
+    // Issue #22: a leaf that cannot be tied to any file used to block EVERY
+    // write in the vault - silently, for as long as a drawing tab stayed in
+    // the background. None of these leaves holds a scene, so none can lose
+    // strokes; they must not block this file or any other.
+    describe('leaves with no file never block (issue #22)', () => {
+      it.each([
+        ['a deferred background tab', 'deferred'],
+        ['a ghost pane (Excalidraw disabled)', 'ghost'],
+        ['a FileView before loadFile (file null)', 'no-file'],
+      ] as const)('writes a drawing next to %s', async (_label, kind) => {
+        const { plugin, processFrontMatter, file, timers } = setup({
+          frontmatter: DRAWING,
+          excalidrawLeaves: [{ kind }],
+        });
+
+        const result = await plugin.handleFileChange(file);
+
+        expect(result).toEqual({ status: 'ok', wrote: true });
+        expect(processFrontMatter).toHaveBeenCalledTimes(1);
+        expect(timers.has(file.path)).toBe(false);
+      });
+
+      it('writes an unindexed note while a deferred drawing tab sits in the background', async () => {
+        // A metadataCache miss still runs the leaf scan (fail closed), so this
+        // exercises the scan itself, not the second-layer classification skip.
+        const { plugin, processFrontMatter, file } = setup({
+          excalidrawLeaves: [{ kind: 'deferred' }, { kind: 'ghost' }],
+        });
+        (
+          plugin.app.metadataCache as unknown as { getFileCache: () => null }
+        ).getFileCache = () => null;
+
+        const result = await plugin.handleFileChange(file);
+
+        expect(result).toEqual({ status: 'ok', wrote: true });
+        expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      });
+
+      it('still blocks on a dirty view of the file when a fileless leaf comes first', async () => {
+        // Skipping a fileless leaf must not end the scan early.
+        const { plugin, processFrontMatter, file } = setup({
+          frontmatter: DRAWING,
+          excalidrawLeaves: [{ kind: 'deferred' }, { isDirty: true }],
+        });
+
+        const result = await plugin.handleFileChange(file);
+
+        expect(result).toEqual({
+          status: 'ok',
+          wrote: false,
+          blocked: 'excalidraw',
+        });
+        expect(processFrontMatter).not.toHaveBeenCalled();
+      });
+    });
+
+    // Second layer (issue #22): a note the metadataCache knows is NOT a drawing
+    // never consults Excalidraw views, so a defect in the leaf scan cannot
+    // stop dating ordinary notes again.
+    it('never scans Excalidraw leaves for a note known not to be a drawing', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        frontmatter: { title: 'plain' },
+        excalidrawLeaves: [{ isDirty: true }],
+      });
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({ status: 'ok', wrote: true });
+      expect(processFrontMatter).toHaveBeenCalledTimes(1);
+      expect(plugin.app.workspace.getLeavesOfType).not.toHaveBeenCalledWith(
+        'excalidraw',
+      );
+    });
+
+    it('fails closed on a metadataCache miss: a dirty view of the file still blocks', async () => {
+      const { plugin, processFrontMatter, file } = setup({
+        excalidrawLeaves: [{ isDirty: true }],
+      });
+      (
+        plugin.app.metadataCache as unknown as { getFileCache: () => null }
+      ).getFileCache = () => null;
+
+      const result = await plugin.handleFileChange(file);
+
+      expect(result).toEqual({
+        status: 'ok',
+        wrote: false,
+        blocked: 'excalidraw',
+      });
+      expect(processFrontMatter).not.toHaveBeenCalled();
+    });
+
     it('blocks when Markdown leaves are clean but an Excalidraw view is dirty', async () => {
       const { plugin, processFrontMatter, file } = setup({
+        frontmatter: DRAWING,
         leaves: [{ dirty: false }],
         excalidrawLeaves: [{ isDirty: true }],
       });
@@ -549,6 +663,7 @@ describe('handleFileChange', () => {
 
     it('a dirty Markdown leaf wins over the Excalidraw block (defers with a timer)', async () => {
       const { plugin, file, timers } = setup({
+        frontmatter: DRAWING,
         leaves: [{ dirty: true }],
         excalidrawLeaves: [{ isDirty: true }],
       });
@@ -748,6 +863,7 @@ describe('handleFileChange', () => {
     // here so the two never drift apart (only e2e X6 covered it before).
     it('reports a blocked Excalidraw pass with its own notice, not a false success', async () => {
       const { plugin, file } = setup({
+        frontmatter: { 'excalidraw-plugin': 'parsed' },
         excalidrawLeaves: [{ isDirty: true }],
       });
 

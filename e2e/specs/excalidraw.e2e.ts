@@ -1,7 +1,7 @@
 /* global describe, it, before, after, afterEach -- Mocha BDD globals injected by the WebdriverIO test runner */
 import { browser } from '@wdio/globals';
 import { assert } from '../helpers/assert';
-import { createNote, readNote } from '../helpers/vault';
+import { appendToNote, createNote, readNote } from '../helpers/vault';
 import { setSettings } from '../helpers/settings';
 import { fmValue, getBody } from '../helpers/frontmatter';
 import {
@@ -15,12 +15,14 @@ import {
   ageDrawing,
   closeAllDrawings,
   createDrawing,
+  excalidrawLeafStates,
   fdmHandleFileChange,
   fdmWriteBlock,
   forceSaveDrawing,
   isDrawingDirty,
   markDrawingDirty,
   openDrawing,
+  openDrawingInHiddenTab,
   panZoomDrawing,
   sceneElementCount,
   setExcalidrawAutosave,
@@ -593,4 +595,147 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
 
     await setExcalidrawEnabled(true);
   });
+  it('X12: a drawing tab never shown since the layout loaded does not block other notes (issue #22)', async function () {
+    // Obsidian loads only the visible tabs when it restores a layout; every
+    // other tab holds a DeferredView - view type 'excalidraw', but no file and
+    // no scene - until the user clicks it. The guard used to treat that leaf
+    // as "unknown state" and block EVERY write in the vault, silently.
+    await setSettings(BASE);
+    // X11 re-enables Excalidraw with a marked note open, which Excalidraw then
+    // switches into a drawing view - start from a workspace with no drawings.
+    await closeAllDrawings();
+    const drawing = await createDrawing(DRAWINGS, nextName('x12'));
+    const anchor = await createNote('x12-anchor', '# anchor\n');
+    await openNote(anchor);
+    await openDrawingInHiddenTab(drawing);
+
+    const before = await excalidrawLeafStates();
+    assert.equal(
+      before.length,
+      1,
+      `setup: exactly one Excalidraw leaf, got ${JSON.stringify(before)}`,
+    );
+    assert.equal(
+      before[0]?.isDeferred,
+      true,
+      'setup: the tab must be deferred',
+    );
+    assert.equal(
+      before[0]?.filePath,
+      null,
+      'setup: a deferred view has no file',
+    );
+
+    // The gate every write path consults (automatic, command, viewed, bulk,
+    // rename suppression): neither an unrelated note nor the deferred drawing
+    // itself - which holds no scene that a write could discard - is blocked.
+    const plain = await createNote('x12-plain', '# plain\n');
+    assert.equal(
+      await fdmWriteBlock(plain),
+      null,
+      'plain note must not be blocked',
+    );
+    assert.equal(
+      await fdmWriteBlock(drawing),
+      null,
+      'deferred drawing must not be blocked',
+    );
+
+    // The reporter's scenario: a new note filled right after creation gets its
+    // dates from the automatic pipeline.
+    await appendToNote(plain, '\ntyped after creation\n');
+    await browser.waitUntil(
+      async () => {
+        const text = await readNote(plain);
+        return (
+          fmValue(text, 'created') !== undefined &&
+          fmValue(text, 'updated') !== undefined
+        );
+      },
+      {
+        timeout: 20_000,
+        interval: 250,
+        timeoutMsg:
+          'the new note never got its dates next to a deferred drawing tab',
+      },
+    );
+
+    // The manual command reports a real write, not the drawing notice.
+    await armNoticeProbe();
+    await browser.executeObsidianCommand(COMMAND_ID);
+    await browser.pause(1000);
+    const notices = await collectedNotices();
+    assert.ok(
+      notices.some((n) => /Timestamps updated/.test(n)),
+      `expected "Timestamps updated", got: ${JSON.stringify(notices)}`,
+    );
+    assert.ok(
+      !notices.some((n) => /drawing has unsaved changes/.test(n)),
+      `the drawing notice must not appear, got: ${JSON.stringify(notices)}`,
+    );
+
+    // Nothing above may have loaded the tab, or the scenario proved nothing.
+    const after = await excalidrawLeafStates();
+    assert.equal(after[0]?.isDeferred, true, 'the tab must still be deferred');
+    await closeAllDrawings();
+  });
+
+  it('X13: a drawing tab restored while Excalidraw is not loaded does not block other notes (issue #22)', async function () {
+    // With Excalidraw disabled or failed to load, a drawing tab in the layout
+    // becomes a ghost pane: view type 'excalidraw', not a FileView, no file.
+    // (Disabling Excalidraw at runtime does not produce one - it switches its
+    // own tabs back to Markdown - so the restore path is driven directly.)
+    await setSettings(BASE);
+    const drawing = await createDrawing(DRAWINGS, nextName('x13'));
+    const anchor = await createNote('x13-anchor', '# anchor\n');
+    await closeAllDrawings();
+    await setExcalidrawEnabled(false);
+    try {
+      await openNote(anchor);
+      await openDrawingInHiddenTab(drawing);
+
+      const ghosts = await excalidrawLeafStates();
+      assert.equal(ghosts.length, 1, 'setup: exactly one Excalidraw leaf');
+      assert.equal(
+        ghosts[0]?.isFileView,
+        false,
+        'setup: a ghost pane is not a FileView',
+      );
+      assert.equal(
+        ghosts[0]?.filePath,
+        null,
+        'setup: a ghost pane has no file',
+      );
+
+      const plain = await createNote('x13-plain', '# plain\n');
+      assert.equal(
+        await fdmWriteBlock(plain),
+        null,
+        'plain note must not be blocked',
+      );
+
+      await appendToNote(plain, '\ntyped after creation\n');
+      await browser.waitUntil(
+        async () => fmValue(await readNote(plain), 'updated') !== undefined,
+        {
+          timeout: 20_000,
+          interval: 250,
+          timeoutMsg:
+            'the note never got its dates next to a ghost drawing pane',
+        },
+      );
+    } finally {
+      await closeAllDrawings();
+      await setExcalidrawEnabled(true);
+    }
+  });
 });
+
+/** Open a note in the active leaf. */
+async function openNote(path: string): Promise<void> {
+  await browser.executeObsidian(async ({ app, obsidian }, p) => {
+    const f = app.vault.getAbstractFileByPath(p);
+    if (!(f instanceof obsidian.TFile)) throw new Error(`no such file: ${p}`);
+    await app.workspace.getLeaf(false).openFile(f);
+  }, path);
+}

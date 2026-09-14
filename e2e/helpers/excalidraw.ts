@@ -384,3 +384,49 @@ export async function closeAllDrawings(): Promise<void> {
     await new Promise<void>((resolve) => window.setTimeout(resolve, 500));
   });
 }
+
+/**
+ * Put a drawing into a NEW tab of the active tab group WITHOUT showing it,
+ * while the note in the active leaf stays in front.
+ *
+ * Runs `WorkspaceLeaf.setViewState` on a hidden leaf with a persisted-style
+ * state (`icon` + `title`) - the exact branch Obsidian takes for every tab
+ * that was not visible when the layout was restored. With Excalidraw loaded,
+ * that leaf becomes a DeferredView (`isDeferred`, no `file`) until the user
+ * activates it; with Excalidraw NOT loaded it becomes a ghost pane ("This
+ * pane doesn't look like anything to me"). Issue #22. Callers must assert the
+ * resulting state via `excalidrawLeafStates()` - it is the precondition the
+ * scenario relies on.
+ */
+export async function openDrawingInHiddenTab(path: string): Promise<void> {
+  await browser.executeObsidian(async ({ app }, p) => {
+    const front = app.workspace.getMostRecentLeaf();
+    if (!front) throw new Error('open a note first: no active leaf');
+    const hidden = app.workspace.getLeaf('tab');
+    app.workspace.setActiveLeaf(front, { focus: true });
+    // `icon`/`title` are persisted by getViewState() but not part of the
+    // public ViewState typing; passed through a variable, not a literal.
+    const restored = {
+      type: 'excalidraw',
+      state: { file: p },
+      icon: 'excalidraw-icon',
+      title: p,
+    };
+    await hidden.setViewState(restored);
+  }, path);
+}
+
+/** Every leaf `getLeavesOfType('excalidraw')` returns, as FDM's guard sees it. */
+export async function excalidrawLeafStates(): Promise<
+  { isDeferred: boolean; isFileView: boolean; filePath: string | null }[]
+> {
+  return browser.executeObsidian(({ app, obsidian }) =>
+    app.workspace.getLeavesOfType('excalidraw').map((leaf) => ({
+      isDeferred: leaf.isDeferred,
+      isFileView: leaf.view instanceof obsidian.FileView,
+      filePath:
+        (leaf.view as unknown as { file?: { path?: string } | null }).file
+          ?.path ?? null,
+    })),
+  );
+}
