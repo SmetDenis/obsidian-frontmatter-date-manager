@@ -49,11 +49,14 @@ The heart of the plugin. Flow for an automatic edit:
 
 ```
 vault 'modify' event
-  -> guards (auto-update on? not bulkRunning? not paused? is a TFile?)
-  -> recentlyCreated? defer to new-file window
+  -> guards (automaticDatesAllowed(): switch on and not paused? is a TFile?)
+  -> recentlyCreated? remember it for the new-file window (even mid-bulk)
+  -> not bulkRunning?
   -> per-file debounce (MODIFY_DEBOUNCE_MS = 2000ms)   [src/constants.ts]
-  -> processFileWithLock()  (processingFiles Set prevents concurrent writes)
-  -> handleFileChange()
+  -> processFileWithLock(file, origin)  (processingFiles Set prevents concurrent writes)
+  -> handleFileChange(file, origin)
+       -> origin 'auto' and automaticDatesAllowed() false? drop (re-checked
+          again right before the write)
        -> self-trigger check: lastPluginWriteMtime matches file.stat.mtime? skip
        -> shouldFileBeIgnored(): extension, Canvas.md, Excalidraw (only when
           trackExcalidraw is off), filter rules, empty file, then SHA-256 hash
@@ -100,9 +103,17 @@ The `updated` branch of `computeFrontmatterUpdates` (and the `viewed` write in `
 
 After computing candidate values, the final `created`/`updated` pair is checked with `isInversion()` (symmetric, tolerance-aware). If inverted and a non-`disabled` strategy is configured, `applyInversionFix()` rewrites the pair and a one-time-per-session Notice is shown. Default strategy is `disabled` (no-op for existing users until opt-in).
 
+### 5.4a Automatic dates master switch and work origin (issue #24)
+
+`enableAutoUpdate` (UI: "Automatic dates", first row of the settings) is the switch for every automatic write: `created`, `updated`, `viewed`, and rename suppression. `automaticDatesAllowed()` (switch on and not paused) is checked when an event arrives AND when queued work runs, so switching off or pausing also stops writes already waiting on a debounce or retry timer. Every pass carries a `WorkOrigin`: `'auto'` for event-driven work, `'manual'` for the "Update timestamps for current file" command. All deferral paths (dirty buffer, Excalidraw mid-save, rate limit, file lock) go through one `scheduleRetry(file, delay, origin)`; because a single per-file timer serves both origins, manual requests are recorded in `manualPending` so an automatic re-arm never downgrades a manual retry. Manual work ignores the switch. There is no catch-up when the switch turns back on: a dropped pass does not refresh the hash, so the next edit detects the change. `created` is filled on a note's first processed edit, never on the `create` event itself.
+
+A manual pass on content whose hash still matches the cache runs in **fill-missing-only** mode: it adds a missing `created`/`updated`, keeps an existing `updated`, does not move the edit counter, schedules no rate-limit retry, and skips the out-of-order fix.
+
+The status bar indicator (`FDM: on` / `FDM: off` / `FDM: paused (Xm)`) follows `statusBarMode` (`always` / `when-inactive` / `never`); clicks and the toggle command go through `setAutomaticDates()`, which also refreshes the declarative settings snapshot. While the switch is off and any date is enabled, settings show a hint row (the only signal on mobile).
+
 ### 5.5 New-file delay
 
-Template plugins (Templater, Daily Notes) populate a file right after creation. `delayForNewFiles` (default 5000ms) suppresses processing during a window; a deferred modify is replayed once the window expires, so template-populated files still get stamped without capturing the empty initial state.
+Template plugins (Templater, Daily Notes) populate a file right after creation. `delayForNewFiles` (default 5000ms) suppresses processing during a window; a deferred modify is replayed once the window expires, so template-populated files still get stamped without capturing the empty initial state. The `create` listener is registered inside `workspace.onLayoutReady`, because Obsidian fires `create` for every existing file while the vault loads. Renaming a note inside the window re-arms it under the new path with the remaining time (`migratePendingWork`, which also moves a pending retry); a window that expires during a bulk run is extended until the run ends.
 
 ### 5.6 Hash cache lifecycle
 

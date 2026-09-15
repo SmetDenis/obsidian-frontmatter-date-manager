@@ -20,12 +20,15 @@ export const STRINGS_FR: Strings = {
   },
   commands: {
     updateCurrentFile: 'Mettre à jour les dates du fichier actuel',
-    toggleAutoUpdate: 'Activer/désactiver la mise à jour automatique',
-    pauseAutoUpdate: 'Suspendre la mise à jour automatique pendant 5 minutes',
+    toggleAutomaticDates: 'Activer ou désactiver les dates automatiques',
+    pauseAutomaticDates: 'Suspendre les dates automatiques pendant 5 minutes',
   },
   statusBar: {
-    paused: 'En pause',
-    pausedWithMinutes: 'En pause ({remaining}min)',
+    on: 'FDM : activé',
+    off: 'FDM : désactivé',
+    pausedWithMinutes: 'FDM : en pause ({remaining}min)',
+    tooltip:
+      'Frontmatter Date Manager : cliquez pour activer ou désactiver les dates automatiques',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_FR: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Toutes les dates sont déjà renseignées, et la note n’a pas changé depuis la dernière mise à jour.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_FR: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Échec de la mise à jour des dates : {reason}',
     failedToUpdate: 'Échec de la mise à jour des dates.',
-    autoUpdateEnabled: 'Mise à jour automatique activée',
-    autoUpdateDisabled: 'Mise à jour automatique désactivée',
-    autoUpdatePausedForMinutes:
-      'Mise à jour automatique suspendue pendant {minutes} minutes. Elle reprendra automatiquement.',
-    autoUpdateResumed: 'Mise à jour automatique reprise.',
+    automaticDatesOn: 'Dates automatiques activées.',
+    automaticDatesOff:
+      'Dates automatiques désactivées. Les dates ne changent désormais que via la palette de commandes et les outils groupés.',
+    automaticDatesPausedForMinutes:
+      'Dates automatiques suspendues pendant {minutes} minutes. Elles reprendront automatiquement.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager : dates automatiques reprises.',
+    nothingToPause:
+      'Les dates automatiques sont désactivées, il n’y a donc rien à suspendre.',
+    automaticDatesOffSkipped:
+      'Les dates automatiques sont désactivées, cette note n’a donc pas été mise à jour.',
     malformedFrontmatter:
       'Échec de Frontmatter Date Manager\nPropriétés mal formées dans ce fichier : {filePath}\n\n{message}',
   },
@@ -93,10 +103,16 @@ export const STRINGS_FR: Strings = {
     dates: {
       enableNoneHint:
         'Activez au moins une date ci-dessus pour configurer le module.',
+      automatic: {
+        name: 'Dates automatiques',
+        desc: 'Laissez le module maintenir automatiquement les dates ci-dessous à jour : la date de création est ajoutée lors de la première modification d’une note, la date de dernière modification à chaque modification, et la date de dernière ouverture lorsque vous ouvrez une note. Lorsque désactivé, les dates ne changent que via la commande "Mettre à jour les dates du fichier actuel" et les outils groupés.',
+        offHint:
+          'Les dates automatiques sont désactivées, les dates ci-dessus ne sont donc pas ajoutées ni mises à jour automatiquement. Activez "Dates automatiques" ci-dessus, ou utilisez la commande "Mettre à jour les dates du fichier actuel" ou les outils groupés.',
+      },
       created: {
         enableName: 'Suivre la date de création',
         enableDesc:
-          'Ajouter une date de création aux notes qui n’en ont pas encore.',
+          'Ajouter une date de création aux notes qui n’en ont pas encore. Elle est ajoutée lors de la première modification de la note.',
         propertyName: 'Propriété de création',
         propertyDesc:
           'Nom de la propriété où la date de création est enregistrée.',
@@ -154,9 +170,12 @@ export const STRINGS_FR: Strings = {
     },
     behavior: {
       heading: 'Comportement',
-      autoUpdate: {
-        name: 'Mise à jour automatique',
-        desc: 'Mettre à jour automatiquement les dates quand vous modifiez une note. Également disponible depuis la palette de commandes.',
+      statusBarMode: {
+        name: 'Indicateur de la barre d’état',
+        desc: 'Quand afficher dans la barre d’état si les dates automatiques sont activées. Cliquez sur l’indicateur pour les activer ou les désactiver. La barre d’état n’est pas disponible sur mobile.',
+        optionAlways: 'Toujours',
+        optionWhenInactive: 'Seulement si désactivées ou en pause',
+        optionNever: 'Jamais',
       },
       minSeconds: {
         name: 'Secondes minimum entre les mises à jour',
@@ -360,9 +379,9 @@ export const STRINGS_FR: Strings = {
       overrideOptionFillMissing: 'Manquantes seulement (sûr)',
       overrideOptionOverwriteAll:
         'Tout écraser (remplace les valeurs existantes)',
-      autoUpdateNoteTitle: 'Remarque sur la mise à jour automatique :',
+      autoUpdateNoteTitle: 'Remarque sur les dates automatiques :',
       autoUpdateNoteBody:
-        'Si la mise à jour automatique a été active, les dates du fichier sur le disque peuvent déjà refléter les modifications du module, et non les dates d’origine. Pour de meilleurs résultats, utilisez cette fonction avant d’activer la mise à jour automatique ou juste après l’installation du module.',
+        'Si les dates automatiques ont été activées, les dates du fichier sur le disque peuvent déjà refléter les modifications du module, et non les dates d’origine. Pour de meilleurs résultats, utilisez cette fonction avant d’activer les dates automatiques ou juste après l’installation du module.',
       warningTitleCreatedUnreliable:
         'La date de création du fichier n’est pas fiable sur certaines plateformes',
       warningTitlePlatformNote: 'Remarque sur la plateforme',

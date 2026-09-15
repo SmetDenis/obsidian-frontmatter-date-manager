@@ -3,6 +3,7 @@ import { browser, $, $$ } from '@wdio/globals';
 const PLUGIN_ID = 'frontmatter-date-manager';
 
 const EXCLUDE_INPUT = '.frontmatter-date-manager-exclude-input';
+const AUTOMATIC_OFF_HINT = '.frontmatter-date-manager-automatic-off-hint';
 const EXCLUDE_ADD = '.frontmatter-date-manager-exclude-add';
 const EXCLUDE_LIST = '.frontmatter-date-manager-exclude-list';
 // Real entries only. The list renders two non-entry rows as .setting-item too:
@@ -110,6 +111,16 @@ export const settingsTab = {
       }
     }
     throw new Error(`no exclude-list row named "${label}"`);
+  },
+
+  // --- "Automatic dates are off" hint (issue #24) ---
+
+  /** True when the automatic-dates-off hint is rendered and displayed. */
+  async automaticDatesOffHintShown(): Promise<boolean> {
+    for (const el of await $$(AUTOMATIC_OFF_HINT).getElements()) {
+      if (await el.isDisplayed()) return true;
+    }
+    return false;
   },
 
   async close(): Promise<void> {

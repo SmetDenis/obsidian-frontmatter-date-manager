@@ -23,7 +23,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 ## Features
 
 - Auto-update `updated` field on file modification (syncs with `mtime`)
-- Auto-set `created` field on new files (syncs with `ctime`)
+- Auto-set a missing `created` field on a note's first edit (syncs with `ctime`)
 - Auto-set `viewed` field when a file is opened - unique feature not found in other plugins (disabled by default)
 - Count how often you edit each note (`updated_count`, disabled by default) - an approximate activity signal you can sort or filter in Bases/Dataview to find your most-edited notes
 - Customizable date format (uses [date-fns](https://date-fns.org/v4.1.0/docs/format) syntax)
@@ -40,8 +40,8 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Rename a property across all notes (migrate old names with preview)
 - Reformat existing dates from one format to another (parse old, write new, with preview)
 - Every bulk preview is paginated (Prev/Next), shows all affected files (no row cap), and can download the full diff as a TSV file on desktop (saved to your system downloads, never written into your vault)
-- Toggle auto-update via command palette or status bar
-- Pause auto-update for 5 minutes with automatic resume
+- One "Automatic dates" switch for all automatic writes, from settings, the command palette, or the status bar (with a clear hint in settings while it is off)
+- Pause automatic dates for 5 minutes with automatic resume
 - Multilingual UI following Obsidian's app language - English and Russian hand-checked, plus 19 baseline translations, all with per-key fallback to English
 - Works on desktop and mobile
 
@@ -73,7 +73,9 @@ into `<vault>/.obsidian/plugins/frontmatter-date-manager/`.
 
 ## Usage
 
-The plugin runs automatically after installation. When you edit a markdown file, it updates the `updated` property with the current modification time. If the `created` property is missing, it sets it to the file's creation time. Optionally, enable the `viewed` date in settings to record when you last opened each note.
+The plugin runs automatically after installation. When you edit a markdown file, it updates the `updated` property with the current modification time. If the `created` property is missing, it sets it to the file's creation time - on that first edit, not at the moment the file appears (a note created with content and never edited, e.g. by a web clipper, gets `created` on its first edit or from the command below). Optionally, enable the `viewed` date in settings to record when you last opened each note.
+
+All of this is controlled by one switch, **Automatic dates**, at the top of the settings. With it off the plugin never writes on its own - not `created`, `updated`, or `viewed` - and dates change only through the command below or the bulk tools. Turning it off also stops writes that were already waiting (for example, the short delay after an edit). Settings show a hint while it is off.
 
 Configure behavior in **Settings -> Frontmatter Date Manager**.
 
@@ -81,11 +83,11 @@ Configure behavior in **Settings -> Frontmatter Date Manager**.
 
 | Command                                | Description                                             |
 |----------------------------------------|---------------------------------------------------------|
-| **Update timestamps for current file** | Manually trigger a timestamp update for the active note |
-| **Toggle auto-update on/off**          | Enable or disable automatic timestamp updates           |
-| **Pause auto-update for 5 minutes**    | Temporarily pause updates with automatic resume         |
+| **Update timestamps for current file** | Update the active note's dates now. Works even while automatic dates are off. If the note has not changed since the last update, it only adds dates that are missing and keeps the existing ones |
+| **Turn automatic dates on or off**     | Turn the "Automatic dates" switch on or off              |
+| **Pause automatic dates for 5 minutes** | Temporarily pause automatic dates with automatic resume |
 
-**Status bar indicator** - shows current state (`Paused` or `Paused (Xm)`); click to toggle auto-update on/off.
+**Status bar indicator** - shows `FDM: off` or `FDM: paused (Xm)` (and `FDM: on` if you choose "Always"); click it to turn automatic dates on or off. The "Status bar indicator" setting chooses when it appears. Mobile has no status bar - use the settings hint instead.
 
 ## Settings
 
@@ -93,7 +95,8 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 
 | Setting                            | Default                 | Description                                                                      |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
-| Track creation date                | `true`                  | Add a creation date to notes that don't have one yet                             |
+| Automatic dates                    | `true`                  | Let the plugin add and update the dates below on its own; when off, only the command and bulk tools write |
+| Track creation date                | `true`                  | Add a creation date to notes that don't have one yet, on the note's first edit   |
 | Created property                   | `created`               | Property name where the creation date is saved                                   |
 | Track last-edited date             | `true`                  | Update this date whenever you edit the note                                      |
 | Updated property                   | `updated`               | Property name where the last-edited date is saved                                |
@@ -104,7 +107,7 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 | Date format                        | `yyyy-MM-dd'T'HH:mm:ss` | Date & time format ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format))  |
 | Timezone                           | `""` (system)           | IANA timezone identifier; empty uses the system timezone                         |
 | Save number-only dates without quotes | `false`              | Output numbers instead of quoted text for digit-only formats                     |
-| Auto-update                        | `true`                  | Automatically update dates when you edit a note                                  |
+| Status bar indicator               | `Only when off or paused` | When to show the automatic dates state in the status bar (`Always` / `Only when off or paused` / `Never`) |
 | Minimum seconds between updates    | `30`                    | Minimum interval between date updates                                            |
 | Include Excalidraw drawings        | `true`                  | Add dates to Excalidraw drawings too; turn off to leave drawings alone           |
 | Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments (own sub-page) |
@@ -183,6 +186,10 @@ The default `yyyy-MM-dd'T'HH:mm:ss` (ISO 8601) works out of the box. Dataview ca
 Only if you customize the date format. Key difference: use `yyyy` (not `YYYY`) for year, `dd` (not `DD`) for day. The plugin shows a hint in settings if it detects a Moment.js-style format.
 
 ### Everyday usage
+
+> I only want the creation date. Which settings do I need?
+
+Keep **Automatic dates** on, keep **Track creation date** on, and turn off **Track last-edited date** and **Track last-opened date**. **Automatic dates** is the switch for everything the plugin writes on its own, including `created`: with it off, no date is added automatically, and the settings show a hint saying so. `created` is added on a note's first edit; for notes that are never edited, run **Update timestamps for current file** or the bulk "Set dates from the file's own dates" tool.
 
 > I enabled "viewed" timestamps but they don't appear in some notes.
 

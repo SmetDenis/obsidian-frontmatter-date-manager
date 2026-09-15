@@ -20,12 +20,15 @@ export const STRINGS_FA: Strings = {
   },
   commands: {
     updateCurrentFile: 'به‌روزرسانی تاریخ‌ها در پرونده فعلی',
-    toggleAutoUpdate: 'روشن/خاموش کردن به‌روزرسانی خودکار',
-    pauseAutoUpdate: 'مکث به‌روزرسانی خودکار به مدت 5 دقیقه',
+    toggleAutomaticDates: 'روشن یا خاموش کردن تاریخ‌های خودکار',
+    pauseAutomaticDates: 'مکث تاریخ‌های خودکار به مدت 5 دقیقه',
   },
   statusBar: {
-    paused: 'متوقف‌شده',
-    pausedWithMinutes: 'متوقف‌شده ({remaining} دقیقه)',
+    on: 'FDM: روشن',
+    off: 'FDM: خاموش',
+    pausedWithMinutes: 'FDM: متوقف‌شده ({remaining} دقیقه)',
+    tooltip:
+      'Frontmatter Date Manager: برای روشن یا خاموش کردن تاریخ‌های خودکار کلیک کنید',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_FA: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'همه تاریخ‌ها از پیش پر شده‌اند و محتوای یادداشت از آخرین به‌روزرسانی تغییر نکرده است.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_FA: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'به‌روزرسانی تاریخ‌ها ناموفق بود: {reason}',
     failedToUpdate: 'به‌روزرسانی تاریخ‌ها ناموفق بود.',
-    autoUpdateEnabled: 'به‌روزرسانی خودکار فعال شد',
-    autoUpdateDisabled: 'به‌روزرسانی خودکار غیرفعال شد',
-    autoUpdatePausedForMinutes:
-      'به‌روزرسانی خودکار به مدت {minutes} دقیقه متوقف شد. به‌طور خودکار از سر گرفته می‌شود.',
-    autoUpdateResumed: 'به‌روزرسانی خودکار از سر گرفته شد.',
+    automaticDatesOn: 'تاریخ‌های خودکار روشن شدند.',
+    automaticDatesOff:
+      'تاریخ‌های خودکار خاموش شدند. اکنون تاریخ‌ها فقط از طریق پالت فرمان و ابزارهای گروهی تغییر می‌کنند.',
+    automaticDatesPausedForMinutes:
+      'تاریخ‌های خودکار به مدت {minutes} دقیقه متوقف شدند. خودشان از سر گرفته می‌شوند.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: تاریخ‌های خودکار از سر گرفته شدند.',
+    nothingToPause:
+      'تاریخ‌های خودکار خاموش هستند، پس چیزی برای مکث وجود ندارد.',
+    automaticDatesOffSkipped:
+      'تاریخ‌های خودکار خاموش هستند، پس این یادداشت به‌روزرسانی نشد.',
     malformedFrontmatter:
       'Frontmatter Date Manager ناموفق بود\nویژگی‌های نادرست در این پرونده: {filePath}\n\n{message}',
   },
@@ -92,9 +102,16 @@ export const STRINGS_FA: Strings = {
     dates: {
       enableNoneHint:
         'برای راه‌اندازی افزونه، دست‌کم یکی از تاریخ‌های بالا را روشن کنید.',
+      automatic: {
+        name: 'تاریخ‌های خودکار',
+        desc: 'اجازه بده افزونه تاریخ‌های زیر را خودش به‌روز نگه دارد: تاریخ ایجاد در نخستین ویرایش یادداشت افزوده می‌شود، تاریخ آخرین ویرایش در هر ویرایش، و تاریخ آخرین بازکردن هنگام بازکردن یادداشت. وقتی خاموش باشد، تاریخ‌ها فقط از طریق فرمان «به‌روزرسانی تاریخ‌ها در پرونده فعلی» و ابزارهای گروهی تغییر می‌کنند.',
+        offHint:
+          'تاریخ‌های خودکار خاموش هستند، پس تاریخ‌های بالا خودشان افزوده یا به‌روز نمی‌شوند. «تاریخ‌های خودکار» را در بالا روشن کنید، یا از فرمان «به‌روزرسانی تاریخ‌ها در پرونده فعلی» یا ابزارهای گروهی استفاده کنید.',
+      },
       created: {
         enableName: 'ردیابی تاریخ ایجاد',
-        enableDesc: 'افزودن تاریخ ایجاد به یادداشت‌هایی که هنوز آن را ندارند.',
+        enableDesc:
+          'افزودن تاریخ ایجاد به یادداشت‌هایی که هنوز آن را ندارند. در نخستین ویرایش یادداشت افزوده می‌شود.',
         propertyName: 'ویژگی تاریخ ایجاد',
         propertyDesc: 'نام ویژگی‌ای که تاریخ ایجاد در آن ذخیره می‌شود.',
         propertyPlaceholder: 'Created',
@@ -148,9 +165,12 @@ export const STRINGS_FA: Strings = {
     },
     behavior: {
       heading: 'رفتار',
-      autoUpdate: {
-        name: 'به‌روزرسانی خودکار',
-        desc: 'هنگام ویرایش یادداشت، تاریخ‌ها را به‌طور خودکار به‌روز کن. از پالت فرمان نیز در دسترس است.',
+      statusBarMode: {
+        name: 'نشانگر نوار وضعیت',
+        desc: 'چه زمانی در نوار وضعیت نشان داده شود که تاریخ‌های خودکار روشن هستند یا نه. برای روشن یا خاموش کردن آن‌ها روی نشانگر کلیک کنید. نوار وضعیت در موبایل در دسترس نیست.',
+        optionAlways: 'همیشه',
+        optionWhenInactive: 'فقط وقتی خاموش یا متوقف است',
+        optionNever: 'هرگز',
       },
       minSeconds: {
         name: 'حداقل ثانیه بین به‌روزرسانی‌ها',
@@ -346,9 +366,9 @@ export const STRINGS_FA: Strings = {
         'فقط تاریخ‌های موجودنبوده را پر کن، یا تاریخ‌های موجود را بازنویسی کن.',
       overrideOptionFillMissing: 'فقط موارد موجودنبوده (ایمن)',
       overrideOptionOverwriteAll: 'بازنویسی همه (موجودها را جایگزین می‌کند)',
-      autoUpdateNoteTitle: 'یادداشتی درباره به‌روزرسانی خودکار:',
+      autoUpdateNoteTitle: 'یادداشتی درباره تاریخ‌های خودکار:',
       autoUpdateNoteBody:
-        'اگر به‌روزرسانی خودکار فعال بوده باشد، تاریخ‌های خود پرونده روی دیسک ممکن است از پیش ویرایش‌های خود افزونه را بازتاب دهند، نه تاریخ‌های اصلی را. برای بهترین نتیجه، از این ویژگی پیش از فعال‌کردن به‌روزرسانی خودکار یا درست پس از نصب افزونه استفاده کنید.',
+        'اگر تاریخ‌های خودکار روشن بوده باشند، تاریخ‌های خود پرونده روی دیسک ممکن است از پیش ویرایش‌های خود افزونه را بازتاب دهند، نه تاریخ‌های اصلی را. برای بهترین نتیجه، از این ویژگی پیش از روشن‌کردن تاریخ‌های خودکار یا درست پس از نصب افزونه استفاده کنید.',
       warningTitleCreatedUnreliable:
         'تاریخ ایجاد پرونده در برخی سکوها قابل اعتماد نیست',
       warningTitlePlatformNote: 'یادداشت درباره سکو',

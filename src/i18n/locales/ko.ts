@@ -20,12 +20,14 @@ export const STRINGS_KO: Strings = {
   },
   commands: {
     updateCurrentFile: '현재 파일의 날짜 업데이트',
-    toggleAutoUpdate: '자동 업데이트 켜기/끄기',
-    pauseAutoUpdate: '자동 업데이트 5분간 일시 중지',
+    toggleAutomaticDates: '자동 날짜 켜기 또는 끄기',
+    pauseAutomaticDates: '자동 날짜 5분간 일시 중지',
   },
   statusBar: {
-    paused: '일시 중지됨',
-    pausedWithMinutes: '일시 중지됨 ({remaining}분)',
+    on: 'FDM: 켜짐',
+    off: 'FDM: 꺼짐',
+    pausedWithMinutes: 'FDM: 일시 중지됨 ({remaining}분)',
+    tooltip: 'Frontmatter Date Manager: 클릭하여 자동 날짜를 켜거나 끄세요',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +41,8 @@ export const STRINGS_KO: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      '모든 날짜가 이미 채워져 있고, 마지막 업데이트 이후 노트가 변경되지 않았습니다.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +52,16 @@ export const STRINGS_KO: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '날짜를 업데이트하지 못했습니다: {reason}',
     failedToUpdate: '날짜를 업데이트하지 못했습니다.',
-    autoUpdateEnabled: '자동 업데이트 켜짐',
-    autoUpdateDisabled: '자동 업데이트 꺼짐',
-    autoUpdatePausedForMinutes:
-      '자동 업데이트가 {minutes}분간 일시 중지되었습니다. 자동으로 다시 시작됩니다.',
-    autoUpdateResumed: '자동 업데이트가 다시 시작되었습니다.',
+    automaticDatesOn: '자동 날짜가 켜졌습니다.',
+    automaticDatesOff:
+      '자동 날짜가 꺼졌습니다. 이제 날짜는 명령어 팔레트와 일괄 작업을 통해서만 변경됩니다.',
+    automaticDatesPausedForMinutes:
+      '자동 날짜가 {minutes}분간 일시 중지되었습니다. 자동으로 다시 시작됩니다.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: 자동 날짜가 다시 시작되었습니다.',
+    nothingToPause: '자동 날짜가 꺼져 있어 일시 중지할 것이 없습니다.',
+    automaticDatesOffSkipped:
+      '자동 날짜가 꺼져 있어 이 노트는 업데이트되지 않았습니다.',
     malformedFrontmatter:
       'Frontmatter Date Manager 실패\n이 파일의 속성 형식이 잘못되었습니다: {filePath}\n\n{message}',
   },
@@ -90,9 +98,16 @@ export const STRINGS_KO: Strings = {
     },
     dates: {
       enableNoneHint: '플러그인을 설정하려면 위에서 날짜를 하나 이상 켜세요.',
+      automatic: {
+        name: '자동 날짜',
+        desc: '플러그인이 아래 날짜를 스스로 최신 상태로 유지하도록 합니다: 생성 날짜는 노트를 처음 편집할 때 추가되고, 최종 편집 날짜는 편집할 때마다, 최종 열람 날짜는 노트를 열 때 추가됩니다. 꺼져 있으면 날짜는 "현재 파일의 날짜 업데이트" 명령과 일괄 작업을 통해서만 변경됩니다.',
+        offHint:
+          '자동 날짜가 꺼져 있어 위의 날짜가 스스로 추가되거나 업데이트되지 않습니다. 위의 "자동 날짜"를 켜거나, "현재 파일의 날짜 업데이트" 명령 또는 일괄 작업을 사용하세요.',
+      },
       created: {
         enableName: '생성 날짜 추적',
-        enableDesc: '아직 생성 날짜가 없는 노트에 생성 날짜를 추가합니다.',
+        enableDesc:
+          '아직 생성 날짜가 없는 노트에 생성 날짜를 추가합니다. 노트를 처음 편집할 때 추가됩니다.',
         propertyName: '생성 날짜 속성',
         propertyDesc: '생성 날짜가 저장되는 속성 이름.',
         propertyPlaceholder: 'Created',
@@ -145,9 +160,12 @@ export const STRINGS_KO: Strings = {
     },
     behavior: {
       heading: '동작',
-      autoUpdate: {
-        name: '자동 업데이트',
-        desc: '노트를 편집할 때 날짜를 자동으로 업데이트합니다. 명령어 팔레트에서도 사용할 수 있습니다.',
+      statusBarMode: {
+        name: '상태 표시줄 표시기',
+        desc: '자동 날짜가 켜져 있는지를 상태 표시줄에 언제 표시할지 설정합니다. 표시기를 클릭하면 켜거나 끌 수 있습니다. 상태 표시줄은 모바일에서 사용할 수 없습니다.',
+        optionAlways: '항상',
+        optionWhenInactive: '꺼져 있거나 일시 중지된 경우에만',
+        optionNever: '표시 안 함',
       },
       minSeconds: {
         name: '업데이트 사이 최소 초',
@@ -335,9 +353,9 @@ export const STRINGS_KO: Strings = {
       overrideDesc: '없는 날짜만 채우거나 기존 날짜를 덮어씁니다.',
       overrideOptionFillMissing: '없는 것만 채우기 (안전)',
       overrideOptionOverwriteAll: '전부 덮어쓰기 (기존 값 대체)',
-      autoUpdateNoteTitle: '자동 업데이트에 관한 참고:',
+      autoUpdateNoteTitle: '자동 날짜에 관한 참고:',
       autoUpdateNoteBody:
-        '자동 업데이트가 활성화되어 있었다면, 디스크상의 파일 자체 날짜가 원래 날짜가 아니라 플러그인 자체 편집을 이미 반영하고 있을 수 있습니다. 최상의 결과를 위해, 자동 업데이트를 켜기 전이나 플러그인을 설치한 직후에 이 기능을 사용하세요.',
+        '자동 날짜가 켜져 있었다면, 디스크상의 파일 자체 날짜가 원래 날짜가 아니라 플러그인 자체 편집을 이미 반영하고 있을 수 있습니다. 최상의 결과를 위해, 자동 날짜를 켜기 전이나 플러그인을 설치한 직후에 이 기능을 사용하세요.',
       warningTitleCreatedUnreliable:
         '파일 생성 날짜는 일부 플랫폼에서 신뢰할 수 없습니다',
       warningTitlePlatformNote: '플랫폼 참고',

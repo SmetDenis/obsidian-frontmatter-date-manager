@@ -384,7 +384,12 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
       'excalidraw',
       'bulk writes must be blocked for an idle dirty drawing',
     );
-    const result = await fdmHandleFileChange(path);
+    // Automatic dates are off (so the drawing's own events cannot interfere),
+    // and an automatic pass is then dropped before the guard is ever reached
+    // (issue #24). Run the single-file pass as the manual command does - the
+    // one path that still writes with automatic dates off - so the Excalidraw
+    // guard itself is what must stop it.
+    const result = await fdmHandleFileChange(path, 'manual');
     assert.equal(result.wrote, false, 'nothing may be written');
     assert.equal(result.blocked, 'excalidraw');
 

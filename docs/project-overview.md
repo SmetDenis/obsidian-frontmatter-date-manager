@@ -6,7 +6,7 @@
 
 Frontmatter Date Manager is an Obsidian community plugin that automatically maintains date properties in note frontmatter:
 
-- **`created`** - stamped once, when a note is first created (sourced from the file's `ctime`).
+- **`created`** - added once if missing, on the note's first edit after creation (sourced from the file's `ctime`); a note that is never edited gets it from the manual command or the bulk tool.
 - **`updated`** - bumped when the note's content actually changes (sourced from `mtime`).
 - **`viewed`** - last-opened date, stamped on file open (opt-in, disabled by default).
 

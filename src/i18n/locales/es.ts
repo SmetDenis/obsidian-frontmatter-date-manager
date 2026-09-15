@@ -20,12 +20,15 @@ export const STRINGS_ES: Strings = {
   },
   commands: {
     updateCurrentFile: 'Actualizar fechas del archivo actual',
-    toggleAutoUpdate: 'Activar/desactivar actualización automática',
-    pauseAutoUpdate: 'Pausar la actualización automática durante 5 minutos',
+    toggleAutomaticDates: 'Activar o desactivar las fechas automáticas',
+    pauseAutomaticDates: 'Pausar las fechas automáticas durante 5 minutos',
   },
   statusBar: {
-    paused: 'En pausa',
-    pausedWithMinutes: 'En pausa ({remaining}m)',
+    on: 'FDM: activado',
+    off: 'FDM: desactivado',
+    pausedWithMinutes: 'FDM: en pausa ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: haz clic para activar o desactivar las fechas automáticas',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_ES: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Todas las fechas ya están completas y la nota no ha cambiado desde la última actualización.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_ES: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'No se pudieron actualizar las fechas: {reason}',
     failedToUpdate: 'No se pudieron actualizar las fechas.',
-    autoUpdateEnabled: 'Actualización automática activada',
-    autoUpdateDisabled: 'Actualización automática desactivada',
-    autoUpdatePausedForMinutes:
-      'Actualización automática en pausa durante {minutes} minutos. Se reanudará automáticamente.',
-    autoUpdateResumed: 'Actualización automática reanudada.',
+    automaticDatesOn: 'Fechas automáticas activadas.',
+    automaticDatesOff:
+      'Fechas automáticas desactivadas. Las fechas ahora solo cambian mediante la paleta de comandos y las herramientas masivas.',
+    automaticDatesPausedForMinutes:
+      'Fechas automáticas pausadas durante {minutes} minutos. Se reanudarán automáticamente.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: fechas automáticas reanudadas.',
+    nothingToPause:
+      'Las fechas automáticas están desactivadas, así que no hay nada que pausar.',
+    automaticDatesOffSkipped:
+      'Las fechas automáticas están desactivadas, así que esta nota no se actualizó.',
     malformedFrontmatter:
       'Frontmatter Date Manager falló\nPropiedades con formato incorrecto en este archivo: {filePath}\n\n{message}',
   },
@@ -91,10 +101,16 @@ export const STRINGS_ES: Strings = {
     dates: {
       enableNoneHint:
         'Activa al menos una fecha arriba para configurar el plugin.',
+      automatic: {
+        name: 'Fechas automáticas',
+        desc: 'Deja que el plugin mantenga actualizadas las fechas de abajo por sí solo: la fecha de creación se añade en la primera edición de una nota, la fecha de última edición en cada edición, y la fecha de última apertura al abrir una nota. Cuando está desactivado, las fechas solo cambian mediante el comando "Actualizar fechas del archivo actual" y las herramientas masivas.',
+        offHint:
+          'Las fechas automáticas están desactivadas, así que las fechas de arriba no se añaden ni se actualizan por sí solas. Activa "Fechas automáticas" arriba, o usa el comando "Actualizar fechas del archivo actual" o las herramientas masivas.',
+      },
       created: {
         enableName: 'Registrar la fecha de creación',
         enableDesc:
-          'Añade una fecha de creación a las notas que aún no la tienen.',
+          'Añade una fecha de creación a las notas que aún no la tienen. Se añade en la primera edición de la nota.',
         propertyName: 'Propiedad de creación',
         propertyDesc:
           'Nombre de la propiedad donde se guarda la fecha de creación.',
@@ -151,9 +167,12 @@ export const STRINGS_ES: Strings = {
     },
     behavior: {
       heading: 'Comportamiento',
-      autoUpdate: {
-        name: 'Actualización automática',
-        desc: 'Actualiza automáticamente las fechas cuando editas una nota. También está disponible desde la paleta de comandos.',
+      statusBarMode: {
+        name: 'Indicador de la barra de estado',
+        desc: 'Cuándo mostrar en la barra de estado si las fechas automáticas están activadas. Haz clic en el indicador para activarlas o desactivarlas. La barra de estado no está disponible en dispositivos móviles.',
+        optionAlways: 'Siempre',
+        optionWhenInactive: 'Solo cuando esté desactivado o en pausa',
+        optionNever: 'Nunca',
       },
       minSeconds: {
         name: 'Segundos mínimos entre actualizaciones',
@@ -357,9 +376,9 @@ export const STRINGS_ES: Strings = {
       overrideOptionFillMissing: 'Solo rellenar las que faltan (seguro)',
       overrideOptionOverwriteAll:
         'Sobrescribir todas (reemplaza las existentes)',
-      autoUpdateNoteTitle: 'Nota sobre la actualización automática:',
+      autoUpdateNoteTitle: 'Nota sobre las fechas automáticas:',
       autoUpdateNoteBody:
-        'Si la actualización automática ha estado activa, las propias fechas del archivo en el disco pueden reflejar ya las ediciones del propio plugin, no las fechas originales. Para mejores resultados, usa esta función antes de activar la actualización automática o justo después de instalar el plugin.',
+        'Si las fechas automáticas han estado activadas, las propias fechas del archivo en el disco pueden reflejar ya las ediciones del propio plugin, no las fechas originales. Para mejores resultados, usa esta función antes de activar las fechas automáticas o justo después de instalar el plugin.',
       warningTitleCreatedUnreliable:
         'La fecha de creación del archivo no es fiable en algunas plataformas',
       warningTitlePlatformNote: 'Nota sobre la plataforma',

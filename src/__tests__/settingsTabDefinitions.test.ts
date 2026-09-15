@@ -22,6 +22,7 @@ function makePlugin(
     saveSettings: vi.fn().mockResolvedValue(undefined),
     recompileFilterRules: vi.fn(),
     updateStatusBar: vi.fn(),
+    onAutomaticDatesChanged: vi.fn(),
     getCompiledRules: vi.fn(() => []),
   } as unknown as FrontmatterDateManagerPlugin;
 }
@@ -78,19 +79,34 @@ describe('getSettingDefinitions structure', () => {
     const { tab } = makeTab();
     const defs = topLevel(tab);
 
-    // intro, dates group, hint, formatting, behavior, exclude list,
-    // inversions, advanced page, bulk
-    expect(defs).toHaveLength(9);
+    // intro, dates group, none-enabled hint, automatic-dates-off hint,
+    // formatting, behavior, exclude list, inversions, advanced page, bulk
+    expect(defs).toHaveLength(10);
     expect(defs[1]?.type).toBe('group');
     expect(defs[1]?.heading).toBeUndefined(); // first section is unheaded
-    expect(defs[3]?.heading).toBe(strings.settings.formatting.heading);
-    expect(defs[4]?.heading).toBe(strings.settings.behavior.heading);
-    expect(defs[5]?.type).toBe('list');
-    expect(defs[5]?.cls).toBe('frontmatter-date-manager-exclude-list');
-    expect(defs[6]?.heading).toBe(strings.settings.inversions.heading);
-    expect(defs[7]?.type).toBe('page');
-    expect(defs[7]?.name).toBe(strings.settings.advanced.pageName);
-    expect(defs[8]?.heading).toBe(strings.settings.bulk.heading);
+    expect(defs[4]?.heading).toBe(strings.settings.formatting.heading);
+    expect(defs[5]?.heading).toBe(strings.settings.behavior.heading);
+    expect(defs[6]?.type).toBe('list');
+    expect(defs[6]?.cls).toBe('frontmatter-date-manager-exclude-list');
+    expect(defs[7]?.heading).toBe(strings.settings.inversions.heading);
+    expect(defs[8]?.type).toBe('page');
+    expect(defs[8]?.name).toBe(strings.settings.advanced.pageName);
+    expect(defs[9]?.heading).toBe(strings.settings.bulk.heading);
+  });
+
+  it('puts the automatic dates master switch first in the dates group (issue #24)', () => {
+    const { tab } = makeTab();
+    const dates = topLevel(tab)[1] as AnyDef;
+    const first = (dates.items as AnyDef[])[0];
+    expect(first?.control?.key).toBe('enableAutoUpdate');
+    expect(first?.name).toBe(strings.settings.dates.automatic.name);
+    const behavior = groupByHeading(tab, strings.settings.behavior.heading);
+    expect(
+      (behavior.items as AnyDef[]).some(
+        (d) => d.control?.key === 'enableAutoUpdate',
+      ),
+    ).toBe(false);
+    expect((behavior.items as AnyDef[])[0]?.control?.key).toBe('statusBarMode');
   });
 
   it('binds every expected settings key to a control', () => {
@@ -111,6 +127,7 @@ describe('getSettingDefinitions structure', () => {
         'headerLastViewed',
         'enableNumberProperties',
         'enableAutoUpdate',
+        'statusBarMode',
         'minSecondsBetweenSaves',
         'trackExcalidraw',
         'enableContentHashCheck',
@@ -156,6 +173,7 @@ describe('getSettingDefinitions structure', () => {
     const defs = topLevel(tab);
     expect(defs[0]?.searchable).toBe(false);
     expect(defs[2]?.searchable).toBe(false);
+    expect(defs[3]?.searchable).toBe(false);
   });
 
   it('floors the free number controls at zero', () => {
@@ -173,7 +191,7 @@ describe('getSettingDefinitions structure', () => {
     const { tab } = makeTab();
     // A control dropdown would freeze the command list in the definitions
     // snapshot (built once at plugin load) - the row must stay a render row.
-    const advanced = topLevel(tab)[7] as AnyDef;
+    const advanced = topLevel(tab)[8] as AnyDef;
     const row = (advanced.items as AnyDef[]).find(
       (d) => d.name === strings.settings.advanced.postUpdateCommand.name,
     );
@@ -237,20 +255,20 @@ describe('visible predicates', () => {
   it('gates the hash-mode dropdown and exclude block on content hashing', () => {
     const { tab } = makeTab({ enableContentHashCheck: false });
     expect(isVisible(controlByKey(tab, 'hashTrackingMode'))).toBe(false);
-    expect(isVisible(topLevel(tab)[5] as AnyDef)).toBe(false);
+    expect(isVisible(topLevel(tab)[6] as AnyDef)).toBe(false);
 
     const { tab: tab2 } = makeTab({
       enableContentHashCheck: true,
       hashTrackingMode: 'body',
     });
     expect(isVisible(controlByKey(tab2, 'hashTrackingMode'))).toBe(true);
-    expect(isVisible(topLevel(tab2)[5] as AnyDef)).toBe(false);
+    expect(isVisible(topLevel(tab2)[6] as AnyDef)).toBe(false);
 
     const { tab: tab3 } = makeTab({
       enableContentHashCheck: true,
       hashTrackingMode: 'both',
     });
-    expect(isVisible(topLevel(tab3)[5] as AnyDef)).toBe(true);
+    expect(isVisible(topLevel(tab3)[6] as AnyDef)).toBe(true);
   });
 
   it('hides everything after the dates group when all date toggles are off', () => {
@@ -265,7 +283,7 @@ describe('visible predicates', () => {
     expect(isVisible(defs[2] as AnyDef)).toBe(true);
     // ...and every subsequent section disappears (the display() early-return
     // replacement - the most load-bearing predicate in the tree).
-    for (const index of [3, 4, 5, 6, 7, 8]) {
+    for (const index of [3, 4, 5, 6, 7, 8, 9]) {
       expect(isVisible(defs[index] as AnyDef)).toBe(false);
     }
   });
@@ -274,6 +292,28 @@ describe('visible predicates', () => {
     const { tab } = makeTab();
     expect(isVisible(topLevel(tab)[2] as AnyDef)).toBe(false);
   });
+
+  it.each([
+    [true, false, false],
+    [false, false, true],
+    // All dates off: the none-enabled hint speaks instead, never both.
+    [false, true, false],
+  ])(
+    'automatic-dates-off hint: switch on=%s, all dates off=%s -> visible=%s',
+    (on, allOff, visible) => {
+      const { tab } = makeTab({
+        enableAutoUpdate: on,
+        ...(allOff
+          ? {
+              enableCreateTime: false,
+              enableModifiedTime: false,
+              enableLastViewed: false,
+            }
+          : {}),
+      });
+      expect(isVisible(topLevel(tab)[3] as AnyDef)).toBe(visible);
+    },
+  );
 
   it('gates the rebuild-cache bulk row on content hashing', () => {
     const { tab } = makeTab({ enableContentHashCheck: false });
@@ -355,10 +395,17 @@ describe('setControlValue funnel', () => {
     expect(plugin.recompileFilterRules).toHaveBeenCalledTimes(1);
   });
 
-  it('refreshes the status bar after an enableAutoUpdate write', async () => {
+  it('runs the master-switch side effects after an enableAutoUpdate write', async () => {
     const { tab, plugin } = makeTab();
     await tab.setControlValue('enableAutoUpdate', false);
     expect(plugin.settings.enableAutoUpdate).toBe(false);
+    expect(plugin.onAutomaticDatesChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes the status bar after a statusBarMode write', async () => {
+    const { tab, plugin } = makeTab();
+    await tab.setControlValue('statusBarMode', 'always');
+    expect(plugin.settings.statusBarMode).toBe('always');
     expect(plugin.updateStatusBar).toHaveBeenCalledTimes(1);
   });
 
@@ -382,7 +429,7 @@ describe('exclude-keys list', () => {
       hashTrackingMode: 'both',
       frontmatterHashExcludeKeys: ['tags', 'aliases'],
     });
-    const list = topLevel(tab)[5] as AnyDef;
+    const list = topLevel(tab)[6] as AnyDef;
     expect((list.items as AnyDef[]).map((i) => i.name)).toEqual([
       'tags',
       'aliases',
@@ -406,7 +453,7 @@ describe('exclude-keys list', () => {
       frontmatterHashExcludeKeys: ['a', 'b', 'c'],
     });
     const updateSpy = vi.spyOn(tab, 'update');
-    const list = topLevel(tab)[5] as AnyDef;
+    const list = topLevel(tab)[6] as AnyDef;
     (list.onDelete as (index: number) => void)(1);
 
     await vi.waitFor(() => {

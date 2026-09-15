@@ -54,6 +54,9 @@ export class Plugin {
   addCommand = () => {};
   addStatusBarItem = () => ({
     setText: () => {},
+    setAttribute: () => {},
+    addClass: () => {},
+    toggleClass: () => {},
     onClickEvent: () => {},
   });
   registerEvent = () => {};

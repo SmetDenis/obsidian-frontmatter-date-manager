@@ -20,12 +20,15 @@ export const STRINGS_UK: Strings = {
   },
   commands: {
     updateCurrentFile: 'Оновити дати в поточному файлі',
-    toggleAutoUpdate: 'Увімкнути/вимкнути автооновлення',
-    pauseAutoUpdate: 'Призупинити автооновлення на 5 хвилин',
+    toggleAutomaticDates: 'Увімкнути або вимкнути автоматичні дати',
+    pauseAutomaticDates: 'Призупинити автоматичні дати на 5 хвилин',
   },
   statusBar: {
-    paused: 'Призупинено',
-    pausedWithMinutes: 'Призупинено ({remaining}хв)',
+    on: 'FDM: увімкнено',
+    off: 'FDM: вимкнено',
+    pausedWithMinutes: 'FDM: призупинено ({remaining}хв)',
+    tooltip:
+      'Frontmatter Date Manager: натисніть, щоб увімкнути або вимкнути автоматичні дати',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_UK: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Усі дати вже заповнені, а нотатка не змінювалася з моменту останнього оновлення.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,16 @@ export const STRINGS_UK: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Не вдалося оновити дати: {reason}',
     failedToUpdate: 'Не вдалося оновити дати.',
-    autoUpdateEnabled: 'Автооновлення увімкнено',
-    autoUpdateDisabled: 'Автооновлення вимкнено',
-    autoUpdatePausedForMinutes:
-      'Автооновлення призупинено на {minutes} хвилин. Відновиться автоматично.',
-    autoUpdateResumed: 'Автооновлення відновлено.',
+    automaticDatesOn: 'Автоматичні дати увімкнено.',
+    automaticDatesOff:
+      'Автоматичні дати вимкнено. Тепер дати змінюються лише через палітру команд і масові інструменти.',
+    automaticDatesPausedForMinutes:
+      'Автоматичні дати призупинено на {minutes} хвилин. Вони відновляться самостійно.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: автоматичні дати відновлено.',
+    nothingToPause: 'Автоматичні дати вимкнено, тому призупиняти нема чого.',
+    automaticDatesOffSkipped:
+      'Автоматичні дати вимкнено, тому цю нотатку не оновлено.',
     malformedFrontmatter:
       'Frontmatter Date Manager: збій\nНекоректні властивості у файлі: {filePath}\n\n{message}',
   },
@@ -92,9 +101,16 @@ export const STRINGS_UK: Strings = {
     dates: {
       enableNoneHint:
         'Увімкніть хоча б одну дату вище, щоб налаштувати плагін.',
+      automatic: {
+        name: 'Автоматичні дати',
+        desc: 'Дозволяє плагіну самостійно підтримувати дати нижче в актуальному стані: дата створення додається під час першого редагування нотатки, дата останнього редагування - під час кожного редагування, а дата останнього відкриття - під час відкриття нотатки. Коли вимкнено, дати змінюються лише через команду "Оновити дати в поточному файлі" та масові інструменти.',
+        offHint:
+          'Автоматичні дати вимкнено, тому дати вище не додаються та не оновлюються самостійно. Увімкніть "Автоматичні дати" вище або скористайтеся командою "Оновити дати в поточному файлі" чи масовими інструментами.',
+      },
       created: {
         enableName: 'Відстежувати дату створення',
-        enableDesc: 'Додавати дату створення нотаткам, у яких її ще немає.',
+        enableDesc:
+          'Додавати дату створення нотаткам, у яких її ще немає. Вона додається під час першого редагування нотатки.',
         propertyName: 'Властивість для дати створення',
         propertyDesc: "Ім'я властивості, у яку зберігається дата створення.",
         propertyPlaceholder: 'Created',
@@ -149,9 +165,12 @@ export const STRINGS_UK: Strings = {
     },
     behavior: {
       heading: 'Поведінка',
-      autoUpdate: {
-        name: 'Автооновлення',
-        desc: 'Автоматично оновлювати дати під час редагування нотатки. Також доступно з палітри команд.',
+      statusBarMode: {
+        name: 'Індикатор у рядку стану',
+        desc: 'Коли показувати в рядку стану, чи ввімкнено автоматичні дати. Натисніть на індикатор, щоб увімкнути або вимкнути їх. Рядок стану недоступний на мобільних пристроях.',
+        optionAlways: 'Завжди',
+        optionWhenInactive: 'Лише коли вимкнено або призупинено',
+        optionNever: 'Ніколи',
       },
       minSeconds: {
         name: 'Мінімум секунд між оновленнями',
@@ -348,9 +367,9 @@ export const STRINGS_UK: Strings = {
       overrideDesc: 'Заповнити лише відсутні дати або перезаписати наявні.',
       overrideOptionFillMissing: 'Лише відсутні (безпечно)',
       overrideOptionOverwriteAll: 'Перезаписати всі (замінює наявні)',
-      autoUpdateNoteTitle: 'Примітка про автооновлення:',
+      autoUpdateNoteTitle: 'Примітка про автоматичні дати:',
       autoUpdateNoteBody:
-        'Якщо автооновлення було активним, власні дати файлу на диску можуть уже відображати правки самого плагіна, а не початкові дати. Для найкращого результату використовуйте цю функцію до ввімкнення автооновлення або одразу після встановлення плагіна.',
+        'Якщо автоматичні дати були ввімкнені, власні дати файлу на диску можуть уже відображати правки самого плагіна, а не початкові дати. Для найкращого результату використовуйте цю функцію до ввімкнення автоматичних дат або одразу після встановлення плагіна.',
       warningTitleCreatedUnreliable:
         'Дата створення файлу ненадійна на деяких платформах',
       warningTitlePlatformNote: 'Примітка про платформу',

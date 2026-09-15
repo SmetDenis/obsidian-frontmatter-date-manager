@@ -213,6 +213,24 @@ describe('sanitizeSettings (pure)', () => {
       ).toBe('both');
     });
 
+    it.each(['sometimes', 42, null])(
+      'coerces invalid statusBarMode %s to default',
+      (value) => {
+        expect(
+          sanitizeSettings({ statusBarMode: value as never }).statusBarMode,
+        ).toBe('when-inactive');
+      },
+    );
+
+    it.each(['always', 'when-inactive', 'never'] as const)(
+      'preserves a valid statusBarMode %s',
+      (value) => {
+        expect(sanitizeSettings({ statusBarMode: value }).statusBarMode).toBe(
+          value,
+        );
+      },
+    );
+
     it('coerces invalid inversionFixStrategy to default', () => {
       expect(
         sanitizeSettings({ inversionFixStrategy: 'bogus' as never })
@@ -351,7 +369,7 @@ describe('loadSettings / sync flow (integration)', () => {
 
   it('onExternalSettingsChange (sync) does not throw on corrupt data.json', async () => {
     const plugin = new FrontmatterDateManagerPlugin();
-    plugin.statusBarEl = { setText: () => {} } as never;
+    plugin.statusBarEl = { setText: () => {}, toggleClass: () => {} } as never;
     plugin.loadData = (async () => ({ filterRules: { bad: true } })) as never;
     await expect(plugin.onExternalSettingsChange()).resolves.toBeUndefined();
     expect(plugin.settings.filterRules).toBe('');

@@ -71,7 +71,17 @@ export type FileChangeIgnoreReason =
   | IgnoreReason
   | 'not-a-file'
   | 'no-date-keys'
-  | 'invalid-file-times';
+  | 'invalid-file-times'
+  | 'automatic-dates-off';
+
+// Who asked for a pass. Automatic work ('auto': vault events, their debounce,
+// and every retry they schedule) is subject to the "Automatic dates" master
+// switch and the timed pause at EXECUTION time, not only when the event
+// arrives. Work the user requested explicitly ('manual': the "Update
+// timestamps for current file" command, including its own deferred retries)
+// runs regardless - the command is the documented way to date a note while
+// automatic dates are off.
+export type WorkOrigin = 'auto' | 'manual';
 
 // What blocked a write this pass.
 // - 'markdown': a Markdown editor buffer holds unsaved changes -> defer via
@@ -142,6 +152,8 @@ export function ignoreReasonToNotice(reason: FileChangeIgnoreReason): string {
       return strings.notices.ignoredNoDateKeys;
     case 'invalid-file-times':
       return strings.notices.ignoredInvalidFileTimes;
+    case 'automatic-dates-off':
+      return strings.notices.automaticDatesOffSkipped;
     case 'no-path':
     case 'not-markdown':
     case 'not-a-file':
@@ -166,11 +178,22 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // files still get stamped (see setupOnEditHandler).
   private newFileModified = new Set<string>();
   // Per-path delay timers for newly created files. Tracked so they can be
-  // cleared on delete/unload before the deferred processing fires.
-  private newFileTimers = new Map<string, number>();
+  // cleared on delete/unload before the deferred processing fires, and
+  // re-armed with the remaining time when the file is renamed inside the
+  // window (the deadline is what makes "remaining" computable).
+  private newFileTimers = new Map<
+    string,
+    { timer: number; deadline: number }
+  >();
   // Timers are managed manually (not via registerInterval) because they need
   // individual clearing/re-setting. All are cleaned up in onunload().
   private modifyTimers = new Map<string, number>();
+  // Paths whose pending pass (a timer in modifyTimers, or the pass that
+  // timer's coalescing absorbed) was requested by the manual command. One
+  // per-file timer serves both origins, so the origin cannot live in the
+  // timer's closure: an automatic debounce re-arming the timer must never
+  // downgrade a manual retry into automatic work that the master switch drops.
+  private manualPending = new Set<string>();
   private processingFiles = new Set<string>();
   // Tracks the mtime set by the last plugin write per file.
   // Used to detect self-triggered modify events (processFrontMatter fires modify
@@ -262,6 +285,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     await this.loadSettings();
 
     this.setupOnEditHandler();
+    // Obsidian fires `create` for EVERY existing file while the vault loads
+    // (Vault.on('create') typings). Registering after layout-ready keeps
+    // startup from arming a new-file window per note in the vault. Runs the
+    // callback at once when the layout is already ready (plugin enabled later).
+    this.app.workspace.onLayoutReady(() => {
+      this.setupCreateHandler();
+    });
     this.setupFileOpenHandler();
     this.setupStatusBar();
     this.setupCommands();
@@ -310,25 +340,70 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
   setupStatusBar() {
     this.statusBarEl = this.addStatusBarItem();
+    this.statusBarEl.addClass('frontmatter-date-manager-status');
+    this.statusBarEl.setAttribute('aria-label', strings.statusBar.tooltip);
     this.statusBarEl.onClickEvent(() => {
-      this.settings.enableAutoUpdate = !this.settings.enableAutoUpdate;
-      void this.saveSettings();
-      this.updateStatusBar();
+      void this.setAutomaticDates(!this.settings.enableAutoUpdate);
     });
     this.updateStatusBar();
   }
 
+  // The status bar is shared by every plugin, so its text carries the short
+  // "FDM" prefix to say whose indicator it is. The persistent off state wins
+  // over the timed pause: a pause is meaningless while automatic dates are off.
   updateStatusBar() {
-    if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) {
+    let text: string;
+    let active = false;
+    if (!this.settings.enableAutoUpdate) {
+      text = strings.statusBar.off;
+    } else if (this.isPaused()) {
       const remaining = Math.ceil((this._pausedUntil - Date.now()) / 60000);
-      this.statusBarEl.setText(
-        t(strings.statusBar.pausedWithMinutes, { remaining }),
-      );
-    } else if (!this.settings.enableAutoUpdate) {
-      this.statusBarEl.setText(strings.statusBar.paused);
+      text = t(strings.statusBar.pausedWithMinutes, { remaining });
     } else {
-      this.statusBarEl.setText('');
+      text = strings.statusBar.on;
+      active = true;
     }
+    const mode = this.settings.statusBarMode;
+    const visible = mode === 'always' || (mode !== 'never' && !active);
+    this.statusBarEl.setText(visible ? text : '');
+    this.statusBarEl.toggleClass(
+      'frontmatter-date-manager-status-hidden',
+      !visible,
+    );
+  }
+
+  // The single gate for automatic writes: the "Automatic dates" master switch
+  // plus the timed pause. Checked when an event arrives AND again when queued
+  // work executes (handleFileChange, handleFileOpen), so switching off or
+  // pausing stops writes already waiting on a debounce/retry timer, not just
+  // future events. Deliberately no catch-up when it turns back on: a skipped
+  // pass does not refresh the hash, so the note's next edit still detects the
+  // change.
+  automaticDatesAllowed(): boolean {
+    return this.settings.enableAutoUpdate && !this.isPaused();
+  }
+
+  private isPaused(): boolean {
+    return this._pausedUntil > 0 && Date.now() < this._pausedUntil;
+  }
+
+  // One write funnel for the master switch outside the settings tab (status
+  // bar click, toggle command). Refreshes the declarative settings tree too:
+  // it is a snapshot, so without update() an open settings tab keeps showing
+  // the old toggle position.
+  async setAutomaticDates(enabled: boolean): Promise<void> {
+    this.settings.enableAutoUpdate = enabled;
+    this.onAutomaticDatesChanged();
+    this.settingsTab?.update();
+    await this.saveSettings();
+  }
+
+  // Side effects of a master-switch change, shared with the settings tab's
+  // setControlValue funnel. An armed rename suppression holds a snapshot taken
+  // while automatic dates were on - drop it so "off" takes effect at once.
+  onAutomaticDatesChanged(): void {
+    if (!this.settings.enableAutoUpdate) this.cancelRenameSuppression();
+    this.updateStatusBar();
   }
 
   setupCommands() {
@@ -344,7 +419,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             // the same file. No view.save() flush either: with several leaves
             // on one file flushing one proves nothing about the others, and it
             // would write the user's content without being asked.
-            this.processFileWithLock(file)
+            this.processFileWithLock(file, 'manual')
               .then((result) => {
                 if (result.status === 'ok') {
                   new Notice(
@@ -387,28 +462,33 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     this.addCommand({
       id: 'toggle-auto-update',
-      name: strings.commands.toggleAutoUpdate,
+      name: strings.commands.toggleAutomaticDates,
       callback: () => {
-        this.settings.enableAutoUpdate = !this.settings.enableAutoUpdate;
-        void this.saveSettings();
-        this.updateStatusBar();
+        const enabled = !this.settings.enableAutoUpdate;
+        void this.setAutomaticDates(enabled);
         new Notice(
-          this.settings.enableAutoUpdate
-            ? strings.notices.autoUpdateEnabled
-            : strings.notices.autoUpdateDisabled,
+          enabled
+            ? strings.notices.automaticDatesOn
+            : strings.notices.automaticDatesOff,
         );
       },
     });
 
     this.addCommand({
       id: 'pause-auto-update',
-      name: strings.commands.pauseAutoUpdate,
+      name: strings.commands.pauseAutomaticDates,
       callback: () => {
+        // Pausing something that is already off would do nothing, and its
+        // later "resumed" notice would claim the opposite of the real state.
+        if (!this.settings.enableAutoUpdate) {
+          new Notice(strings.notices.nothingToPause);
+          return;
+        }
         const PAUSE_MINUTES = 5;
         this._pausedUntil = Date.now() + PAUSE_MINUTES * 60 * 1000;
         this.updateStatusBar();
         new Notice(
-          t(strings.notices.autoUpdatePausedForMinutes, {
+          t(strings.notices.automaticDatesPausedForMinutes, {
             minutes: PAUSE_MINUTES,
           }),
         );
@@ -432,7 +512,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
               this._pauseCountdownTimer = null;
             }
             this.updateStatusBar();
-            new Notice(strings.notices.autoUpdateResumed);
+            // Unsolicited (fires minutes later), so the text names the plugin.
+            // Skipped when automatic dates were switched off meanwhile.
+            if (this.settings.enableAutoUpdate) {
+              new Notice(strings.notices.automaticDatesResumed);
+            }
           },
           PAUSE_MINUTES * 60 * 1000,
         );
@@ -599,20 +683,26 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return { ignored: true, reason: 'excalidraw' };
     }
 
-    if (this.settings.enableContentHashCheck && !options?.skipHashCheck) {
-      const entry = this.hashCache[file.path];
-      if (entry) {
-        entry.lastAccessed = Date.now();
-        const contentToHash = this.getContentForHashing(fileContent);
-        const sha = this.hashString(contentToHash);
-        if (sha === entry.hash) {
-          this.log('Ignoring file - SHA is the same');
-          return { ignored: true, reason: 'unchanged' };
-        }
-      }
+    if (!options?.skipHashCheck && this.isContentUnchanged(file, fileContent)) {
+      this.log('Ignoring file - SHA is the same');
+      return { ignored: true, reason: 'unchanged' };
     }
 
     return { ignored: false, fileContent };
+  }
+
+  // True when change detection is on and the tracked content still hashes to
+  // the cached value, i.e. nothing changed since the plugin last looked. A
+  // missing cache entry is NOT "unchanged" (an unprocessed edit may be
+  // pending). Shared by shouldFileBeIgnored and the manual command's
+  // fill-missing path.
+  private isContentUnchanged(file: TFile, fileContent: string): boolean {
+    if (!this.settings.enableContentHashCheck) return false;
+    const entry = this.hashCache[file.path];
+    if (!entry) return false;
+    entry.lastAccessed = Date.now();
+    const sha = this.hashString(this.getContentForHashing(fileContent));
+    return sha === entry.hash;
   }
 
   shouldUpdateValue(currentMtime: Date, updateHeader: Date): boolean {
@@ -877,7 +967,17 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return null;
   }
 
-  private computeFrontmatterUpdates(file: TFile): {
+  // `fillMissingOnly` (manual command on a note whose content has not changed
+  // since the last pass): add a missing `created`/`updated` and nothing else.
+  // Without a content change there is no edit to date, so an existing
+  // `updated` is kept, the edit counter never moves, no rate-limit retry is
+  // scheduled, and the out-of-order fix is not applied (it would rewrite an
+  // existing value with no change to justify it - "Find out-of-order dates"
+  // stays the explicit tool for that).
+  private computeFrontmatterUpdates(
+    file: TFile,
+    options?: { fillMissingOnly?: boolean },
+  ): {
     createdValue?: string | number;
     updatedValue?: string | number;
     retryAfterMs?: number;
@@ -892,6 +992,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // happen. This keeps the compute pure (no user-visible side effects).
     inversionFixed?: boolean;
   } | null {
+    const fillMissingOnly = options?.fillMissingOnly === true;
     const updatedKey = this.settings.headerUpdated.trim();
     const createdKey = this.settings.headerCreated.trim();
 
@@ -938,7 +1039,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         // as "no value" too (pre-existing semantics; both are degenerate as a
         // stored date and converge to a write via the paths below regardless).
         result.updatedValue = candidate;
-        result.countedEdit = true;
+        if (!fillMissingOnly) result.countedEdit = true;
+      } else if (fillMissingOnly) {
+        // An existing value is kept: no content change, nothing to date.
       } else if (
         candidate !== undefined &&
         String(candidate) === String(existingUpdated)
@@ -979,7 +1082,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     const strategy: InversionFixStrategy =
       this.settings.inversionFixStrategy ?? 'disabled';
-    if (strategy !== 'disabled' && createdKey && updatedKey) {
+    if (
+      !fillMissingOnly &&
+      strategy !== 'disabled' &&
+      createdKey &&
+      updatedKey
+    ) {
       const finalCreatedRaw =
         result.createdValue ??
         (cached?.[createdKey] as string | number | undefined);
@@ -1014,9 +1122,18 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     return result;
   }
 
-  async handleFileChange(file: TAbstractFile): Promise<FileChangeResult> {
+  async handleFileChange(
+    file: TAbstractFile,
+    origin: WorkOrigin = 'auto',
+  ): Promise<FileChangeResult> {
     if (!isTFile(file)) {
       return { status: 'ignored', reason: 'not-a-file' };
+    }
+
+    // Execution-time gate (see automaticDatesAllowed): automatic work queued
+    // before the switch went off or the pause started must not write now.
+    if (origin === 'auto' && !this.automaticDatesAllowed()) {
+      return { status: 'ignored', reason: 'automatic-dates-off' };
     }
 
     // Detect self-triggered modify events: after processFrontMatter writes,
@@ -1030,10 +1147,21 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
     }
 
-    const checkResult = await this.shouldFileBeIgnored(file);
+    // The manual command must be able to add a missing date even when the
+    // content has not changed (e.g. `created` deleted by hand, or never added
+    // while automatic dates were off) - the hash gate would stop it before any
+    // compute. It therefore skips the gate and, when the content IS unchanged,
+    // computes in fill-missing-only mode instead.
+    const checkResult = await this.shouldFileBeIgnored(
+      file,
+      origin === 'manual' ? { skipHashCheck: true } : undefined,
+    );
     if (checkResult.ignored) {
       return { status: 'ignored', reason: checkResult.reason };
     }
+    const fillMissingOnly =
+      origin === 'manual' &&
+      this.isContentUnchanged(file, checkResult.fileContent);
 
     // Never write while an editor buffer of this file has unsaved changes -
     // Obsidian would merge the write into the live buffer and pop the
@@ -1068,13 +1196,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           ? 'Editor buffer has unsaved changes - deferring'
           : 'Excalidraw view is mid-save - deferring',
       );
-      if (!this.modifyTimers.has(file.path)) {
-        const timer = window.setTimeout(() => {
-          this.modifyTimers.delete(file.path);
-          void this.processFileWithLock(file);
-        }, MODIFY_DEBOUNCE_MS);
-        this.modifyTimers.set(file.path, timer);
-      }
+      this.scheduleRetry(file, MODIFY_DEBOUNCE_MS, origin);
       return { status: 'ok', wrote: false, deferred: true };
     }
     if (block === 'excalidraw') {
@@ -1092,7 +1214,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return { status: 'ignored', reason: 'no-date-keys' };
     }
 
-    const updates = this.computeFrontmatterUpdates(file);
+    const updates = this.computeFrontmatterUpdates(file, { fillMissingOnly });
 
     if (updates === null) {
       return { status: 'ignored', reason: 'invalid-file-times' };
@@ -1107,13 +1229,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // and apply everything once the limit expires.
     if (updates.retryAfterMs != null && updates.retryAfterMs > 0) {
       this.log('Update rate-limited - deferring to retry');
-      if (!this.modifyTimers.has(file.path)) {
-        const timer = window.setTimeout(() => {
-          this.modifyTimers.delete(file.path);
-          void this.processFileWithLock(file);
-        }, updates.retryAfterMs);
-        this.modifyTimers.set(file.path, timer);
-      }
+      this.scheduleRetry(file, updates.retryAfterMs, origin);
       // deferred: a real change IS pending - it will be written on the retry once
       // the rate limit expires. Distinct from a guard-skip no-op (wrote:false with
       // no `deferred`) so the manual command can report it honestly rather than a
@@ -1124,6 +1240,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const hasChanges =
       updates.createdValue !== undefined || updates.updatedValue !== undefined;
 
+    if (!hasChanges && fillMissingOnly) {
+      // Every date is present and the content has not changed: report it the
+      // way the hash gate always has. The cached hash already matches.
+      return { status: 'ignored', reason: 'unchanged' };
+    }
+
     if (!hasChanges) {
       // Genuinely no changes needed - cache hash to skip future events.
       this.log('Skipping processFrontMatter - no changes needed');
@@ -1131,6 +1253,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         await this.populateCacheForFile(file, checkResult.fileContent);
       }
       return { status: 'ok', wrote: false };
+    }
+
+    // Re-check right before writing: the read and the write-block probe above
+    // awaited, and the switch or the pause can change in between.
+    if (origin === 'auto' && !this.automaticDatesAllowed()) {
+      return { status: 'ignored', reason: 'automatic-dates-off' };
     }
 
     try {
@@ -1223,25 +1351,47 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // this lock too, so it can never race the automatic path) can report
   // honestly: a locked file maps to `deferred` - the rescheduled pass IS
   // pending and will apply the change shortly.
-  private async processFileWithLock(file: TFile): Promise<FileChangeResult> {
+  private async processFileWithLock(
+    file: TFile,
+    origin: WorkOrigin = 'auto',
+  ): Promise<FileChangeResult> {
     if (this.processingFiles.has(file.path)) {
       // Already processing this file - re-schedule (coalesced per-file timer).
-      if (!this.modifyTimers.has(file.path)) {
-        const retryTimer = window.setTimeout(() => {
-          this.modifyTimers.delete(file.path);
-          void this.processFileWithLock(file);
-        }, MODIFY_DEBOUNCE_MS);
-        this.modifyTimers.set(file.path, retryTimer);
-      }
+      this.scheduleRetry(file, MODIFY_DEBOUNCE_MS, origin);
       return { status: 'ok', wrote: false, deferred: true };
     }
     this.processingFiles.add(file.path);
     try {
       this.log('TRIGGER FROM MODIFY (debounced)');
-      return await this.handleFileChange(file);
+      return await this.handleFileChange(file, origin);
     } finally {
       this.processingFiles.delete(file.path);
     }
+  }
+
+  // The one coalesced per-file retry timer shared by every deferral path
+  // (dirty buffer / Excalidraw mid-save, rate limit, file lock, rename
+  // re-arm). An already-pending timer is kept, never pushed back; a manual
+  // request is recorded in manualPending either way, so the pass that finally
+  // runs keeps the manual origin.
+  private scheduleRetry(
+    file: TFile,
+    delayMs: number,
+    origin: WorkOrigin,
+  ): void {
+    if (origin === 'manual') this.manualPending.add(file.path);
+    if (this.modifyTimers.has(file.path)) return;
+    const timer = window.setTimeout(() => {
+      this.modifyTimers.delete(file.path);
+      void this.processFileWithLock(file, this.takePendingOrigin(file.path));
+    }, delayMs);
+    this.modifyTimers.set(file.path, timer);
+  }
+
+  // Consumes the pending manual request for a path, if any. If that pass
+  // defers again, handleFileChange re-schedules it with the same origin.
+  private takePendingOrigin(path: string): WorkOrigin {
+    return this.manualPending.delete(path) ? 'manual' : 'auto';
   }
 
   private setupFileOpenHandler() {
@@ -1249,9 +1399,8 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       this.app.workspace.on('file-open', (file: TFile | null) => {
         if (!file) return;
         if (!(this.settings.enableLastViewed ?? false)) return;
-        if (!this.settings.enableAutoUpdate) return;
+        if (!this.automaticDatesAllowed()) return;
         if (this.bulkRunning) return;
-        if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
         void this.handleFileOpen(file);
       }),
     );
@@ -1321,6 +1470,10 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       ) {
         return;
       }
+
+      // Same execution-time gate as handleFileChange: the checks above
+      // awaited, and the switch or the pause may have changed meanwhile.
+      if (!this.automaticDatesAllowed()) return;
 
       await this.app.fileManager.processFrontMatter(
         file,
@@ -1470,7 +1623,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   // and issuing the file reads) happens before the first await.
   armRenameSuppression(file: TAbstractFile, oldPath: string): void {
     if (this.settings.experimentalSkipRenameLinkUpdates !== true) return;
-    if (!this.settings.enableAutoUpdate) return;
+    if (!this.automaticDatesAllowed()) return;
     // Suppression works ONLY by refreshing the content hash, and
     // shouldFileBeIgnored consults that cache only when content-hash change
     // detection is on. With it off the whole snapshot/predict/verify pass would
@@ -1479,7 +1632,6 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // setting that can never act is worse than an absent one.
     if (!this.settings.enableContentHashCheck) return;
     if (this.bulkRunning) return;
-    if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
 
     // A second rename event in the same batch means a folder move (Obsidian
     // fires one per moved child). LATCH the batch shut rather than clearing the
@@ -1725,52 +1877,112 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     }
   }
 
-  setupOnEditHandler() {
-    this.log('Setup handler');
-
+  // Registered from onload inside workspace.onLayoutReady - see there.
+  setupCreateHandler() {
     // Template plugins (Templater, Daily Notes) modify files immediately after
     // creation. Without this delay, the plugin captures template content as the
     // initial file state, producing a false "content changed" detection.
     this.registerEvent(
       this.app.vault.on('create', (file) => {
         if (isTFile(file) && this.settings.delayForNewFiles > 0) {
-          const path = file.path;
-          this.recentlyCreated.add(path);
-          const existing = this.newFileTimers.get(path);
-          if (existing) window.clearTimeout(existing);
-          const timer = window.setTimeout(() => {
-            this.newFileTimers.delete(path);
-            this.recentlyCreated.delete(path);
-            // The delay only suppresses processing - it must not cancel it.
-            // If a template/editor populated the file during the window, a
-            // modify event was deferred; process the settled state now so the
-            // file gets stamped. Files with no deferred modify are left
-            // untouched, matching the delayForNewFiles === 0 behavior.
-            if (this.newFileModified.delete(path)) {
-              const current = this.app.vault.getAbstractFileByPath(path);
-              if (current !== null && isTFile(current)) {
-                void this.processFileWithLock(current);
-              }
-            }
-          }, this.settings.delayForNewFiles);
-          this.newFileTimers.set(path, timer);
+          this.armNewFileWindow(file, this.settings.delayForNewFiles);
         }
       }),
     );
+  }
+
+  // The timer captures the TFile, not its path: Obsidian renames a file by
+  // mutating the same instance, and the rename handler re-keys the window
+  // state (re-arming this timer with the remaining time) under the new path.
+  private armNewFileWindow(file: TFile, delayMs: number): void {
+    const path = file.path;
+    this.recentlyCreated.add(path);
+    const existing = this.newFileTimers.get(path);
+    if (existing) window.clearTimeout(existing.timer);
+    const timer = window.setTimeout(() => {
+      this.onNewFileWindowExpired(file);
+    }, delayMs);
+    this.newFileTimers.set(path, { timer, deadline: Date.now() + delayMs });
+  }
+
+  private onNewFileWindowExpired(file: TFile): void {
+    const path = file.path;
+    this.newFileTimers.delete(path);
+    // A bulk run is writing right now: keep the window open a little longer
+    // instead of processing mid-run (bulk has no per-file lock shared with
+    // this pipeline). The remembered modify is kept.
+    if (this.bulkRunning && this.newFileModified.has(path)) {
+      this.armNewFileWindow(file, MODIFY_DEBOUNCE_MS);
+      return;
+    }
+    this.recentlyCreated.delete(path);
+    // The delay only suppresses processing - it must not cancel it. If a
+    // template/editor populated the file during the window, a modify event was
+    // deferred; process the settled state now so the file gets stamped. Files
+    // with no deferred modify are left untouched, matching the
+    // delayForNewFiles === 0 behavior. The pass is automatic work, so the
+    // master switch and the pause are re-checked when it runs.
+    if (this.newFileModified.delete(path)) {
+      const current = this.app.vault.getAbstractFileByPath(path);
+      if (current !== null && isTFile(current)) {
+        void this.processFileWithLock(current, this.takePendingOrigin(path));
+      }
+    }
+  }
+
+  // Moves per-path pending work to the renamed path so it is not lost: the
+  // new-file window (with its remaining time and its remembered modify) and a
+  // pending retry/debounce pass (with its manual origin). The hash cache entry
+  // is migrated separately by the rename handler.
+  private migratePendingWork(file: TAbstractFile, oldPath: string): void {
+    if (!isTFile(file)) return;
+    const newPath = file.path;
+    if (newPath === oldPath) return;
+
+    const manual = this.manualPending.delete(oldPath);
+    const oldTimer = this.modifyTimers.get(oldPath);
+    if (oldTimer !== undefined) {
+      window.clearTimeout(oldTimer);
+      this.modifyTimers.delete(oldPath);
+      this.scheduleRetry(file, MODIFY_DEBOUNCE_MS, manual ? 'manual' : 'auto');
+    } else if (manual) {
+      this.manualPending.add(newPath);
+    }
+
+    const windowState = this.newFileTimers.get(oldPath);
+    const inWindow = this.recentlyCreated.delete(oldPath);
+    const remembered = this.newFileModified.delete(oldPath);
+    if (windowState) {
+      window.clearTimeout(windowState.timer);
+      this.newFileTimers.delete(oldPath);
+    }
+    if (inWindow || windowState) {
+      if (remembered) this.newFileModified.add(newPath);
+      const remaining = windowState
+        ? Math.max(0, windowState.deadline - Date.now())
+        : 0;
+      this.armNewFileWindow(file, remaining);
+    }
+  }
+
+  setupOnEditHandler() {
+    this.log('Setup handler');
 
     this.registerEvent(
       this.app.vault.on('modify', (file) => {
-        if (!this.settings.enableAutoUpdate) return;
-        if (this.bulkRunning) return;
-        if (this._pausedUntil > 0 && Date.now() < this._pausedUntil) return;
+        if (!this.automaticDatesAllowed()) return;
         if (!isTFile(file)) return;
         if (this.recentlyCreated.has(file.path)) {
           // Within the new-file delay window. Remember that the file changed
           // so its settled state is processed when the window expires, instead
-          // of dropping the event and leaving the file unstamped.
+          // of dropping the event and leaving the file unstamped. Checked
+          // before bulkRunning on purpose: a template landing during a bulk
+          // run must still be remembered (a bulk write's own self-triggered
+          // modify is recognized later by the lastPluginWriteMtime token).
           this.newFileModified.add(file.path);
           return;
         }
+        if (this.bulkRunning) return;
 
         // Debounce per file: coalesce a typing burst into one pass instead of
         // one per keystroke. NOT a corruption guard - Obsidian serializes
@@ -1784,7 +1996,10 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
         const timer = window.setTimeout(() => {
           this.modifyTimers.delete(file.path);
-          void this.processFileWithLock(file);
+          void this.processFileWithLock(
+            file,
+            this.takePendingOrigin(file.path),
+          );
         }, MODIFY_DEBOUNCE_MS);
         this.modifyTimers.set(file.path, timer);
       }),
@@ -1797,12 +2012,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         // the only moment before Obsidian rewrites those links.
         this.armRenameSuppression(file, oldPath);
 
-        // Clear pending debounce for the old path
-        const oldTimer = this.modifyTimers.get(oldPath);
-        if (oldTimer) {
-          window.clearTimeout(oldTimer);
-          this.modifyTimers.delete(oldPath);
-        }
+        this.migratePendingWork(file, oldPath);
         this.lastPluginWriteMtime.delete(oldPath);
 
         const entry = this.hashCache[oldPath];
@@ -1827,11 +2037,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         // Cancel any pending new-file delay so it doesn't process a dead path
         const newFileTimer = this.newFileTimers.get(file.path);
         if (newFileTimer) {
-          window.clearTimeout(newFileTimer);
+          window.clearTimeout(newFileTimer.timer);
           this.newFileTimers.delete(file.path);
         }
         this.recentlyCreated.delete(file.path);
         this.newFileModified.delete(file.path);
+        this.manualPending.delete(file.path);
         this.lastPluginWriteMtime.delete(file.path);
 
         const entry = this.hashCache[file.path];
@@ -1849,12 +2060,13 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       window.clearTimeout(timer);
     }
     this.modifyTimers.clear();
-    for (const timer of this.newFileTimers.values()) {
+    for (const { timer } of this.newFileTimers.values()) {
       window.clearTimeout(timer);
     }
     this.newFileTimers.clear();
     this.newFileModified.clear();
     this.recentlyCreated.clear();
+    this.manualPending.clear();
     this.processingFiles.clear();
     this.lastPluginWriteMtime.clear();
     this.cancelRenameSuppression();

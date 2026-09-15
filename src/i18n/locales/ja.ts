@@ -25,12 +25,15 @@ export const STRINGS_JA: Strings = {
   },
   commands: {
     updateCurrentFile: '現在のファイルの日付を更新',
-    toggleAutoUpdate: '自動更新のオン/オフを切り替え',
-    pauseAutoUpdate: '自動更新を5分間停止',
+    toggleAutomaticDates: '自動日付更新をオンまたはオフに切り替え',
+    pauseAutomaticDates: '自動日付更新を5分間停止',
   },
   statusBar: {
-    paused: '停止中',
-    pausedWithMinutes: '停止中 ({remaining}分)',
+    on: 'FDM: オン',
+    off: 'FDM: オフ',
+    pausedWithMinutes: 'FDM: 停止中 ({remaining}分)',
+    tooltip:
+      'Frontmatter Date Manager: クリックして自動日付更新のオン・オフを切り替え',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -44,7 +47,8 @@ export const STRINGS_JA: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'すべての日付は入力済みで、前回の更新以降ノートは変更されていません。',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -54,11 +58,17 @@ export const STRINGS_JA: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '日付の更新に失敗しました: {reason}',
     failedToUpdate: '日付の更新に失敗しました。',
-    autoUpdateEnabled: '自動更新を有効にしました',
-    autoUpdateDisabled: '自動更新を無効にしました',
-    autoUpdatePausedForMinutes:
-      '自動更新を{minutes}分間停止しました。自動的に再開します。',
-    autoUpdateResumed: '自動更新を再開しました。',
+    automaticDatesOn: '自動日付更新をオンにしました。',
+    automaticDatesOff:
+      '自動日付更新をオフにしました。日付はコマンドパレットと一括操作からのみ変更されます。',
+    automaticDatesPausedForMinutes:
+      '自動日付更新を{minutes}分間停止しました。自動的に再開します。',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: 自動日付更新を再開しました。',
+    nothingToPause:
+      '自動日付更新はオフになっているため、停止するものはありません。',
+    automaticDatesOffSkipped:
+      '自動日付更新はオフになっているため、このノートは更新されませんでした。',
     malformedFrontmatter:
       'Frontmatter Date Manager: 失敗しました\nこのファイルのプロパティが不正です: {filePath}\n\n{message}',
   },
@@ -98,9 +108,16 @@ export const STRINGS_JA: Strings = {
     dates: {
       enableNoneHint:
         'プラグインを設定するには、上の日付を少なくとも1つ有効にしてください。',
+      automatic: {
+        name: '自動日付更新',
+        desc: 'プラグインが以下の日付を自動的に最新の状態に保つようにします: 作成日はノートの最初の編集時に追加され、最終編集日は編集のたびに、最終閲覧日はノートを開いたときに追加されます。オフの場合、日付は「現在のファイルの日付を更新」コマンドと一括操作からのみ変更されます。',
+        offHint:
+          '自動日付更新はオフになっているため、上の日付は自動的に追加・更新されません。上の「自動日付更新」をオンにするか、「現在のファイルの日付を更新」コマンドまたは一括操作を使ってください。',
+      },
       created: {
         enableName: '作成日を追跡',
-        enableDesc: 'まだ作成日のないノートに作成日を追加します。',
+        enableDesc:
+          'まだ作成日のないノートに作成日を追加します。ノートの最初の編集時に追加されます。',
         propertyName: '作成日のプロパティ',
         propertyDesc: '作成日を保存するプロパティ名。',
         propertyPlaceholder: 'Created',
@@ -153,9 +170,12 @@ export const STRINGS_JA: Strings = {
     },
     behavior: {
       heading: '動作',
-      autoUpdate: {
-        name: '自動更新',
-        desc: 'ノートを編集したときに自動的に日付を更新します。コマンドパレットからも利用できます。',
+      statusBarMode: {
+        name: 'ステータスバーの表示',
+        desc: '自動日付更新がオンかどうかをステータスバーにいつ表示するか。インジケーターをクリックするとオン・オフを切り替えられます。ステータスバーはモバイルでは利用できません。',
+        optionAlways: '常に',
+        optionWhenInactive: 'オフまたは停止中のみ',
+        optionNever: '表示しない',
       },
       minSeconds: {
         name: '更新間隔の最小秒数',
@@ -347,9 +367,9 @@ export const STRINGS_JA: Strings = {
         '不足している日付だけを埋めるか、既存の日付を上書きします。',
       overrideOptionFillMissing: '不足分のみ埋める (安全)',
       overrideOptionOverwriteAll: 'すべて上書き (既存を置き換え)',
-      autoUpdateNoteTitle: '自動更新についての注意:',
+      autoUpdateNoteTitle: '自動日付更新についての注意:',
       autoUpdateNoteBody:
-        '自動更新が有効だった場合、ディスク上のファイル自身の日付は、元の日付ではなくプラグイン自身の編集を既に反映していることがあります。最良の結果を得るには、自動更新を有効にする前か、プラグインのインストール直後にこの機能を使ってください。',
+        '自動日付更新が有効だった場合、ディスク上のファイル自身の日付は、元の日付ではなくプラグイン自身の編集を既に反映していることがあります。最良の結果を得るには、自動日付更新を有効にする前か、プラグインのインストール直後にこの機能を使ってください。',
       warningTitleCreatedUnreliable:
         '一部のプラットフォームではファイルの作成日は信頼できません',
       warningTitlePlatformNote: 'プラットフォームに関する注意',

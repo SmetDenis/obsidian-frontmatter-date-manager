@@ -20,12 +20,15 @@ export const STRINGS_PT: Strings = {
   },
   commands: {
     updateCurrentFile: 'Atualizar datas no ficheiro atual',
-    toggleAutoUpdate: 'Ativar/desativar atualização automática',
-    pauseAutoUpdate: 'Pausar a atualização automática durante 5 minutos',
+    toggleAutomaticDates: 'Ativar ou desativar as datas automáticas',
+    pauseAutomaticDates: 'Pausar as datas automáticas durante 5 minutos',
   },
   statusBar: {
-    paused: 'Em pausa',
-    pausedWithMinutes: 'Em pausa ({remaining}m)',
+    on: 'FDM: ativado',
+    off: 'FDM: desativado',
+    pausedWithMinutes: 'FDM: em pausa ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: clique para ativar ou desativar as datas automáticas',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_PT: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Todas as datas já estão preenchidas e a nota não foi alterada desde a última atualização.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_PT: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Falha ao atualizar as datas: {reason}',
     failedToUpdate: 'Falha ao atualizar as datas.',
-    autoUpdateEnabled: 'Atualização automática ativada',
-    autoUpdateDisabled: 'Atualização automática desativada',
-    autoUpdatePausedForMinutes:
-      'Atualização automática em pausa durante {minutes} minutos. Será retomada automaticamente.',
-    autoUpdateResumed: 'Atualização automática retomada.',
+    automaticDatesOn: 'Datas automáticas ativadas.',
+    automaticDatesOff:
+      'Datas automáticas desativadas. As datas agora só mudam através da paleta de comandos e das ferramentas em massa.',
+    automaticDatesPausedForMinutes:
+      'Datas automáticas em pausa durante {minutes} minutos. Serão retomadas automaticamente.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: datas automáticas retomadas.',
+    nothingToPause:
+      'As datas automáticas estão desativadas, por isso não há nada para pausar.',
+    automaticDatesOffSkipped:
+      'As datas automáticas estão desativadas, por isso esta nota não foi atualizada.',
     malformedFrontmatter:
       'Frontmatter Date Manager: falhou\nPropriedades malformadas neste ficheiro: {filePath}\n\n{message}',
   },
@@ -94,10 +104,16 @@ export const STRINGS_PT: Strings = {
     dates: {
       enableNoneHint:
         'Ative pelo menos uma data acima para configurar o plugin.',
+      automatic: {
+        name: 'Datas automáticas',
+        desc: 'Permita que o plugin mantenha as datas abaixo atualizadas por conta própria: a data de criação é adicionada na primeira edição de uma nota, a data de última edição em cada edição, e a data de última abertura quando abre uma nota. Quando desativado, as datas só mudam através do comando "Atualizar datas no ficheiro atual" e das ferramentas em massa.',
+        offHint:
+          'As datas automáticas estão desativadas, por isso as datas acima não são adicionadas nem atualizadas por conta própria. Ative "Datas automáticas" acima, ou use o comando "Atualizar datas no ficheiro atual" ou as ferramentas em massa.',
+      },
       created: {
         enableName: 'Acompanhar a data de criação',
         enableDesc:
-          'Adicionar uma data de criação às notas que ainda não a têm.',
+          'Adicionar uma data de criação às notas que ainda não a têm. É adicionada na primeira edição da nota.',
         propertyName: 'Propriedade de criação',
         propertyDesc: 'Nome da propriedade onde é guardada a data de criação.',
         propertyPlaceholder: 'Created',
@@ -153,9 +169,12 @@ export const STRINGS_PT: Strings = {
     },
     behavior: {
       heading: 'Comportamento',
-      autoUpdate: {
-        name: 'Atualização automática',
-        desc: 'Atualizar automaticamente as datas quando editar uma nota. Também disponível na paleta de comandos.',
+      statusBarMode: {
+        name: 'Indicador da barra de estado',
+        desc: 'Quando mostrar na barra de estado se as datas automáticas estão ativadas. Clique no indicador para as ativar ou desativar. A barra de estado não está disponível em dispositivos móveis.',
+        optionAlways: 'Sempre',
+        optionWhenInactive: 'Apenas quando desativadas ou em pausa',
+        optionNever: 'Nunca',
       },
       minSeconds: {
         name: 'Mínimo de segundos entre atualizações',
@@ -358,9 +377,9 @@ export const STRINGS_PT: Strings = {
         'Preencher só as datas em falta ou substituir as existentes.',
       overrideOptionFillMissing: 'Só preencher em falta (seguro)',
       overrideOptionOverwriteAll: 'Substituir tudo (substitui as existentes)',
-      autoUpdateNoteTitle: 'Nota sobre a atualização automática:',
+      autoUpdateNoteTitle: 'Nota sobre as datas automáticas:',
       autoUpdateNoteBody:
-        'Se a atualização automática esteve ativa, as próprias datas do ficheiro no disco podem já refletir as edições do próprio plugin, e não as datas originais. Para melhores resultados, use esta funcionalidade antes de ativar a atualização automática ou logo após instalar o plugin.',
+        'Se as datas automáticas estiveram ativadas, as próprias datas do ficheiro no disco podem já refletir as edições do próprio plugin, e não as datas originais. Para melhores resultados, use esta funcionalidade antes de ativar as datas automáticas ou logo após instalar o plugin.',
       warningTitleCreatedUnreliable:
         'A data de criação do ficheiro não é fiável em algumas plataformas',
       warningTitlePlatformNote: 'Nota sobre a plataforma',

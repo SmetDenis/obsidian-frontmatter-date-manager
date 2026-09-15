@@ -25,7 +25,7 @@ Aktualisiert automatisch die Datumsangaben `created`, `updated` und `viewed` im 
 ## Funktionen
 
 - Automatische Aktualisierung des Feldes `updated` bei Dateiänderung (synchron mit `mtime`)
-- Automatisches Setzen des Feldes `created` bei neuen Dateien (synchron mit `ctime`)
+- Automatisches Setzen eines fehlenden Feldes `created` bei der ersten Bearbeitung einer Notiz (synchron mit `ctime`)
 - Automatisches Setzen des Feldes `viewed` beim Öffnen einer Datei - eine einzigartige Funktion, die andere Plugins nicht bieten (standardmäßig deaktiviert)
 - Zähle, wie oft du jede Notiz bearbeitest (`updated_count`, standardmäßig deaktiviert) - ein ungefähres Aktivitätssignal, das du in Bases/Dataview sortieren oder filtern kannst, um deine meistbearbeiteten Notizen zu finden
 - Anpassbares Datumsformat (verwendet die [date-fns](https://date-fns.org/v4.1.0/docs/format)-Syntax)
@@ -42,8 +42,8 @@ Aktualisiert automatisch die Datumsangaben `created`, `updated` und `viewed` im 
 - Eine Eigenschaft über alle Notizen hinweg umbenennen (alte Namen mit Vorschau migrieren)
 - Bestehende Datumsangaben von einem Format in ein anderes umformatieren (altes parsen, neues schreiben, mit Vorschau)
 - Jede Massenvorschau ist seitenweise navigierbar (Zurück/Weiter), zeigt alle betroffenen Dateien (keine Zeilenbegrenzung) und kann das vollständige Diff als TSV-Datei am Desktop herunterladen (im System-Download-Ordner gespeichert, nie in deinen Vault geschrieben)
-- Automatische Aktualisierung über die Befehlspalette oder die Statusleiste umschalten
-- Automatische Aktualisierung für 5 Minuten pausieren mit automatischer Fortsetzung
+- Ein Schalter "Automatische Daten" für alle automatischen Schreibvorgänge - in den Einstellungen, über die Befehlspalette oder die Statusleiste (mit einem deutlichen Hinweis in den Einstellungen, solange er aus ist)
+- Automatische Daten für 5 Minuten pausieren mit automatischer Fortsetzung
 - Mehrsprachige Oberfläche, die der App-Sprache von Obsidian folgt - Englisch und Russisch von Hand geprüft, plus 19 Basisübersetzungen, alle mit schlüsselweisem Rückfall auf Englisch
 - Funktioniert auf Desktop und Mobilgeräten
 
@@ -75,7 +75,9 @@ in das Verzeichnis `<vault>/.obsidian/plugins/frontmatter-date-manager/` herunte
 
 ## Verwendung
 
-Das Plugin läuft nach der Installation automatisch. Wenn du eine Markdown-Datei bearbeitest, aktualisiert es die Eigenschaft `updated` mit der aktuellen Änderungszeit. Fehlt die Eigenschaft `created`, setzt es sie auf die Erstellungszeit der Datei. Optional kannst du in den Einstellungen das `viewed`-Datum aktivieren, um festzuhalten, wann du jede Notiz zuletzt geöffnet hast.
+Das Plugin läuft nach der Installation automatisch. Wenn du eine Markdown-Datei bearbeitest, aktualisiert es die Eigenschaft `updated` mit der aktuellen Änderungszeit. Fehlt die Eigenschaft `created`, setzt es sie auf die Erstellungszeit der Datei - bei dieser ersten Bearbeitung, nicht in dem Moment, in dem die Datei entsteht (eine Notiz, die mit Inhalt erstellt und nie bearbeitet wird, z. B. von einem Web-Clipper, erhält `created` bei ihrer ersten Bearbeitung oder über den Befehl weiter unten). Optional kannst du in den Einstellungen das `viewed`-Datum aktivieren, um festzuhalten, wann du jede Notiz zuletzt geöffnet hast.
+
+Das alles wird über einen einzigen Schalter gesteuert, **Automatische Daten**, oben in den Einstellungen. Ist er aus, schreibt das Plugin nie von selbst - weder `created`, `updated` noch `viewed` - und Daten ändern sich nur über den Befehl weiter unten oder die Massen-Tools. Ihn auszuschalten stoppt auch bereits wartende Schreibvorgänge (zum Beispiel die kurze Verzögerung nach einer Bearbeitung). Die Einstellungen zeigen einen Hinweis, solange er aus ist.
 
 Konfiguriere das Verhalten unter **Einstellungen -> Frontmatter Date Manager**.
 
@@ -83,11 +85,11 @@ Konfiguriere das Verhalten unter **Einstellungen -> Frontmatter Date Manager**.
 
 | Befehl                                 | Beschreibung                                            |
 |----------------------------------------|---------------------------------------------------------|
-| **Zeitstempel für aktuelle Datei aktualisieren** | Löst manuell eine Aktualisierung der Zeitstempel für die aktive Notiz aus |
-| **Automatische Aktualisierung ein-/ausschalten** | Aktiviert oder deaktiviert die automatische Aktualisierung der Zeitstempel |
-| **Automatische Aktualisierung für 5 Minuten pausieren** | Pausiert Aktualisierungen vorübergehend mit automatischer Fortsetzung |
+| **Zeitstempel für aktuelle Datei aktualisieren** | Aktualisiert die Daten der aktiven Notiz jetzt. Funktioniert auch, wenn automatische Daten aus sind. Hat sich die Notiz seit der letzten Aktualisierung nicht geändert, werden nur fehlende Daten ergänzt und bestehende bleiben erhalten |
+| **Automatische Daten ein- oder ausschalten** | Schaltet den Schalter "Automatische Daten" ein oder aus |
+| **Automatische Daten für 5 Minuten pausieren** | Pausiert automatische Daten vorübergehend mit automatischer Fortsetzung |
 
-**Statusleisten-Anzeige** - zeigt den aktuellen Zustand (`Paused` oder `Paused (Xm)`); klicke darauf, um die automatische Aktualisierung ein-/auszuschalten.
+**Statusleisten-Anzeige** - zeigt `FDM: off` oder `FDM: paused (Xm)` (und `FDM: on`, wenn du "Immer" wählst); klicke darauf, um automatische Daten ein- oder auszuschalten. Die Einstellung "Statusleisten-Anzeige" legt fest, wann sie erscheint. Mobilgeräte haben keine Statusleiste - nutze stattdessen den Hinweis in den Einstellungen.
 
 ## Einstellungen
 
@@ -95,7 +97,8 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 
 | Einstellung                        | Standard                | Beschreibung                                                                     |
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
-| Erstellungsdatum erfassen          | `true`                  | Fügt Notizen, die noch keines haben, ein Erstellungsdatum hinzu                  |
+| Automatische Daten                 | `true`                  | Lässt das Plugin die untenstehenden Daten selbstständig hinzufügen und aktualisieren; ist der Schalter aus, schreiben nur der Befehl und die Massen-Tools |
+| Erstellungsdatum erfassen          | `true`                  | Fügt Notizen, die noch keines haben, bei der ersten Bearbeitung der Notiz ein Erstellungsdatum hinzu |
 | Eigenschaft für Erstellung         | `created`               | Eigenschaftsname, unter dem das Erstellungsdatum gespeichert wird                |
 | Datum der letzten Bearbeitung erfassen | `true`              | Aktualisiert dieses Datum jedes Mal, wenn du die Notiz bearbeitest               |
 | Eigenschaft für Aktualisierung     | `updated`               | Eigenschaftsname, unter dem das Datum der letzten Bearbeitung gespeichert wird   |
@@ -106,7 +109,7 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 | Datumsformat                       | `yyyy-MM-dd'T'HH:mm:ss` | Datums- und Zeitformat ([date-fns-Syntax](https://date-fns.org/v4.1.0/docs/format)) |
 | Zeitzone                           | `""` (System)           | IANA-Zeitzonenkennung; leer verwendet die Systemzeitzone                         |
 | Nur-Zahlen-Datumsangaben ohne Anführungszeichen speichern | `false` | Gibt für reine Ziffernformate Zahlen statt Text in Anführungszeichen aus       |
-| Automatische Aktualisierung        | `true`                  | Aktualisiert Datumsangaben automatisch, wenn du eine Notiz bearbeitest           |
+| Statusleisten-Anzeige              | `Nur wenn ausgeschaltet oder pausiert` | Wann der Status der automatischen Daten in der Statusleiste angezeigt wird (`Immer` / `Nur wenn ausgeschaltet oder pausiert` / `Nie`) |
 | Mindestsekunden zwischen Aktualisierungen | `30`             | Mindestintervall zwischen Datumsaktualisierungen                                |
 | Excalidraw-Zeichnungen einbeziehen | `true`           | Auch Excalidraw-Zeichnungen mit Datumsangaben versehen; ausschalten, um Zeichnungen unangetastet zu lassen |
 | Zu überspringende Dateien und Ordner | `""` (alle Dateien)   | Regeln im Gitignore-Stil: Zeilen schließen aus, `!` schließt wieder ein, `#` für Kommentare (eigene Unterseite) |
@@ -185,6 +188,10 @@ Das Standardformat `yyyy-MM-dd'T'HH:mm:ss` (ISO 8601) funktioniert ohne Weiteres
 Nur, wenn du das Datumsformat anpasst. Wesentlicher Unterschied: Verwende `yyyy` (nicht `YYYY`) für das Jahr und `dd` (nicht `DD`) für den Tag. Das Plugin zeigt in den Einstellungen einen Hinweis, wenn es ein Format im Moment.js-Stil erkennt.
 
 ### Alltägliche Nutzung
+
+> Ich möchte nur das Erstellungsdatum. Welche Einstellungen brauche ich?
+
+Lasse **Automatische Daten** eingeschaltet, lasse **Erstellungsdatum erfassen** eingeschaltet und schalte **Datum der letzten Bearbeitung erfassen** sowie **Datum „zuletzt geöffnet" erfassen** aus. **Automatische Daten** ist der Schalter für alles, was das Plugin von selbst schreibt, einschließlich `created`: Ist er aus, wird kein Datum automatisch hinzugefügt, und die Einstellungen zeigen dazu einen entsprechenden Hinweis. `created` wird bei der ersten Bearbeitung einer Notiz hinzugefügt; für Notizen, die nie bearbeitet werden, führe **Zeitstempel für aktuelle Datei aktualisieren** aus oder nutze das Massen-Tool "Datumsangaben aus den eigenen Datumsangaben der Datei setzen".
 
 > Ich habe „viewed"-Zeitstempel aktiviert, aber sie erscheinen in manchen Notizen nicht.
 

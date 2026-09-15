@@ -851,6 +851,7 @@ describe('handleFileChange', () => {
       ['unchanged', strings.notices.ignoredUnchanged],
       ['no-date-keys', strings.notices.ignoredNoDateKeys],
       ['invalid-file-times', strings.notices.ignoredInvalidFileTimes],
+      ['automatic-dates-off', strings.notices.automaticDatesOffSkipped],
       ['no-path', strings.notices.ignoredNotMarkdown],
       ['not-markdown', strings.notices.ignoredNotMarkdown],
       ['not-a-file', strings.notices.ignoredNotMarkdown],
