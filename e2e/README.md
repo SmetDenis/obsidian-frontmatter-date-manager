@@ -27,9 +27,21 @@ here.
   - A3 - no re-stamp: the plugin's own write does not loop into a second stamp
     (`lastPluginWriteMtime` guards self-triggered `modify`).
 - `specs/command-update.e2e.ts`
-  - A4 - with auto-update OFF an edit must not stamp, but the
+  - A4 - with automatic dates OFF an edit must not stamp, but the
     "Update timestamps for current file" command does; `created` and body
     preserved.
+- `specs/automatic-dates.e2e.ts` - the "Automatic dates" master switch
+  (issue #24).
+  - AD1 - switching automatic dates off inside the 2 s debounce stops the
+    already-pending stamp (execution-time gate).
+  - AD2 - the manual command re-adds a hand-deleted `created` on unchanged
+    content and keeps the existing `updated` (fill-missing mode).
+  - AD3 - a new note renamed inside the new-file window is still stamped under
+    its new name (the pending window follows the rename).
+  - AD4 - settings show the automatic-dates-off hint only while the switch is
+    off.
+  - AD5 - clicking the status bar indicator toggles the switch (`FDM: on` /
+    `FDM: off`), and the default mode hides it while automatic dates are on.
 - `specs/editor-safe-write.e2e.ts` - the single-file write into a **clean** open
   editor (the case the dirty-buffer guard lets through). Complements
   `editor-dirty-merge.e2e.ts`, which owns every dirty case.

@@ -394,6 +394,9 @@ describe('marketing screenshots (manual; staged, not characterization)', functio
 
   it('04: organised, plain-language settings', async function () {
     await setSettings({
+      // The master switch is the first row of the tab: show it ON (the earlier
+      // shots turn it off to freeze their staged dates).
+      enableAutoUpdate: true,
       enableCreateTime: true,
       enableModifiedTime: true,
       enableLastViewed: true,

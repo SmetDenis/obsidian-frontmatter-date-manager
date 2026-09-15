@@ -25,12 +25,14 @@ export const STRINGS_ZH_CN: Strings = {
   },
   commands: {
     updateCurrentFile: '更新当前文件的日期',
-    toggleAutoUpdate: '开启/关闭自动更新',
-    pauseAutoUpdate: '暂停自动更新 5 分钟',
+    toggleAutomaticDates: '开启或关闭自动日期',
+    pauseAutomaticDates: '暂停自动日期 5 分钟',
   },
   statusBar: {
-    paused: '已暂停',
-    pausedWithMinutes: '已暂停（{remaining} 分钟）',
+    on: 'FDM：开启',
+    off: 'FDM：关闭',
+    pausedWithMinutes: 'FDM：已暂停（{remaining} 分钟）',
+    tooltip: 'Frontmatter Date Manager：点击开启或关闭自动日期',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -44,7 +46,7 @@ export const STRINGS_ZH_CN: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged: '所有日期均已填写，且笔记自上次更新以来未发生变化。',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -54,10 +56,14 @@ export const STRINGS_ZH_CN: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: '更新日期失败：{reason}',
     failedToUpdate: '更新日期失败。',
-    autoUpdateEnabled: '自动更新已开启',
-    autoUpdateDisabled: '自动更新已关闭',
-    autoUpdatePausedForMinutes: '自动更新已暂停 {minutes} 分钟，将自动恢复。',
-    autoUpdateResumed: '自动更新已恢复。',
+    automaticDatesOn: '自动日期已开启。',
+    automaticDatesOff:
+      '自动日期已关闭。现在只能通过命令面板和批量工具更改日期。',
+    automaticDatesPausedForMinutes:
+      '自动日期已暂停 {minutes} 分钟，将自动恢复。',
+    automaticDatesResumed: 'Frontmatter Date Manager：自动日期已恢复。',
+    nothingToPause: '自动日期已关闭，没有可暂停的内容。',
+    automaticDatesOffSkipped: '自动日期已关闭，因此未更新此笔记。',
     malformedFrontmatter:
       'Frontmatter Date Manager 失败\n该文件的属性格式有误：{filePath}\n\n{message}',
   },
@@ -93,9 +99,16 @@ export const STRINGS_ZH_CN: Strings = {
     },
     dates: {
       enableNoneHint: '请至少开启上方的一项日期来设置插件。',
+      automatic: {
+        name: '自动日期',
+        desc: '让插件自动保持以下日期为最新：创建日期在笔记首次编辑时添加，最后编辑日期在每次编辑时更新，最后打开日期在打开笔记时添加。关闭后，日期只能通过“更新当前文件的日期”命令和批量工具更改。',
+        offHint:
+          '自动日期已关闭，因此上方的日期不会自动添加或更新。请在上方开启“自动日期”，或使用“更新当前文件的日期”命令或批量工具。',
+      },
       created: {
         enableName: '跟踪创建日期',
-        enableDesc: '为还没有创建日期的笔记添加创建日期。',
+        enableDesc:
+          '为还没有创建日期的笔记添加创建日期。该日期在笔记首次编辑时添加。',
         propertyName: '创建日期属性',
         propertyDesc: '保存创建日期的属性名。',
         propertyPlaceholder: 'Created',
@@ -148,9 +161,12 @@ export const STRINGS_ZH_CN: Strings = {
     },
     behavior: {
       heading: '行为',
-      autoUpdate: {
-        name: '自动更新',
-        desc: '编辑笔记时自动更新日期。也可从命令面板使用。',
+      statusBarMode: {
+        name: '状态栏指示器',
+        desc: '何时在状态栏显示自动日期是否开启。点击指示器可将其开启或关闭。状态栏在移动端不可用。',
+        optionAlways: '始终',
+        optionWhenInactive: '仅在关闭或暂停时',
+        optionNever: '从不',
       },
       minSeconds: {
         name: '更新之间的最少秒数',
@@ -334,9 +350,9 @@ export const STRINGS_ZH_CN: Strings = {
       overrideDesc: '只填写缺失的日期，或覆盖已有的日期。',
       overrideOptionFillMissing: '仅填写缺失（安全）',
       overrideOptionOverwriteAll: '全部覆盖（替换已有的）',
-      autoUpdateNoteTitle: '关于自动更新的说明：',
+      autoUpdateNoteTitle: '关于自动日期的说明：',
       autoUpdateNoteBody:
-        '如果自动更新一直处于活动状态，文件在磁盘上自身的日期可能已经反映的是插件自己的编辑，而非原始日期。为获得最佳效果，请在开启自动更新之前，或安装插件后立即使用此功能。',
+        '如果自动日期一直处于开启状态，文件在磁盘上自身的日期可能已经反映的是插件自己的编辑，而非原始日期。为获得最佳效果，请在开启自动日期之前，或安装插件后立即使用此功能。',
       warningTitleCreatedUnreliable: '文件的创建日期在某些平台上不可靠',
       warningTitlePlatformNote: '平台说明',
       platformMacWin: 'macOS / Windows',

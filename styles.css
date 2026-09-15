@@ -1,162 +1,165 @@
 .frontmatter-date-manager-hidden {
-    display: none;
+  display: none;
 }
 
 /* Plugin description block at the top of settings */
 .frontmatter-date-manager-plugin-description {
-    /* Rendered as a child of a .setting-item, which is a flex row - without an
+  /* Rendered as a child of a .setting-item, which is a flex row - without an
        explicit width the block shrinks to its content and is pushed to the
        right by the row's empty .setting-item-info. Same fix as the filter
        reference below. */
-    width: 100%;
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.6;
-    margin-bottom: 1rem;
-    padding: 0.75rem 1rem;
-    background: var(--background-secondary);
-    border-radius: var(--radius-s);
-    border-inline-start: 3px solid var(--text-accent);
+  width: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  border-inline-start: 3px solid var(--text-accent);
 }
 
 .frontmatter-date-manager-plugin-description p {
-    margin: 0 0 0.4rem;
+  margin: 0 0 0.4rem;
 }
 
 .frontmatter-date-manager-plugin-description p:last-child {
-    margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* Hint when both timestamp toggles are off */
 .frontmatter-date-manager-hint-message {
-    /* Full width for the same reason as the description block above: the
+  /* Full width for the same reason as the description block above: the
        parent .setting-item is a flex row with an empty info column. */
-    width: 100%;
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    font-style: italic;
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    background: var(--background-secondary);
-    border-radius: var(--radius-s);
-    border-inline-start: 3px solid var(--text-accent);
+  width: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  font-style: italic;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  border-inline-start: 3px solid var(--text-accent);
 }
 
 .frontmatter-date-manager-filter-setting {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
 .frontmatter-date-manager-filter-setting .setting-item-control {
-    width: 100%;
+  width: 100%;
 }
 
 .frontmatter-date-manager-filter-textarea {
-    width: 100%;
-    font-family: var(--font-monospace);
-    font-size: var(--font-smaller);
-    resize: vertical;
-    min-height: 150px;
+  width: 100%;
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  resize: vertical;
+  min-height: 150px;
 }
 
 .frontmatter-date-manager-filter-warn {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    margin-top: 0.25rem;
-    margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .frontmatter-date-manager-filter-errors {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin-top: 0.25rem;
+  color: var(--text-error);
+  font-size: var(--font-smaller);
+  margin-top: 0.25rem;
 }
 
 .frontmatter-date-manager-filter-preview {
-    margin-top: 0.5rem;
-    font-size: var(--font-smaller);
+  margin-top: 0.5rem;
+  font-size: var(--font-smaller);
 }
 
 .frontmatter-date-manager-filter-preview-summary {
-    color: var(--text-muted);
-    margin-bottom: 0.25rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
 }
 
 .frontmatter-date-manager-filter-preview details {
-    margin-top: 0.25rem;
+  margin-top: 0.25rem;
 }
 
 .frontmatter-date-manager-filter-preview ul {
-    margin: 0.25rem 0;
-    padding-inline-start: 1.5rem;
+  margin: 0.25rem 0;
+  padding-inline-start: 1.5rem;
 }
 
 .frontmatter-date-manager-filter-preview li {
-    font-family: var(--font-monospace);
-    font-size: var(--font-smaller);
-    color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  color: var(--text-muted);
 }
 
 /* Filter rules: collapsible syntax reference */
 .frontmatter-date-manager-filter-reference {
-    /* The parent row is a flex column with align-items: flex-start - without
+  /* The parent row is a flex column with align-items: flex-start - without
        an explicit width the details shrinks to its content. */
-    width: 100%;
-    margin: 0.5rem 0;
-    font-size: var(--font-smaller);
-    line-height: 1.5;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: var(--font-smaller);
+  line-height: 1.5;
 }
 
 .frontmatter-date-manager-filter-reference > summary {
-    cursor: pointer;
-    color: var(--text-muted);
-    font-weight: var(--font-semibold);
-    margin-bottom: 0.25rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: var(--font-semibold);
+  margin-bottom: 0.25rem;
 }
 
-.frontmatter-date-manager-filter-reference .frontmatter-date-manager-ref-section-title {
-    margin: 0.75rem 0 0.25rem;
-    padding: 0;
-    color: var(--text-normal);
-    font-size: var(--font-smaller);
-    font-weight: var(--font-semibold);
-    border-bottom: 1px solid var(--background-modifier-border);
+.frontmatter-date-manager-filter-reference
+  .frontmatter-date-manager-ref-section-title {
+  margin: 0.75rem 0 0.25rem;
+  padding: 0;
+  color: var(--text-normal);
+  font-size: var(--font-smaller);
+  font-weight: var(--font-semibold);
+  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .frontmatter-date-manager-filter-reference table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.frontmatter-date-manager-filter-reference td.frontmatter-date-manager-ref-pattern {
-    font-family: var(--font-monospace);
-    white-space: nowrap;
-    padding-block: 0.15rem;
-    padding-inline: 0 1rem;
-    color: var(--text-normal);
-    vertical-align: top;
-    width: 40%;
+.frontmatter-date-manager-filter-reference
+  td.frontmatter-date-manager-ref-pattern {
+  font-family: var(--font-monospace);
+  white-space: nowrap;
+  padding-block: 0.15rem;
+  padding-inline: 0 1rem;
+  color: var(--text-normal);
+  vertical-align: top;
+  width: 40%;
 }
 
-.frontmatter-date-manager-filter-reference td.frontmatter-date-manager-ref-desc {
-    color: var(--text-muted);
-    padding: 0.15rem 0;
-    vertical-align: top;
+.frontmatter-date-manager-filter-reference
+  td.frontmatter-date-manager-ref-desc {
+  color: var(--text-muted);
+  padding: 0.15rem 0;
+  vertical-align: top;
 }
 
 .frontmatter-date-manager-filter-reference .frontmatter-date-manager-ref-note {
-    margin-top: 0.75rem;
-    color: var(--text-muted);
-    font-style: italic;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 /* Inline error under the timezone input (invalid IANA name typed) */
 .frontmatter-date-manager-timezone-error {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin-block-start: 0.25rem;
-    text-align: end;
+  color: var(--text-error);
+  font-size: var(--font-smaller);
+  margin-block-start: 0.25rem;
+  text-align: end;
 }
 
 /* ===== Bulk operation modals: shared chrome ===== */
@@ -170,172 +173,180 @@
    flags :has() for the broad selector invalidation it can trigger. Capped so it
    stays compact on large monitors. */
 .frontmatter-date-manager-bulk-modal-host {
-    width: var(--modal-width);
-    max-width: min(85vw, 900px);
+  width: var(--modal-width);
+  max-width: min(85vw, 900px);
 }
 
 .frontmatter-date-manager-bulk-modal .setting-item {
-    flex-wrap: wrap;
+  flex-wrap: wrap;
 }
 
 .frontmatter-date-manager-bulk-progress-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 0.75rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0;
 
-    & progress {
-        flex: 1;
-    }
+  & progress {
+    flex: 1;
+  }
 }
 
 .frontmatter-date-manager-bulk-summary {
-    color: var(--text-muted);
-    margin: 0.5rem 0;
-    font-size: var(--font-smaller);
+  color: var(--text-muted);
+  margin: 0.5rem 0;
+  font-size: var(--font-smaller);
 }
 
 .frontmatter-date-manager-bulk-warning {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin: 0.5rem 0;
-    font-weight: var(--font-semibold);
+  color: var(--text-error);
+  font-size: var(--font-smaller);
+  margin: 0.5rem 0;
+  font-weight: var(--font-semibold);
 }
 
 .frontmatter-date-manager-bulk-conflict-row {
-    color: var(--text-warning);
+  color: var(--text-warning);
 }
 
 .frontmatter-date-manager-bulk-preview-list {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    margin: 0.75rem 0;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  margin: 0.75rem 0;
 
-    & table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: var(--font-smaller);
-    }
+  & table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-smaller);
+  }
 
-    & th {
-        position: sticky;
-        top: 0;
-        background: var(--background-secondary);
-        padding: 0.4rem 0.5rem;
-        text-align: start;
-        border-bottom: 1px solid var(--background-modifier-border);
-        /* Headers mix LTR data (keyed names, the -> and delta glyphs); isolate
+  & th {
+    position: sticky;
+    top: 0;
+    background: var(--background-secondary);
+    padding: 0.4rem 0.5rem;
+    text-align: start;
+    border-bottom: 1px solid var(--background-modifier-border);
+    /* Headers mix LTR data (keyed names, the -> and delta glyphs); isolate
            them so they read correctly inside an RTL (ar/fa) line, like the cells. */
-        unicode-bidi: plaintext;
-    }
+    unicode-bidi: plaintext;
+  }
 
-    & td {
-        padding: 0.25rem 0.5rem;
-        font-family: var(--font-monospace);
-        font-size: var(--font-smaller);
-        border-bottom: 1px solid var(--background-modifier-border-hover);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        /* Diff cells hold LTR data (paths, dates, the -> and delta glyphs);
+  & td {
+    padding: 0.25rem 0.5rem;
+    font-family: var(--font-monospace);
+    font-size: var(--font-smaller);
+    border-bottom: 1px solid var(--background-modifier-border-hover);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Diff cells hold LTR data (paths, dates, the -> and delta glyphs);
            isolate them so they read correctly inside an RTL (ar/fa) line. */
-        unicode-bidi: plaintext;
-    }
+    unicode-bidi: plaintext;
+  }
 
-    & td:first-child {
-        max-width: 300px;
-    }
+  & td:first-child {
+    max-width: 300px;
+  }
 }
 
 /* Paginated preview: Prev / "Page X of Y" / Next pager (shared by all modals) */
 .frontmatter-date-manager-bulk-pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin: 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
 }
 
 .frontmatter-date-manager-bulk-pagination-info {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    min-width: 8em;
-    text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  min-width: 8em;
+  text-align: center;
 }
 
 /* "Download full preview" button row */
 .frontmatter-date-manager-bulk-download {
-    margin: 0.5rem 0;
+  margin: 0.5rem 0;
 }
 
 /* Notes a bulk run deliberately left untouched (unsaved editor changes).
    Visually distinct from the failure table: a skip is not a failure, so the
    intro uses the warning accent, not the error one. */
 .frontmatter-date-manager-bulk-skipped {
-    margin-block-start: 0.75rem;
+  margin-block-start: 0.75rem;
 }
 
 .frontmatter-date-manager-bulk-skipped-intro {
-    color: var(--text-warning);
-    font-size: var(--font-smaller);
-    font-weight: var(--font-semibold);
-    margin: 0.5rem 0;
+  color: var(--text-warning);
+  font-size: var(--font-smaller);
+  font-weight: var(--font-semibold);
+  margin: 0.5rem 0;
 }
 
 /* Populate: configure-phase platform / override notes */
 .frontmatter-date-manager-populate-platform-warning {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.5;
-    margin: 0.75rem 0;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  line-height: 1.5;
+  margin: 0.75rem 0;
 
-    & ul {
-        margin: 0.25rem 0;
-        padding-inline-start: 1.5rem;
-    }
+  & ul {
+    margin: 0.25rem 0;
+    padding-inline-start: 1.5rem;
+  }
 
-    & p {
-        margin: 0.5rem 0 0;
-    }
+  & p {
+    margin: 0.5rem 0 0;
+  }
 }
 
-.frontmatter-date-manager-populate-platform-warning .frontmatter-date-manager-current-platform {
-    font-weight: var(--font-bold);
-    color: var(--text-accent);
+.frontmatter-date-manager-populate-platform-warning
+  .frontmatter-date-manager-current-platform {
+  font-weight: var(--font-bold);
+  color: var(--text-accent);
 }
 
 .frontmatter-date-manager-populate-overwrite-warning {
-    color: var(--text-error);
-    font-weight: var(--font-bold);
-    margin: 0.5rem 0;
+  color: var(--text-error);
+  font-weight: var(--font-bold);
+  margin: 0.5rem 0;
 }
 
 .frontmatter-date-manager-populate-auto-update-note {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.5;
-    margin: 0.75rem 0;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  line-height: 1.5;
+  margin: 0.75rem 0;
 }
 
 /* Rename: configure-phase validation message */
 .frontmatter-date-manager-rename-key-validation {
-    color: var(--text-error);
-    font-size: var(--font-smaller);
-    margin: 0.25rem 0 0.5rem;
-    min-height: 1.2em;
+  color: var(--text-error);
+  font-size: var(--font-smaller);
+  margin: 0.25rem 0 0.5rem;
+  min-height: 1.2em;
 }
 
 /* Reformat: configure-phase auto-detect note */
 .frontmatter-date-manager-reformat-note {
-    color: var(--text-muted);
-    font-size: var(--font-smaller);
-    line-height: 1.5;
-    margin: 0.75rem 0;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+  line-height: 1.5;
+  margin: 0.75rem 0;
 }
 
 /* Find inversions: delta cell accent in the preview table */
 .frontmatter-date-manager-inversion-delta {
-    color: var(--text-error);
+  color: var(--text-error);
+}
+
+/* Status bar indicator hidden by the "Status bar indicator" setting (or while
+   automatic dates are on in the default mode). A class, not an inline style,
+   so themes and the snippet system keep control. */
+.frontmatter-date-manager-status.frontmatter-date-manager-status-hidden {
+  display: none;
 }

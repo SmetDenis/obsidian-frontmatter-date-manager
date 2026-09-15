@@ -20,12 +20,15 @@ export const STRINGS_NL: Strings = {
   },
   commands: {
     updateCurrentFile: 'Datums in huidig bestand bijwerken',
-    toggleAutoUpdate: 'Automatisch bijwerken aan/uit',
-    pauseAutoUpdate: 'Automatisch bijwerken 5 minuten pauzeren',
+    toggleAutomaticDates: 'Automatische datums in- of uitschakelen',
+    pauseAutomaticDates: 'Automatische datums 5 minuten pauzeren',
   },
   statusBar: {
-    paused: 'Gepauzeerd',
-    pausedWithMinutes: 'Gepauzeerd ({remaining}m)',
+    on: 'FDM: aan',
+    off: 'FDM: uit',
+    pausedWithMinutes: 'FDM: gepauzeerd ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: klik om automatische datums in of uit te schakelen',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_NL: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Alle datums zijn al ingevuld en de notitie is niet gewijzigd sinds de laatste update.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_NL: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Datums bijwerken mislukt: {reason}',
     failedToUpdate: 'Datums bijwerken mislukt.',
-    autoUpdateEnabled: 'Automatisch bijwerken ingeschakeld',
-    autoUpdateDisabled: 'Automatisch bijwerken uitgeschakeld',
-    autoUpdatePausedForMinutes:
-      'Automatisch bijwerken gepauzeerd voor {minutes} minuten. Wordt automatisch hervat.',
-    autoUpdateResumed: 'Automatisch bijwerken hervat.',
+    automaticDatesOn: 'Automatische datums ingeschakeld.',
+    automaticDatesOff:
+      'Automatische datums uitgeschakeld. Datums veranderen nu alleen via het opdrachtenpalet en de bulkbewerkingen.',
+    automaticDatesPausedForMinutes:
+      'Automatische datums gepauzeerd voor {minutes} minuten. Ze worden automatisch hervat.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: automatische datums hervat.',
+    nothingToPause:
+      'Automatische datums zijn uitgeschakeld, dus er is niets om te pauzeren.',
+    automaticDatesOffSkipped:
+      'Automatische datums zijn uitgeschakeld, dus deze notitie is niet bijgewerkt.',
     malformedFrontmatter:
       'Frontmatter Date Manager: mislukt\nOnjuiste eigenschappen in dit bestand: {filePath}\n\n{message}',
   },
@@ -93,10 +103,16 @@ export const STRINGS_NL: Strings = {
     dates: {
       enableNoneHint:
         'Schakel hierboven minstens één datum in om de plug-in in te stellen.',
+      automatic: {
+        name: 'Automatische datums',
+        desc: 'Laat de plug-in de onderstaande datums zelf actueel houden: de aanmaakdatum wordt toegevoegd bij de eerste bewerking van een notitie, de laatst-bewerkt-datum bij elke bewerking en de laatst-geopend-datum wanneer u een notitie opent. Als dit is uitgeschakeld, veranderen datums alleen via de opdracht "Datums in huidig bestand bijwerken" en de bulkbewerkingen.',
+        offHint:
+          'Automatische datums zijn uitgeschakeld, dus de datums hierboven worden niet vanzelf toegevoegd of bijgewerkt. Schakel "Automatische datums" hierboven in, of gebruik de opdracht "Datums in huidig bestand bijwerken" of de bulkbewerkingen.',
+      },
       created: {
         enableName: 'Aanmaakdatum bijhouden',
         enableDesc:
-          'Voeg een aanmaakdatum toe aan notities die er nog geen hebben.',
+          'Voeg een aanmaakdatum toe aan notities die er nog geen hebben. Deze wordt toegevoegd bij de eerste bewerking van de notitie.',
         propertyName: 'Eigenschap voor aanmaakdatum',
         propertyDesc:
           'Naam van de eigenschap waarin de aanmaakdatum wordt opgeslagen.',
@@ -153,9 +169,12 @@ export const STRINGS_NL: Strings = {
     },
     behavior: {
       heading: 'Gedrag',
-      autoUpdate: {
-        name: 'Automatisch bijwerken',
-        desc: 'Datums automatisch bijwerken wanneer u een notitie bewerkt. Ook beschikbaar vanuit het opdrachtenpalet.',
+      statusBarMode: {
+        name: 'Statusbalkindicator',
+        desc: 'Wanneer in de statusbalk wordt getoond of automatische datums zijn ingeschakeld. Klik op de indicator om ze in of uit te schakelen. De statusbalk is niet beschikbaar op mobiel.',
+        optionAlways: 'Altijd',
+        optionWhenInactive: 'Alleen wanneer uitgeschakeld of gepauzeerd',
+        optionNever: 'Nooit',
       },
       minSeconds: {
         name: 'Minimaal aantal seconden tussen updates',
@@ -354,9 +373,9 @@ export const STRINGS_NL: Strings = {
         'Vul alleen de ontbrekende datums in, of overschrijf de bestaande.',
       overrideOptionFillMissing: 'Alleen ontbrekende invullen (veilig)',
       overrideOptionOverwriteAll: 'Alles overschrijven (vervangt bestaande)',
-      autoUpdateNoteTitle: 'Opmerking over automatisch bijwerken:',
+      autoUpdateNoteTitle: 'Opmerking over automatische datums:',
       autoUpdateNoteBody:
-        'Als automatisch bijwerken actief is geweest, weerspiegelen de eigen datums van het bestand op schijf mogelijk al de bewerkingen van de plug-in zelf, niet de oorspronkelijke datums. Gebruik deze functie voor het beste resultaat voordat u automatisch bijwerken inschakelt of direct na het installeren van de plug-in.',
+        'Als automatische datums ingeschakeld zijn geweest, weerspiegelen de eigen datums van het bestand op schijf mogelijk al de bewerkingen van de plug-in zelf, niet de oorspronkelijke datums. Gebruik deze functie voor het beste resultaat voordat u automatische datums inschakelt of direct na het installeren van de plug-in.',
       warningTitleCreatedUnreliable:
         'De aanmaakdatum van het bestand is onbetrouwbaar op sommige platforms',
       warningTitlePlatformNote: 'Platformopmerking',

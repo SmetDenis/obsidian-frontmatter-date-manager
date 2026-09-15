@@ -34,6 +34,7 @@
 Investigations whose outcome was "do not build this, and here is exactly why". Read one before re-opening the question it settles.
 
 - [Rename-induced link rewrites and `updated`](./decisions/rename-induced-link-updates.md) - why the plugin stamps `updated` on notes it only link-rewrote after a rename, six candidate designs (five rejected, one - R2 - built), the zero-code workaround, and the reopening criteria (issue #18)
+- [The "Automatic dates" master switch](./decisions/automatic-dates-master-switch.md) - why `created` was not decoupled from the switch, how the switch is enforced at write time with auto/manual work origin, the manual fill-missing mode, the new-file window fixes, and the deferred opt-in "stamp when a note appears" mode (issue #24)
 
 ## Plans
 

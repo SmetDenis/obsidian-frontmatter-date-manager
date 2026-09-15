@@ -125,31 +125,46 @@ export async function fdmWriteBlock(path: string): Promise<string | null> {
   }, path);
 }
 
-/** Run one FDM pass on this file exactly as a vault `modify` event would. */
-export async function fdmHandleFileChange(path: string): Promise<{
+/**
+ * Run one FDM pass on this file. `'auto'` (default) runs it exactly as a vault
+ * `modify` event would - so it is dropped while automatic dates are off;
+ * `'manual'` runs it as the "Update timestamps for current file" command does,
+ * the only pass that still writes with automatic dates off (issue #24).
+ */
+export async function fdmHandleFileChange(
+  path: string,
+  origin: 'auto' | 'manual' = 'auto',
+): Promise<{
   status: string;
   wrote?: boolean;
   blocked?: string;
   reason?: string;
 }> {
-  return browser.executeObsidian(async ({ app }, p) => {
-    const plugin = (
-      app as unknown as { plugins: { plugins: Record<string, unknown> } }
-    ).plugins.plugins['frontmatter-date-manager'] as
-      | {
-          handleFileChange(f: unknown): Promise<{
-            status: string;
-            wrote?: boolean;
-            blocked?: string;
-            reason?: string;
-          }>;
-        }
-      | undefined;
-    if (!plugin) throw new Error('frontmatter-date-manager is not loaded');
-    const file = app.vault.getAbstractFileByPath(p);
-    if (!file) throw new Error(`no such file: ${p}`);
-    return await plugin.handleFileChange(file);
-  }, path);
+  return browser.executeObsidian(
+    async ({ app }, p, o) => {
+      const plugin = (
+        app as unknown as { plugins: { plugins: Record<string, unknown> } }
+      ).plugins.plugins['frontmatter-date-manager'] as
+        | {
+            handleFileChange(
+              f: unknown,
+              origin: 'auto' | 'manual',
+            ): Promise<{
+              status: string;
+              wrote?: boolean;
+              blocked?: string;
+              reason?: string;
+            }>;
+          }
+        | undefined;
+      if (!plugin) throw new Error('frontmatter-date-manager is not loaded');
+      const file = app.vault.getAbstractFileByPath(p);
+      if (!file) throw new Error(`no such file: ${p}`);
+      return await plugin.handleFileChange(file, o);
+    },
+    path,
+    origin,
+  );
 }
 
 /**

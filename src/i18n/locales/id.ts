@@ -20,12 +20,15 @@ export const STRINGS_ID: Strings = {
   },
   commands: {
     updateCurrentFile: 'Perbarui tanggal untuk berkas saat ini',
-    toggleAutoUpdate: 'Aktifkan/nonaktifkan pembaruan otomatis',
-    pauseAutoUpdate: 'Jeda pembaruan otomatis selama 5 menit',
+    toggleAutomaticDates: 'Aktifkan atau nonaktifkan tanggal otomatis',
+    pauseAutomaticDates: 'Jeda tanggal otomatis selama 5 menit',
   },
   statusBar: {
-    paused: 'Dijeda',
-    pausedWithMinutes: 'Dijeda ({remaining}m)',
+    on: 'FDM: aktif',
+    off: 'FDM: nonaktif',
+    pausedWithMinutes: 'FDM: dijeda ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: klik untuk mengaktifkan atau menonaktifkan tanggal otomatis',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_ID: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Semua tanggal sudah terisi, dan catatan tidak berubah sejak pembaruan terakhir.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_ID: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Gagal memperbarui tanggal: {reason}',
     failedToUpdate: 'Gagal memperbarui tanggal.',
-    autoUpdateEnabled: 'Pembaruan otomatis aktif',
-    autoUpdateDisabled: 'Pembaruan otomatis nonaktif',
-    autoUpdatePausedForMinutes:
-      'Pembaruan otomatis dijeda selama {minutes} menit. Akan dilanjutkan otomatis.',
-    autoUpdateResumed: 'Pembaruan otomatis dilanjutkan.',
+    automaticDatesOn: 'Tanggal otomatis diaktifkan.',
+    automaticDatesOff:
+      'Tanggal otomatis dinonaktifkan. Tanggal kini hanya berubah melalui palet perintah dan alat massal.',
+    automaticDatesPausedForMinutes:
+      'Tanggal otomatis dijeda selama {minutes} menit. Akan dilanjutkan secara otomatis.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: tanggal otomatis dilanjutkan.',
+    nothingToPause:
+      'Tanggal otomatis nonaktif, jadi tidak ada yang perlu dijeda.',
+    automaticDatesOffSkipped:
+      'Tanggal otomatis nonaktif, jadi catatan ini tidak diperbarui.',
     malformedFrontmatter:
       'Frontmatter Date Manager gagal\nProperti rusak pada berkas ini: {filePath}\n\n{message}',
   },
@@ -92,10 +102,16 @@ export const STRINGS_ID: Strings = {
     dates: {
       enableNoneHint:
         'Aktifkan setidaknya satu tanggal di atas untuk menyiapkan plugin.',
+      automatic: {
+        name: 'Tanggal otomatis',
+        desc: 'Biarkan plugin menjaga tanggal di bawah tetap terkini secara otomatis: tanggal pembuatan ditambahkan saat pengeditan pertama catatan, tanggal terakhir diedit pada setiap suntingan, dan tanggal terakhir dibuka saat Anda membuka catatan. Saat nonaktif, tanggal hanya berubah melalui perintah "Perbarui tanggal untuk berkas saat ini" dan alat massal.',
+        offHint:
+          'Tanggal otomatis nonaktif, jadi tanggal di atas tidak ditambahkan atau diperbarui secara otomatis. Aktifkan "Tanggal otomatis" di atas, atau gunakan perintah "Perbarui tanggal untuk berkas saat ini" atau alat massal.',
+      },
       created: {
         enableName: 'Lacak tanggal pembuatan',
         enableDesc:
-          'Tambahkan tanggal pembuatan ke catatan yang belum memilikinya.',
+          'Tambahkan tanggal pembuatan ke catatan yang belum memilikinya. Ditambahkan saat pengeditan pertama catatan.',
         propertyName: 'Properti dibuat',
         propertyDesc: 'Nama properti tempat tanggal pembuatan disimpan.',
         propertyPlaceholder: 'Created',
@@ -148,9 +164,12 @@ export const STRINGS_ID: Strings = {
     },
     behavior: {
       heading: 'Perilaku',
-      autoUpdate: {
-        name: 'Pembaruan otomatis',
-        desc: 'Perbarui tanggal secara otomatis saat Anda mengedit catatan. Juga tersedia dari palet perintah.',
+      statusBarMode: {
+        name: 'Indikator bilah status',
+        desc: 'Kapan menampilkan di bilah status apakah tanggal otomatis aktif. Klik indikator untuk mengaktifkan atau menonaktifkannya. Bilah status tidak tersedia di perangkat seluler.',
+        optionAlways: 'Selalu',
+        optionWhenInactive: 'Hanya saat nonaktif atau dijeda',
+        optionNever: 'Tidak pernah',
       },
       minSeconds: {
         name: 'Detik minimum antar pembaruan',
@@ -347,9 +366,9 @@ export const STRINGS_ID: Strings = {
       overrideDesc: 'Isi hanya tanggal yang hilang, atau timpa yang sudah ada.',
       overrideOptionFillMissing: 'Hanya isi yang hilang (aman)',
       overrideOptionOverwriteAll: 'Timpa semua (mengganti yang ada)',
-      autoUpdateNoteTitle: 'Catatan tentang pembaruan otomatis:',
+      autoUpdateNoteTitle: 'Catatan tentang tanggal otomatis:',
       autoUpdateNoteBody:
-        'Jika pembaruan otomatis telah aktif, tanggal milik berkas di disk mungkin sudah mencerminkan suntingan plugin sendiri, bukan tanggal asli. Untuk hasil terbaik, gunakan fitur ini sebelum mengaktifkan pembaruan otomatis atau segera setelah memasang plugin.',
+        'Jika tanggal otomatis telah aktif, tanggal milik berkas di disk mungkin sudah mencerminkan suntingan plugin sendiri, bukan tanggal asli. Untuk hasil terbaik, gunakan fitur ini sebelum mengaktifkan tanggal otomatis atau segera setelah memasang plugin.',
       warningTitleCreatedUnreliable:
         'Tanggal pembuatan berkas tidak andal pada beberapa platform',
       warningTitlePlatformNote: 'Catatan platform',

@@ -47,7 +47,7 @@ obsidian-frontmatter-date-manager/
 │   │
 │   ├── __mocks__/
 │   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops; getLanguage stub).
-│   └── __tests__/                    # 38 vitest spec files + helpers/setup (incl. bulk/).
+│   └── __tests__/                    # 39 vitest spec files + helpers/setup (incl. bulk/).
 │
 ├── e2e/                             # WebdriverIO + real Obsidian (1.13.4). Manual, not CI.
 │   ├── specs/                       #   *.e2e.ts (Group A auto path, Group B bulk modals,
@@ -55,7 +55,7 @@ obsidian-frontmatter-date-manager/
 │   ├── helpers/                     #   Per-test notes, frontmatter parsing, settings patch,
 │   │                                 #   editor probes, rename driving (rename.ts).
 │   ├── pageobjects/                 #   ALL DOM coupling (settingsTab, bulkModal,
-│   │                                 #   linkUpdateModal).
+│   │                                 #   linkUpdateModal, statusBar).
 │   ├── vaults/simple/               #   Seed vault (each spec gets its own copy).
 │   └── README.md                    #   Full e2e scenario list.
 │

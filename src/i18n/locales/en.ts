@@ -22,13 +22,18 @@ export const STRINGS_EN = {
 
   commands: {
     updateCurrentFile: 'Update timestamps for current file',
-    toggleAutoUpdate: 'Toggle auto-update on/off',
-    pauseAutoUpdate: 'Pause auto-update for 5 minutes',
+    toggleAutomaticDates: 'Turn automatic dates on or off',
+    pauseAutomaticDates: 'Pause automatic dates for 5 minutes',
   },
 
+  // The status bar is shared by all plugins, so its text carries the short
+  // plugin prefix "FDM" (keep it verbatim in every locale).
   statusBar: {
-    paused: 'Paused',
-    pausedWithMinutes: 'Paused ({remaining}m)',
+    on: 'FDM: on',
+    off: 'FDM: off',
+    pausedWithMinutes: 'FDM: paused ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: click to turn automatic dates on or off',
   },
 
   notices: {
@@ -43,7 +48,8 @@ export const STRINGS_EN = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'All dates are already filled in, and the note has not changed since the last update.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -53,11 +59,17 @@ export const STRINGS_EN = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Failed to update timestamps: {reason}',
     failedToUpdate: 'Failed to update timestamps.',
-    autoUpdateEnabled: 'Auto-update enabled',
-    autoUpdateDisabled: 'Auto-update disabled',
-    autoUpdatePausedForMinutes:
-      'Auto-update paused for {minutes} minutes. Will resume automatically.',
-    autoUpdateResumed: 'Auto-update resumed.',
+    automaticDatesOn: 'Automatic dates turned on.',
+    automaticDatesOff:
+      'Automatic dates turned off. Dates now change only through the command palette and the bulk tools.',
+    automaticDatesPausedForMinutes:
+      'Automatic dates paused for {minutes} minutes. They will resume on their own.',
+    // Shown minutes after the pause command, with no action from the user, so
+    // it names the plugin.
+    automaticDatesResumed: 'Frontmatter Date Manager: automatic dates resumed.',
+    nothingToPause: 'Automatic dates are off, so there is nothing to pause.',
+    automaticDatesOffSkipped:
+      'Automatic dates are off, so this note was not updated.',
     malformedFrontmatter:
       'Frontmatter Date Manager failed\nMalformed frontmatter on this file: {filePath}\n\n{message}',
   },
@@ -97,9 +109,16 @@ export const STRINGS_EN = {
     },
     dates: {
       enableNoneHint: 'Turn on at least one date above to set up the plugin.',
+      automatic: {
+        name: 'Automatic dates',
+        desc: "Let the plugin keep the dates below current on its own: the creation date is added on a note's first edit, the last-edited date on every edit, and the last-opened date when you open a note. When off, dates change only through the 'Update timestamps for current file' command and the bulk tools.",
+        offHint:
+          "Automatic dates are off, so the dates above are not added or updated on their own. Turn on 'Automatic dates' above, or use the 'Update timestamps for current file' command or the bulk tools.",
+      },
       created: {
         enableName: 'Track creation date',
-        enableDesc: "Add a creation date to notes that don't have one yet.",
+        enableDesc:
+          "Add a creation date to notes that don't have one yet. It is added on the note's first edit.",
         propertyName: 'Created property',
         propertyDesc: 'Property name where the creation date is saved.',
         propertyPlaceholder: 'Created',
@@ -152,9 +171,12 @@ export const STRINGS_EN = {
     },
     behavior: {
       heading: 'Behavior',
-      autoUpdate: {
-        name: 'Auto-update',
-        desc: 'Automatically update dates when you edit a note. Also available from the command palette.',
+      statusBarMode: {
+        name: 'Status bar indicator',
+        desc: 'When to show whether automatic dates are on in the status bar. Click the indicator to turn them on or off. The status bar is not available on mobile.',
+        optionAlways: 'Always',
+        optionWhenInactive: 'Only when off or paused',
+        optionNever: 'Never',
       },
       minSeconds: {
         name: 'Minimum seconds between updates',
@@ -347,9 +369,9 @@ export const STRINGS_EN = {
         'Fill in only the missing dates, or overwrite the existing ones.',
       overrideOptionFillMissing: 'Fill missing only (safe)',
       overrideOptionOverwriteAll: 'Overwrite all (replaces existing)',
-      autoUpdateNoteTitle: 'Note about auto-update:',
+      autoUpdateNoteTitle: 'Note about automatic dates:',
       autoUpdateNoteBody:
-        "If auto-update has been active, the file's own dates on disk may already reflect the plugin's own edits, not the original dates. For best results, use this feature before enabling auto-update or right after installing the plugin.",
+        "If automatic dates have been on, the file's own dates on disk may already reflect the plugin's own edits, not the original dates. For best results, use this feature before turning on automatic dates or right after installing the plugin.",
       warningTitleCreatedUnreliable:
         "The file's creation date is unreliable on some platforms",
       warningTitlePlatformNote: 'Platform note',

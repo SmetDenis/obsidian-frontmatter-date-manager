@@ -20,12 +20,15 @@ export const STRINGS_TR: Strings = {
   },
   commands: {
     updateCurrentFile: 'Geçerli dosyadaki tarihleri güncelle',
-    toggleAutoUpdate: 'Otomatik güncellemeyi aç/kapat',
-    pauseAutoUpdate: 'Otomatik güncellemeyi 5 dakika duraklat',
+    toggleAutomaticDates: 'Otomatik tarihleri aç veya kapat',
+    pauseAutomaticDates: 'Otomatik tarihleri 5 dakika duraklat',
   },
   statusBar: {
-    paused: 'Duraklatıldı',
-    pausedWithMinutes: 'Duraklatıldı ({remaining}d)',
+    on: 'FDM: açık',
+    off: 'FDM: kapalı',
+    pausedWithMinutes: 'FDM: duraklatıldı ({remaining}d)',
+    tooltip:
+      'Frontmatter Date Manager: otomatik tarihleri açmak veya kapatmak için tıklayın',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_TR: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Tüm tarihler zaten dolu ve not son güncellemeden bu yana değişmedi.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_TR: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Tarihler güncellenemedi: {reason}',
     failedToUpdate: 'Tarihler güncellenemedi.',
-    autoUpdateEnabled: 'Otomatik güncelleme açık',
-    autoUpdateDisabled: 'Otomatik güncelleme kapalı',
-    autoUpdatePausedForMinutes:
-      'Otomatik güncelleme {minutes} dakika duraklatıldı. Otomatik olarak devam edecek.',
-    autoUpdateResumed: 'Otomatik güncelleme devam ettirildi.',
+    automaticDatesOn: 'Otomatik tarihler açıldı.',
+    automaticDatesOff:
+      'Otomatik tarihler kapatıldı. Tarihler artık yalnızca komut paleti ve toplu araçlar üzerinden değişir.',
+    automaticDatesPausedForMinutes:
+      'Otomatik tarihler {minutes} dakika duraklatıldı. Kendiliğinden devam edecek.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: otomatik tarihler devam ettirildi.',
+    nothingToPause:
+      'Otomatik tarihler kapalı olduğundan duraklatılacak bir şey yok.',
+    automaticDatesOffSkipped:
+      'Otomatik tarihler kapalı olduğundan bu not güncellenmedi.',
     malformedFrontmatter:
       'Frontmatter Date Manager başarısız oldu\nBu dosyada bozuk özellikler var: {filePath}\n\n{message}',
   },
@@ -92,9 +102,16 @@ export const STRINGS_TR: Strings = {
     dates: {
       enableNoneHint:
         'Eklentiyi kurmak için yukarıdaki tarihlerden en az birini açın.',
+      automatic: {
+        name: 'Otomatik tarihler',
+        desc: 'Eklentinin aşağıdaki tarihleri kendiliğinden güncel tutmasına izin verin: oluşturma tarihi bir notun ilk düzenlemesinde eklenir, son düzenleme tarihi her düzenlemede ve son açılma tarihi bir notu açtığınızda eklenir. Kapalıyken tarihler yalnızca "Geçerli dosyadaki tarihleri güncelle" komutu ve toplu araçlar üzerinden değişir.',
+        offHint:
+          'Otomatik tarihler kapalı olduğundan yukarıdaki tarihler kendiliğinden eklenmez veya güncellenmez. Yukarıdan "Otomatik tarihler"i açın veya "Geçerli dosyadaki tarihleri güncelle" komutunu ya da toplu araçları kullanın.',
+      },
       created: {
         enableName: 'Oluşturma tarihini izle',
-        enableDesc: 'Henüz oluşturma tarihi olmayan notlara bir tarih ekle.',
+        enableDesc:
+          'Henüz oluşturma tarihi olmayan notlara bir tarih ekle. Notun ilk düzenlemesinde eklenir.',
         propertyName: 'Oluşturma özelliği',
         propertyDesc: 'Oluşturma tarihinin kaydedildiği özellik adı.',
         propertyPlaceholder: 'Created',
@@ -147,9 +164,12 @@ export const STRINGS_TR: Strings = {
     },
     behavior: {
       heading: 'Davranış',
-      autoUpdate: {
-        name: 'Otomatik güncelleme',
-        desc: 'Bir notu düzenlediğinizde tarihleri otomatik olarak güncelle. Komut paletinden de kullanılabilir.',
+      statusBarMode: {
+        name: 'Durum çubuğu göstergesi',
+        desc: 'Otomatik tarihlerin açık olup olmadığının durum çubuğunda ne zaman gösterileceği. Açmak veya kapatmak için göstergeye tıklayın. Durum çubuğu mobilde kullanılamaz.',
+        optionAlways: 'Her zaman',
+        optionWhenInactive: 'Yalnızca kapalı veya duraklatılmışken',
+        optionNever: 'Hiçbir zaman',
       },
       minSeconds: {
         name: 'Güncellemeler arasındaki en az saniye',
@@ -347,9 +367,9 @@ export const STRINGS_TR: Strings = {
       overrideOptionFillMissing: 'Yalnızca eksik olanları doldur (güvenli)',
       overrideOptionOverwriteAll:
         'Tümünün üzerine yaz (mevcut olanları değiştirir)',
-      autoUpdateNoteTitle: 'Otomatik güncelleme hakkında not:',
+      autoUpdateNoteTitle: 'Otomatik tarihler hakkında not:',
       autoUpdateNoteBody:
-        'Otomatik güncelleme etkinse, dosyanın diskteki kendi tarihleri özgün tarihleri değil, eklentinin kendi düzenlemelerini yansıtıyor olabilir. En iyi sonuç için bu özelliği otomatik güncellemeyi açmadan önce veya eklentiyi kurduktan hemen sonra kullanın.',
+        'Otomatik tarihler açıksa, dosyanın diskteki kendi tarihleri özgün tarihleri değil, eklentinin kendi düzenlemelerini yansıtıyor olabilir. En iyi sonuç için bu özelliği otomatik tarihleri açmadan önce veya eklentiyi kurduktan hemen sonra kullanın.',
       warningTitleCreatedUnreliable:
         'Dosyanın oluşturma tarihi bazı platformlarda güvenilir değil',
       warningTitlePlatformNote: 'Platform notu',

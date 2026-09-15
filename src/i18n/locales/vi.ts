@@ -20,12 +20,14 @@ export const STRINGS_VI: Strings = {
   },
   commands: {
     updateCurrentFile: 'Cập nhật ngày cho tệp hiện tại',
-    toggleAutoUpdate: 'Bật/tắt tự động cập nhật',
-    pauseAutoUpdate: 'Tạm dừng tự động cập nhật trong 5 phút',
+    toggleAutomaticDates: 'Bật hoặc tắt ngày tự động',
+    pauseAutomaticDates: 'Tạm dừng ngày tự động trong 5 phút',
   },
   statusBar: {
-    paused: 'Đã tạm dừng',
-    pausedWithMinutes: 'Đã tạm dừng ({remaining} phút)',
+    on: 'FDM: bật',
+    off: 'FDM: tắt',
+    pausedWithMinutes: 'FDM: đã tạm dừng ({remaining} phút)',
+    tooltip: 'Frontmatter Date Manager: nhấp để bật hoặc tắt ngày tự động',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +41,8 @@ export const STRINGS_VI: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Tất cả các ngày đã được điền đầy đủ, và ghi chú không thay đổi kể từ lần cập nhật gần nhất.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +52,16 @@ export const STRINGS_VI: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Không thể cập nhật ngày: {reason}',
     failedToUpdate: 'Không thể cập nhật ngày.',
-    autoUpdateEnabled: 'Đã bật tự động cập nhật',
-    autoUpdateDisabled: 'Đã tắt tự động cập nhật',
-    autoUpdatePausedForMinutes:
-      'Đã tạm dừng tự động cập nhật trong {minutes} phút. Sẽ tự động tiếp tục.',
-    autoUpdateResumed: 'Đã tiếp tục tự động cập nhật.',
+    automaticDatesOn: 'Đã bật ngày tự động.',
+    automaticDatesOff:
+      'Đã tắt ngày tự động. Ngày giờ đây chỉ thay đổi qua bảng lệnh và các công cụ hàng loạt.',
+    automaticDatesPausedForMinutes:
+      'Đã tạm dừng ngày tự động trong {minutes} phút. Sẽ tự tiếp tục.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: đã tiếp tục ngày tự động.',
+    nothingToPause: 'Ngày tự động đang tắt, nên không có gì để tạm dừng.',
+    automaticDatesOffSkipped:
+      'Ngày tự động đang tắt, nên ghi chú này không được cập nhật.',
     malformedFrontmatter:
       'Frontmatter Date Manager thất bại\nThuộc tính bị lỗi định dạng trong tệp này: {filePath}\n\n{message}',
   },
@@ -92,9 +100,16 @@ export const STRINGS_VI: Strings = {
     },
     dates: {
       enableNoneHint: 'Bật ít nhất một ngày ở trên để thiết lập plugin.',
+      automatic: {
+        name: 'Ngày tự động',
+        desc: 'Để plugin tự giữ các ngày bên dưới luôn cập nhật: ngày tạo được thêm vào lần chỉnh sửa đầu tiên của ghi chú, ngày chỉnh sửa cuối ở mỗi lần chỉnh sửa, và ngày mở cuối khi bạn mở ghi chú. Khi tắt, ngày chỉ thay đổi qua lệnh "Cập nhật ngày cho tệp hiện tại" và các công cụ hàng loạt.',
+        offHint:
+          'Ngày tự động đang tắt, nên các ngày ở trên không tự thêm hoặc cập nhật. Hãy bật "Ngày tự động" ở trên, hoặc dùng lệnh "Cập nhật ngày cho tệp hiện tại" hay các công cụ hàng loạt.',
+      },
       created: {
         enableName: 'Theo dõi ngày tạo',
-        enableDesc: 'Thêm ngày tạo cho các ghi chú chưa có.',
+        enableDesc:
+          'Thêm ngày tạo cho các ghi chú chưa có. Ngày này được thêm vào lần chỉnh sửa đầu tiên của ghi chú.',
         propertyName: 'Thuộc tính ngày tạo',
         propertyDesc: 'Tên thuộc tính nơi lưu ngày tạo.',
         propertyPlaceholder: 'Created',
@@ -147,9 +162,12 @@ export const STRINGS_VI: Strings = {
     },
     behavior: {
       heading: 'Hành vi',
-      autoUpdate: {
-        name: 'Tự động cập nhật',
-        desc: 'Tự động cập nhật ngày khi bạn chỉnh sửa ghi chú. Cũng có sẵn từ bảng lệnh.',
+      statusBarMode: {
+        name: 'Chỉ báo thanh trạng thái',
+        desc: 'Khi nào hiển thị trên thanh trạng thái việc ngày tự động có đang bật hay không. Nhấp vào chỉ báo để bật hoặc tắt. Thanh trạng thái không có trên di động.',
+        optionAlways: 'Luôn luôn',
+        optionWhenInactive: 'Chỉ khi tắt hoặc tạm dừng',
+        optionNever: 'Không bao giờ',
       },
       minSeconds: {
         name: 'Số giây tối thiểu giữa các lần cập nhật',
@@ -343,9 +361,9 @@ export const STRINGS_VI: Strings = {
         'Chỉ điền các ngày còn thiếu, hoặc ghi đè các ngày hiện có.',
       overrideOptionFillMissing: 'Chỉ điền ngày thiếu (an toàn)',
       overrideOptionOverwriteAll: 'Ghi đè tất cả (thay thế ngày hiện có)',
-      autoUpdateNoteTitle: 'Lưu ý về tự động cập nhật:',
+      autoUpdateNoteTitle: 'Lưu ý về ngày tự động:',
       autoUpdateNoteBody:
-        'Nếu tự động cập nhật đã hoạt động, ngày của chính tệp trên đĩa có thể đã phản ánh các chỉnh sửa của plugin, không phải ngày gốc. Để có kết quả tốt nhất, hãy dùng tính năng này trước khi bật tự động cập nhật hoặc ngay sau khi cài plugin.',
+        'Nếu ngày tự động đã bật, ngày của chính tệp trên đĩa có thể đã phản ánh các chỉnh sửa của plugin, không phải ngày gốc. Để có kết quả tốt nhất, hãy dùng tính năng này trước khi bật ngày tự động hoặc ngay sau khi cài plugin.',
       warningTitleCreatedUnreliable:
         'Ngày tạo của tệp không đáng tin cậy trên một số nền tảng',
       warningTitlePlatformNote: 'Lưu ý về nền tảng',

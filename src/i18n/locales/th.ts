@@ -20,12 +20,14 @@ export const STRINGS_TH: Strings = {
   },
   commands: {
     updateCurrentFile: 'อัปเดตวันที่ในไฟล์ปัจจุบัน',
-    toggleAutoUpdate: 'เปิด/ปิดการอัปเดตอัตโนมัติ',
-    pauseAutoUpdate: 'หยุดการอัปเดตอัตโนมัติชั่วคราว 5 นาที',
+    toggleAutomaticDates: 'เปิดหรือปิดวันที่อัตโนมัติ',
+    pauseAutomaticDates: 'หยุดวันที่อัตโนมัติชั่วคราว 5 นาที',
   },
   statusBar: {
-    paused: 'หยุดชั่วคราว',
-    pausedWithMinutes: 'หยุดชั่วคราว ({remaining} นาที)',
+    on: 'FDM: เปิด',
+    off: 'FDM: ปิด',
+    pausedWithMinutes: 'FDM: หยุดชั่วคราว ({remaining} นาที)',
+    tooltip: 'Frontmatter Date Manager: คลิกเพื่อเปิดหรือปิดวันที่อัตโนมัติ',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +41,8 @@ export const STRINGS_TH: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'วันที่ทั้งหมดถูกกรอกไว้แล้ว และโน้ตนี้ไม่มีการเปลี่ยนแปลงตั้งแต่การอัปเดตครั้งล่าสุด',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +52,16 @@ export const STRINGS_TH: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'อัปเดตวันที่ไม่สำเร็จ: {reason}',
     failedToUpdate: 'อัปเดตวันที่ไม่สำเร็จ',
-    autoUpdateEnabled: 'เปิดการอัปเดตอัตโนมัติแล้ว',
-    autoUpdateDisabled: 'ปิดการอัปเดตอัตโนมัติแล้ว',
-    autoUpdatePausedForMinutes:
-      'หยุดการอัปเดตอัตโนมัติชั่วคราว {minutes} นาที จะกลับมาทำงานอัตโนมัติ',
-    autoUpdateResumed: 'กลับมาอัปเดตอัตโนมัติแล้ว',
+    automaticDatesOn: 'เปิดวันที่อัตโนมัติแล้ว',
+    automaticDatesOff:
+      'ปิดวันที่อัตโนมัติแล้ว ตอนนี้วันที่จะเปลี่ยนแปลงผ่านแถบคำสั่งและเครื่องมือแบบกลุ่มเท่านั้น',
+    automaticDatesPausedForMinutes:
+      'หยุดวันที่อัตโนมัติชั่วคราว {minutes} นาที จะกลับมาทำงานเองโดยอัตโนมัติ',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: กลับมาใช้วันที่อัตโนมัติแล้ว',
+    nothingToPause: 'วันที่อัตโนมัติปิดอยู่ จึงไม่มีอะไรให้หยุดชั่วคราว',
+    automaticDatesOffSkipped:
+      'วันที่อัตโนมัติปิดอยู่ โน้ตนี้จึงไม่ได้รับการอัปเดต',
     malformedFrontmatter:
       'Frontmatter Date Manager ทำงานไม่สำเร็จ\nคุณสมบัติในไฟล์นี้ไม่ถูกต้อง: {filePath}\n\n{message}',
   },
@@ -91,9 +99,16 @@ export const STRINGS_TH: Strings = {
     dates: {
       enableNoneHint:
         'เปิดวันที่อย่างน้อยหนึ่งรายการด้านบนเพื่อตั้งค่าปลั๊กอิน',
+      automatic: {
+        name: 'วันที่อัตโนมัติ',
+        desc: 'ให้ปลั๊กอินอัปเดตวันที่ด้านล่างให้ทันสมัยอยู่เสมอโดยอัตโนมัติ: วันที่สร้างจะถูกเพิ่มเมื่อแก้ไขโน้ตครั้งแรก วันที่แก้ไขล่าสุดทุกครั้งที่แก้ไข และวันที่เปิดล่าสุดเมื่อคุณเปิดโน้ต เมื่อปิดอยู่ วันที่จะเปลี่ยนแปลงผ่านคำสั่ง "อัปเดตวันที่ในไฟล์ปัจจุบัน" และเครื่องมือแบบกลุ่มเท่านั้น',
+        offHint:
+          'วันที่อัตโนมัติปิดอยู่ วันที่ด้านบนจึงไม่ถูกเพิ่มหรืออัปเดตเอง เปิด "วันที่อัตโนมัติ" ด้านบน หรือใช้คำสั่ง "อัปเดตวันที่ในไฟล์ปัจจุบัน" หรือเครื่องมือแบบกลุ่ม',
+      },
       created: {
         enableName: 'ติดตามวันที่สร้าง',
-        enableDesc: 'เพิ่มวันที่สร้างให้กับโน้ตที่ยังไม่มี',
+        enableDesc:
+          'เพิ่มวันที่สร้างให้กับโน้ตที่ยังไม่มี วันที่นี้จะถูกเพิ่มเมื่อแก้ไขโน้ตครั้งแรก',
         propertyName: 'คุณสมบัติวันที่สร้าง',
         propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่สร้าง',
         propertyPlaceholder: 'Created',
@@ -146,9 +161,12 @@ export const STRINGS_TH: Strings = {
     },
     behavior: {
       heading: 'พฤติกรรม',
-      autoUpdate: {
-        name: 'อัปเดตอัตโนมัติ',
-        desc: 'อัปเดตวันที่อัตโนมัติเมื่อคุณแก้ไขโน้ต ใช้งานได้จากแถบคำสั่งด้วย',
+      statusBarMode: {
+        name: 'ตัวบ่งชี้แถบสถานะ',
+        desc: 'กำหนดว่าจะแสดงในแถบสถานะเมื่อใดว่าวันที่อัตโนมัติเปิดอยู่หรือไม่ คลิกที่ตัวบ่งชี้เพื่อเปิดหรือปิด แถบสถานะไม่พร้อมใช้งานบนมือถือ',
+        optionAlways: 'เสมอ',
+        optionWhenInactive: 'เฉพาะเมื่อปิดหรือหยุดชั่วคราว',
+        optionNever: 'ไม่แสดงเลย',
       },
       minSeconds: {
         name: 'จำนวนวินาทีขั้นต่ำระหว่างการอัปเดต',
@@ -337,9 +355,9 @@ export const STRINGS_TH: Strings = {
       overrideDesc: 'เติมเฉพาะวันที่ที่ขาดหายไป หรือเขียนทับวันที่ที่มีอยู่',
       overrideOptionFillMissing: 'เติมเฉพาะที่ขาดหายไป (ปลอดภัย)',
       overrideOptionOverwriteAll: 'เขียนทับทั้งหมด (แทนที่ที่มีอยู่)',
-      autoUpdateNoteTitle: 'หมายเหตุเกี่ยวกับการอัปเดตอัตโนมัติ:',
+      autoUpdateNoteTitle: 'หมายเหตุเกี่ยวกับวันที่อัตโนมัติ:',
       autoUpdateNoteBody:
-        'หากการอัปเดตอัตโนมัติทำงานอยู่ วันที่ของไฟล์เองบนดิสก์อาจสะท้อนการแก้ไขของปลั๊กอินเองอยู่แล้ว ไม่ใช่วันที่ดั้งเดิม เพื่อผลลัพธ์ที่ดีที่สุด ใช้คุณสมบัตินี้ก่อนเปิดการอัปเดตอัตโนมัติ หรือทันทีหลังติดตั้งปลั๊กอิน',
+        'หากวันที่อัตโนมัติเปิดอยู่ วันที่ของไฟล์เองบนดิสก์อาจสะท้อนการแก้ไขของปลั๊กอินเองอยู่แล้ว ไม่ใช่วันที่ดั้งเดิม เพื่อผลลัพธ์ที่ดีที่สุด ใช้คุณสมบัตินี้ก่อนเปิดวันที่อัตโนมัติ หรือทันทีหลังติดตั้งปลั๊กอิน',
       warningTitleCreatedUnreliable:
         'วันที่สร้างไฟล์ไม่น่าเชื่อถือบนบางแพลตฟอร์ม',
       warningTitlePlatformNote: 'หมายเหตุเกี่ยวกับแพลตฟอร์ม',

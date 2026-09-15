@@ -20,12 +20,15 @@ export const STRINGS_AR: Strings = {
   },
   commands: {
     updateCurrentFile: 'تحديث التواريخ في الملف الحالي',
-    toggleAutoUpdate: 'تشغيل/إيقاف التحديث التلقائي',
-    pauseAutoUpdate: 'إيقاف التحديث التلقائي مؤقتًا لمدة 5 دقائق',
+    toggleAutomaticDates: 'تشغيل أو إيقاف التواريخ التلقائية',
+    pauseAutomaticDates: 'إيقاف التواريخ التلقائية مؤقتًا لمدة 5 دقائق',
   },
   statusBar: {
-    paused: 'متوقف مؤقتًا',
-    pausedWithMinutes: 'متوقف مؤقتًا ({remaining}د)',
+    on: 'FDM: تشغيل',
+    off: 'FDM: إيقاف',
+    pausedWithMinutes: 'FDM: متوقف مؤقتًا ({remaining}د)',
+    tooltip:
+      'Frontmatter Date Manager: انقر لتشغيل أو إيقاف التواريخ التلقائية',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_AR: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'جميع التواريخ مكتملة بالفعل، ولم تتغيّر الملاحظة منذ آخر تحديث.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,16 @@ export const STRINGS_AR: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'تعذّر تحديث التواريخ: {reason}',
     failedToUpdate: 'تعذّر تحديث التواريخ.',
-    autoUpdateEnabled: 'تم تفعيل التحديث التلقائي',
-    autoUpdateDisabled: 'تم تعطيل التحديث التلقائي',
-    autoUpdatePausedForMinutes:
-      'تم إيقاف التحديث التلقائي مؤقتًا لمدة {minutes} دقيقة. سيُستأنف تلقائيًا.',
-    autoUpdateResumed: 'تم استئناف التحديث التلقائي.',
+    automaticDatesOn: 'تم تشغيل التواريخ التلقائية.',
+    automaticDatesOff:
+      'تم إيقاف التواريخ التلقائية. الآن لا تتغيّر التواريخ إلا عبر لوحة الأوامر والأدوات الجماعية.',
+    automaticDatesPausedForMinutes:
+      'تم إيقاف التواريخ التلقائية مؤقتًا لمدة {minutes} دقيقة. ستُستأنف تلقائيًا.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: تم استئناف التواريخ التلقائية.',
+    nothingToPause: 'التواريخ التلقائية متوقفة، فلا يوجد شيء لإيقافه مؤقتًا.',
+    automaticDatesOffSkipped:
+      'التواريخ التلقائية متوقفة، لذا لم يتم تحديث هذه الملاحظة.',
     malformedFrontmatter:
       'فشل Frontmatter Date Manager\nخصائص غير صالحة في هذا الملف: {filePath}\n\n{message}',
   },
@@ -90,9 +99,16 @@ export const STRINGS_AR: Strings = {
     },
     dates: {
       enableNoneHint: 'فعّل تاريخًا واحدًا على الأقل أعلاه لإعداد الإضافة.',
+      automatic: {
+        name: 'التواريخ التلقائية',
+        desc: 'دع الإضافة تُبقي التواريخ أدناه محدّثة من تلقاء نفسها: يُضاف تاريخ الإنشاء عند أول تعديل للملاحظة، ويُحدَّث تاريخ آخر تعديل عند كل تعديل، ويُضاف تاريخ آخر فتح عند فتح الملاحظة. عند الإيقاف، لا تتغيّر التواريخ إلا عبر أمر "تحديث التواريخ في الملف الحالي" والأدوات الجماعية.',
+        offHint:
+          'التواريخ التلقائية متوقفة، لذا لا تُضاف التواريخ أعلاه أو تُحدَّث من تلقاء نفسها. فعّل "التواريخ التلقائية" أعلاه، أو استخدم أمر "تحديث التواريخ في الملف الحالي" أو الأدوات الجماعية.',
+      },
       created: {
         enableName: 'تتبّع تاريخ الإنشاء',
-        enableDesc: 'إضافة تاريخ إنشاء للملاحظات التي ليس لها واحد بعد.',
+        enableDesc:
+          'إضافة تاريخ إنشاء للملاحظات التي ليس لها واحد بعد. يُضاف عند أول تعديل للملاحظة.',
         propertyName: 'خاصية تاريخ الإنشاء',
         propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ الإنشاء.',
         propertyPlaceholder: 'Created',
@@ -145,9 +161,12 @@ export const STRINGS_AR: Strings = {
     },
     behavior: {
       heading: 'السلوك',
-      autoUpdate: {
-        name: 'التحديث التلقائي',
-        desc: 'تحديث التواريخ تلقائيًا عند تعديل ملاحظة. متاح أيضًا من لوحة الأوامر.',
+      statusBarMode: {
+        name: 'مؤشر شريط الحالة',
+        desc: 'متى يُعرض في شريط الحالة ما إذا كانت التواريخ التلقائية مفعّلة. انقر على المؤشر لتشغيلها أو إيقافها. شريط الحالة غير متاح على الجوال.',
+        optionAlways: 'دائمًا',
+        optionWhenInactive: 'فقط عند الإيقاف أو التوقف المؤقت',
+        optionNever: 'أبدًا',
       },
       minSeconds: {
         name: 'الحد الأدنى للثواني بين التحديثات',
@@ -338,9 +357,9 @@ export const STRINGS_AR: Strings = {
       overrideDesc: 'تعبئة التواريخ المفقودة فقط، أو الكتابة فوق الموجودة.',
       overrideOptionFillMissing: 'تعبئة المفقود فقط (آمن)',
       overrideOptionOverwriteAll: 'الكتابة فوق الكل (يستبدل الموجود)',
-      autoUpdateNoteTitle: 'ملاحظة حول التحديث التلقائي:',
+      autoUpdateNoteTitle: 'ملاحظة حول التواريخ التلقائية:',
       autoUpdateNoteBody:
-        'إذا كان التحديث التلقائي مفعّلًا، فقد تعكس تواريخ الملف على القرص بالفعل تعديلات الإضافة نفسها لا التواريخ الأصلية. للحصول على أفضل النتائج، استخدم هذه الميزة قبل تفعيل التحديث التلقائي أو مباشرة بعد تثبيت الإضافة.',
+        'إذا كانت التواريخ التلقائية مفعّلة، فقد تعكس تواريخ الملف على القرص بالفعل تعديلات الإضافة نفسها لا التواريخ الأصلية. للحصول على أفضل النتائج، استخدم هذه الميزة قبل تفعيل التواريخ التلقائية أو مباشرة بعد تثبيت الإضافة.',
       warningTitleCreatedUnreliable:
         'تاريخ إنشاء الملف غير موثوق على بعض المنصّات',
       warningTitlePlatformNote: 'ملاحظة حول المنصّة',

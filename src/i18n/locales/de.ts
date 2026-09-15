@@ -20,12 +20,15 @@ export const STRINGS_DE: Strings = {
   },
   commands: {
     updateCurrentFile: 'Daten der aktuellen Datei aktualisieren',
-    toggleAutoUpdate: 'Automatische Aktualisierung ein-/ausschalten',
-    pauseAutoUpdate: 'Automatische Aktualisierung für 5 Minuten pausieren',
+    toggleAutomaticDates: 'Automatische Daten ein- oder ausschalten',
+    pauseAutomaticDates: 'Automatische Daten für 5 Minuten pausieren',
   },
   statusBar: {
-    paused: 'Pausiert',
-    pausedWithMinutes: 'Pausiert ({remaining}m)',
+    on: 'FDM: an',
+    off: 'FDM: aus',
+    pausedWithMinutes: 'FDM: pausiert ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: Klicken, um automatische Daten ein- oder auszuschalten',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_DE: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Alle Daten sind bereits ausgefüllt, und die Notiz hat sich seit der letzten Aktualisierung nicht geändert.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -50,11 +54,17 @@ export const STRINGS_DE: Strings = {
     failedToUpdateWithReason:
       'Daten konnten nicht aktualisiert werden: {reason}',
     failedToUpdate: 'Daten konnten nicht aktualisiert werden.',
-    autoUpdateEnabled: 'Automatische Aktualisierung aktiviert',
-    autoUpdateDisabled: 'Automatische Aktualisierung deaktiviert',
-    autoUpdatePausedForMinutes:
-      'Automatische Aktualisierung für {minutes} Minuten pausiert. Wird automatisch fortgesetzt.',
-    autoUpdateResumed: 'Automatische Aktualisierung fortgesetzt.',
+    automaticDatesOn: 'Automatische Daten eingeschaltet.',
+    automaticDatesOff:
+      'Automatische Daten ausgeschaltet. Daten ändern sich jetzt nur noch über die Befehlspalette und die Massenwerkzeuge.',
+    automaticDatesPausedForMinutes:
+      'Automatische Daten für {minutes} Minuten pausiert. Sie werden automatisch fortgesetzt.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: Automatische Daten fortgesetzt.',
+    nothingToPause:
+      'Automatische Daten sind ausgeschaltet, es gibt nichts zu pausieren.',
+    automaticDatesOffSkipped:
+      'Automatische Daten sind ausgeschaltet, daher wurde diese Notiz nicht aktualisiert.',
     malformedFrontmatter:
       'Frontmatter Date Manager fehlgeschlagen\nFehlerhafte Eigenschaften in dieser Datei: {filePath}\n\n{message}',
   },
@@ -94,10 +104,16 @@ export const STRINGS_DE: Strings = {
     dates: {
       enableNoneHint:
         'Aktivieren Sie oben mindestens ein Datum, um das Plugin einzurichten.',
+      automatic: {
+        name: 'Automatische Daten',
+        desc: 'Lässt das Plugin die Daten unten von selbst aktuell halten: Das Erstellungsdatum wird bei der ersten Bearbeitung einer Notiz hinzugefügt, das letzte Bearbeitungsdatum bei jeder Bearbeitung und das Datum des letzten Öffnens beim Öffnen einer Notiz. Wenn ausgeschaltet, ändern sich die Daten nur über den Befehl "Daten der aktuellen Datei aktualisieren" und die Massenwerkzeuge.',
+        offHint:
+          'Automatische Daten sind ausgeschaltet, daher werden die Daten oben nicht von selbst hinzugefügt oder aktualisiert. Schalten Sie "Automatische Daten" oben ein, oder verwenden Sie den Befehl "Daten der aktuellen Datei aktualisieren" oder die Massenwerkzeuge.',
+      },
       created: {
         enableName: 'Erstellungsdatum verfolgen',
         enableDesc:
-          'Notizen, die noch keines haben, ein Erstellungsdatum hinzufügen.',
+          'Notizen, die noch keines haben, ein Erstellungsdatum hinzufügen. Es wird bei der ersten Bearbeitung der Notiz hinzugefügt.',
         propertyName: 'Eigenschaft für Erstellungsdatum',
         propertyDesc:
           'Name der Eigenschaft, in der das Erstellungsdatum gespeichert wird.',
@@ -155,9 +171,12 @@ export const STRINGS_DE: Strings = {
     },
     behavior: {
       heading: 'Verhalten',
-      autoUpdate: {
-        name: 'Automatische Aktualisierung',
-        desc: 'Daten automatisch aktualisieren, wenn Sie eine Notiz bearbeiten. Auch über die Befehlspalette verfügbar.',
+      statusBarMode: {
+        name: 'Statusleisten-Anzeige',
+        desc: 'Wann in der Statusleiste angezeigt werden soll, ob automatische Daten eingeschaltet sind. Klicken Sie auf die Anzeige, um sie ein- oder auszuschalten. Die Statusleiste ist auf Mobilgeräten nicht verfügbar.',
+        optionAlways: 'Immer',
+        optionWhenInactive: 'Nur wenn ausgeschaltet oder pausiert',
+        optionNever: 'Nie',
       },
       minSeconds: {
         name: 'Mindestsekunden zwischen Aktualisierungen',
@@ -363,9 +382,9 @@ export const STRINGS_DE: Strings = {
         'Nur die fehlenden Daten ausfüllen oder die vorhandenen überschreiben.',
       overrideOptionFillMissing: 'Nur fehlende ausfüllen (sicher)',
       overrideOptionOverwriteAll: 'Alle überschreiben (ersetzt vorhandene)',
-      autoUpdateNoteTitle: 'Hinweis zur automatischen Aktualisierung:',
+      autoUpdateNoteTitle: 'Hinweis zu automatischen Daten:',
       autoUpdateNoteBody:
-        'Wenn die automatische Aktualisierung aktiv war, spiegeln die eigenen Daten der Datei auf der Festplatte möglicherweise bereits die Bearbeitungen des Plugins wider, nicht die ursprünglichen Daten. Für beste Ergebnisse verwenden Sie diese Funktion vor dem Aktivieren der automatischen Aktualisierung oder direkt nach der Installation des Plugins.',
+        'Wenn automatische Daten eingeschaltet waren, spiegeln die eigenen Daten der Datei auf der Festplatte möglicherweise bereits die Bearbeitungen des Plugins wider, nicht die ursprünglichen Daten. Für beste Ergebnisse verwenden Sie diese Funktion vor dem Einschalten automatischer Daten oder direkt nach der Installation des Plugins.',
       warningTitleCreatedUnreliable:
         'Das Erstellungsdatum der Datei ist auf einigen Plattformen unzuverlässig',
       warningTitlePlatformNote: 'Plattformhinweis',

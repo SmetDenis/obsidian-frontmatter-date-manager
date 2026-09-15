@@ -20,12 +20,15 @@ export const STRINGS_PL: Strings = {
   },
   commands: {
     updateCurrentFile: 'Zaktualizuj daty w bieżącym pliku',
-    toggleAutoUpdate: 'Włącz/wyłącz automatyczną aktualizację',
-    pauseAutoUpdate: 'Wstrzymaj automatyczną aktualizację na 5 minut',
+    toggleAutomaticDates: 'Włącz lub wyłącz automatyczne daty',
+    pauseAutomaticDates: 'Wstrzymaj automatyczne daty na 5 minut',
   },
   statusBar: {
-    paused: 'Wstrzymano',
-    pausedWithMinutes: 'Wstrzymano ({remaining}m)',
+    on: 'FDM: włączone',
+    off: 'FDM: wyłączone',
+    pausedWithMinutes: 'FDM: wstrzymano ({remaining}m)',
+    tooltip:
+      'Frontmatter Date Manager: kliknij, aby włączyć lub wyłączyć automatyczne daty',
   },
   notices: {
     inversionDetectedAndFixed:
@@ -39,7 +42,8 @@ export const STRINGS_PL: Strings = {
       "This file is excluded by a rule in 'Files and folders to skip'.",
     ignoredCanvas: 'Canvas files are not supported.',
     ignoredEmpty: 'This file is empty, so there is nothing to date.',
-    ignoredUnchanged: 'No content change detected since the last update.',
+    ignoredUnchanged:
+      'Wszystkie daty są już uzupełnione, a notatka nie zmieniła się od ostatniej aktualizacji.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
     ignoredInvalidFileTimes:
@@ -49,11 +53,17 @@ export const STRINGS_PL: Strings = {
       'The drawing has unsaved changes - dates will update after Excalidraw saves it.',
     failedToUpdateWithReason: 'Nie udało się zaktualizować dat: {reason}',
     failedToUpdate: 'Nie udało się zaktualizować dat.',
-    autoUpdateEnabled: 'Automatyczna aktualizacja włączona',
-    autoUpdateDisabled: 'Automatyczna aktualizacja wyłączona',
-    autoUpdatePausedForMinutes:
-      'Automatyczna aktualizacja wstrzymana na {minutes} minut. Wznowi się automatycznie.',
-    autoUpdateResumed: 'Automatyczna aktualizacja wznowiona.',
+    automaticDatesOn: 'Automatyczne daty włączone.',
+    automaticDatesOff:
+      'Automatyczne daty wyłączone. Daty zmieniają się teraz tylko przez paletę poleceń i narzędzia zbiorcze.',
+    automaticDatesPausedForMinutes:
+      'Automatyczne daty wstrzymane na {minutes} minut. Wznowią się automatycznie.',
+    automaticDatesResumed:
+      'Frontmatter Date Manager: automatyczne daty wznowione.',
+    nothingToPause:
+      'Automatyczne daty są wyłączone, więc nie ma nic do wstrzymania.',
+    automaticDatesOffSkipped:
+      'Automatyczne daty są wyłączone, więc ta notatka nie została zaktualizowana.',
     malformedFrontmatter:
       'Frontmatter Date Manager: niepowodzenie\nNieprawidłowe właściwości w pliku: {filePath}\n\n{message}',
   },
@@ -92,10 +102,16 @@ export const STRINGS_PL: Strings = {
     dates: {
       enableNoneHint:
         'Włącz powyżej co najmniej jedną datę, aby skonfigurować wtyczkę.',
+      automatic: {
+        name: 'Automatyczne daty',
+        desc: 'Pozwól wtyczce samodzielnie aktualizować poniższe daty: data utworzenia jest dodawana przy pierwszej edycji notatki, data ostatniej edycji przy każdej edycji, a data ostatniego otwarcia przy otwarciu notatki. Gdy wyłączone, daty zmieniają się tylko przez polecenie "Zaktualizuj daty w bieżącym pliku" i narzędzia zbiorcze.',
+        offHint:
+          'Automatyczne daty są wyłączone, więc powyższe daty nie są dodawane ani aktualizowane samodzielnie. Włącz powyżej "Automatyczne daty" lub użyj polecenia "Zaktualizuj daty w bieżącym pliku" albo narzędzi zbiorczych.',
+      },
       created: {
         enableName: 'Śledź datę utworzenia',
         enableDesc:
-          'Dodaj datę utworzenia notatkom, które jej jeszcze nie mają.',
+          'Dodaj datę utworzenia notatkom, które jej jeszcze nie mają. Jest dodawana przy pierwszej edycji notatki.',
         propertyName: 'Właściwość daty utworzenia',
         propertyDesc:
           'Nazwa właściwości, w której zapisywana jest data utworzenia.',
@@ -152,9 +168,12 @@ export const STRINGS_PL: Strings = {
     },
     behavior: {
       heading: 'Zachowanie',
-      autoUpdate: {
-        name: 'Automatyczna aktualizacja',
-        desc: 'Automatycznie aktualizuj daty przy edycji notatki. Dostępne także z palety poleceń.',
+      statusBarMode: {
+        name: 'Wskaźnik na pasku stanu',
+        desc: 'Kiedy pokazywać na pasku stanu, czy automatyczne daty są włączone. Kliknij wskaźnik, aby je włączyć lub wyłączyć. Pasek stanu nie jest dostępny na urządzeniach mobilnych.',
+        optionAlways: 'Zawsze',
+        optionWhenInactive: 'Tylko gdy wyłączone lub wstrzymane',
+        optionNever: 'Nigdy',
       },
       minSeconds: {
         name: 'Minimalna liczba sekund między aktualizacjami',
@@ -353,9 +372,9 @@ export const STRINGS_PL: Strings = {
       overrideDesc: 'Wypełnij tylko brakujące daty lub nadpisz istniejące.',
       overrideOptionFillMissing: 'Tylko brakujące (bezpiecznie)',
       overrideOptionOverwriteAll: 'Nadpisz wszystkie (zastępuje istniejące)',
-      autoUpdateNoteTitle: 'Uwaga o automatycznej aktualizacji:',
+      autoUpdateNoteTitle: 'Uwaga o automatycznych datach:',
       autoUpdateNoteBody:
-        'Jeśli automatyczna aktualizacja była aktywna, własne daty pliku na dysku mogą już odzwierciedlać edycje samej wtyczki, a nie pierwotne daty. Dla najlepszych wyników użyj tej funkcji przed włączeniem automatycznej aktualizacji lub zaraz po instalacji wtyczki.',
+        'Jeśli automatyczne daty były włączone, własne daty pliku na dysku mogą już odzwierciedlać edycje samej wtyczki, a nie pierwotne daty. Dla najlepszych wyników użyj tej funkcji przed włączeniem automatycznych dat lub zaraz po instalacji wtyczki.',
       warningTitleCreatedUnreliable:
         'Data utworzenia pliku jest niewiarygodna na niektórych platformach',
       warningTitlePlatformNote: 'Uwaga o platformie',

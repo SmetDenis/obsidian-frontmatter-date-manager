@@ -87,7 +87,7 @@ describe('modify debounce', () => {
     // Window closes: exactly one call, for that file.
     await vi.advanceTimersByTimeAsync(1);
     expect(process).toHaveBeenCalledTimes(1);
-    expect(process).toHaveBeenCalledWith(file);
+    expect(process).toHaveBeenCalledWith(file, 'auto');
   });
 
   it('collapses rapid modify events for the same file into a single call', async () => {
@@ -103,7 +103,7 @@ describe('modify debounce', () => {
     await vi.advanceTimersByTimeAsync(MODIFY_DEBOUNCE_MS);
 
     expect(process).toHaveBeenCalledTimes(1);
-    expect(process).toHaveBeenCalledWith(file);
+    expect(process).toHaveBeenCalledWith(file, 'auto');
   });
 
   it('keys timers by file path so different files run independently', async () => {
@@ -118,8 +118,8 @@ describe('modify debounce', () => {
 
     // A shared/constant key would collapse these to one call.
     expect(process).toHaveBeenCalledTimes(2);
-    expect(process).toHaveBeenCalledWith(a);
-    expect(process).toHaveBeenCalledWith(b);
+    expect(process).toHaveBeenCalledWith(a, 'auto');
+    expect(process).toHaveBeenCalledWith(b, 'auto');
   });
 
   it('distinguishes same-named files in different folders (path, not name)', async () => {
@@ -135,8 +135,8 @@ describe('modify debounce', () => {
     await vi.advanceTimersByTimeAsync(MODIFY_DEBOUNCE_MS);
 
     expect(process).toHaveBeenCalledTimes(2);
-    expect(process).toHaveBeenCalledWith(a);
-    expect(process).toHaveBeenCalledWith(b);
+    expect(process).toHaveBeenCalledWith(a, 'auto');
+    expect(process).toHaveBeenCalledWith(b, 'auto');
   });
 
   it('onunload clears all pending timers', () => {

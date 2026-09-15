@@ -20,12 +20,18 @@ import { strings, format as t } from './i18n';
 
 export type HashTrackingMode = 'body' | 'frontmatter' | 'both';
 
+// When the status bar indicator is shown: always, only while automatic dates
+// are off or paused (the default, matching the indicator's original
+// behavior), or never.
+export type StatusBarMode = 'always' | 'when-inactive' | 'never';
+
 export interface FrontmatterDateManagerSettings {
   dateFormat: string;
   timezone: string;
   enableNumberProperties: boolean;
   enableCreateTime: boolean;
   enableAutoUpdate: boolean;
+  statusBarMode: StatusBarMode;
   headerUpdated: string;
   headerCreated: string;
   minSecondsBetweenSaves: number;
@@ -59,6 +65,7 @@ export const DEFAULT_SETTINGS: FrontmatterDateManagerSettings = {
   enableNumberProperties: false,
   enableCreateTime: true,
   enableAutoUpdate: true,
+  statusBarMode: 'when-inactive',
   headerUpdated: 'updated',
   headerCreated: 'created',
   minSecondsBetweenSaves: 30,
@@ -130,6 +137,11 @@ export function sanitizeSettings(raw: unknown): FrontmatterDateManagerSettings {
   const hashModes: HashTrackingMode[] = ['body', 'frontmatter', 'both'];
   if (!hashModes.includes(result.hashTrackingMode as HashTrackingMode)) {
     result.hashTrackingMode = DEFAULT_SETTINGS.hashTrackingMode;
+  }
+
+  const statusBarModes: StatusBarMode[] = ['always', 'when-inactive', 'never'];
+  if (!statusBarModes.includes(result.statusBarMode as StatusBarMode)) {
+    result.statusBarMode = DEFAULT_SETTINGS.statusBarMode;
   }
 
   const strategies: InversionFixStrategy[] = [
@@ -212,6 +224,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       this.introItem(),
       this.datesGroup(),
       this.noneEnabledHintItem(),
+      this.automaticDatesOffHintItem(),
       this.formattingGroup(),
       this.behaviorGroup(),
       // A list cannot nest inside a group (group items are settings/pages
@@ -239,6 +252,9 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
         this.plugin.recompileFilterRules();
         break;
       case 'enableAutoUpdate':
+        this.plugin.onAutomaticDatesChanged();
+        break;
+      case 'statusBarMode':
         this.plugin.updateStatusBar();
         break;
       case 'experimentalSkipRenameLinkUpdates':
@@ -344,6 +360,14 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     const d = strings.settings.dates;
     const s = () => this.plugin.settings;
     const items: SettingGroupItem[] = [
+      // The master switch comes first: it governs every date row below it, and
+      // placing it with them (not two groups further down, under Behavior)
+      // is what makes that scope visible (issue #24).
+      {
+        name: d.automatic.name,
+        desc: d.automatic.desc,
+        control: { type: 'toggle', key: 'enableAutoUpdate' },
+      },
       {
         name: d.created.enableName,
         desc: d.created.enableDesc,
@@ -443,6 +467,27 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     };
   }
 
+  // Shown while automatic dates are off but at least one date is enabled - the
+  // state issue #24's reporter could not diagnose. It is also the only
+  // signal on mobile, where plugins have no status bar.
+  private automaticDatesOffHintItem(): SettingDefinitionItem {
+    return {
+      name: '',
+      searchable: false,
+      visible: () =>
+        !this.plugin.settings.enableAutoUpdate && !this.allDatesOff(),
+      render: (setting: Setting) => {
+        const hintEl = setting.settingEl.createDiv({
+          // Second class is the stable e2e hook (the first is shared with the
+          // none-enabled hint).
+          cls: 'frontmatter-date-manager-hint-message frontmatter-date-manager-automatic-off-hint',
+          text: strings.settings.dates.automatic.offHint,
+        });
+        return () => void hintEl.remove();
+      },
+    };
+  }
+
   private formattingGroup(): SettingDefinitionItem {
     const f = strings.settings.formatting;
     const localTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -478,9 +523,18 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
       visible: () => !this.allDatesOff(),
       items: [
         {
-          name: b.autoUpdate.name,
-          desc: b.autoUpdate.desc,
-          control: { type: 'toggle', key: 'enableAutoUpdate' },
+          name: b.statusBarMode.name,
+          desc: b.statusBarMode.desc,
+          control: {
+            type: 'dropdown',
+            key: 'statusBarMode',
+            defaultValue: DEFAULT_SETTINGS.statusBarMode,
+            options: {
+              'always': b.statusBarMode.optionAlways,
+              'when-inactive': b.statusBarMode.optionWhenInactive,
+              'never': b.statusBarMode.optionNever,
+            },
+          },
         },
         {
           name: b.minSeconds.name,
