@@ -1,0 +1,20 @@
+{
+  "taski_version": "0.157.0",
+  "registry": {
+    "root": "docs/taski",
+    "lang": "en"
+  },
+  "vocabulary": {
+    "stages": [{ "key": "main", "title": "Plugin work" }],
+    "areas": [
+      { "key": "pipeline", "title": "Automatic dates pipeline" },
+      { "key": "guards", "title": "Write-safety guards" },
+      { "key": "events", "title": "Vault events (rename, create, delete)" },
+      { "key": "excalidraw", "title": "Excalidraw drawings" },
+      { "key": "bulk", "title": "Bulk operations" },
+      { "key": "ui", "title": "Settings, UI and translations" },
+      { "key": "obsidian", "title": "Obsidian internals" },
+      { "key": "release", "title": "Release, store review and tests" }
+    ]
+  }
+}
