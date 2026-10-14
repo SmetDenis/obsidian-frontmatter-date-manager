@@ -1,7 +1,7 @@
 {
-  "taski_version": "0.157.0",
+  "taski_version": "0.176.0",
+  "projects": ["../.."],
   "registry": {
-    "root": "docs/taski",
     "lang": "en"
   },
   "vocabulary": {
