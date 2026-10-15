@@ -23,6 +23,8 @@ The user's notes are irreplaceable - never corrupt, lose, or reorder note data. 
 
 Claude's training knowledge about the Obsidian plugin API is outdated. **Always** use context7 MCP and official Obsidian developer documentation to verify API signatures, available methods, and current patterns before writing or modifying plugin code. Do not rely on memory - check the docs. Likewise, before bumping or trusting a pinned version, verify the **currently published** versions of the `obsidian` types and `eslint-plugin-obsidianmd` (the community review linter) against npm - the review bot always runs the latest linter, so a stale local pin can let new rule violations slip through.
 
+**Obsidian's own code is documentation too - read it.** The docs and `obsidian.d.ts` give signatures, not behavior: event order, which path fires an event, what a rename / sync / file-watcher / adapter actually does, how `mtime` moves. Every claim about runtime behavior (internals, event provenance, sync, mobile) - in code, a design, a review, or a reply on an issue - must be checked against the shipped bundle: `e2e/.obsidian-cache/obsidian-app/obsidian-<version>.asar` (the e2e pin; downloaded on the first e2e run). An asar is a plain archive - extract with a short script or `grep -a`, no package install. Same rule for plugins we interact with (Excalidraw: `e2e/.obsidian-cache/obsidian-plugins/zsviczian/obsidian-excalidraw-plugin/<version>/`). A decision record quoting the bundle, a code comment, or an issue reporter's description is a lead to re-check, not verification. If the code is ambiguous, prove it with an e2e probe; if neither was done, call the claim unverified.
+
 Key Obsidian API used in this plugin:
 
 - `Plugin` lifecycle: `onload()`, `onunload()`
@@ -351,3 +353,25 @@ Update only the sections the change actually touches - don't refresh unrelated d
 ## Formatting
 
 Prettier 3.x with: single quotes, semicolons, trailing commas (`all`), consistent quote props. Configured in `.prettierrc`.
+
+## Task registry (taski)
+
+Work is tracked in a taski registry at `docs/taski` (configured by `.claude/taski.json`, which must stay committed). GitHub Issues remain the public intake; the registry holds the work we take on.
+
+- Task frontmatter is the source of truth; prose that disagrees with it gets fixed.
+- After editing entities run `taski generate`, then `taski doctor` (exit 0 = clean). Never hand-edit the regions between `<!-- taski:* -->` markers.
+- Reach accumulated knowledge and open questions through `taski knowledge --area <term>` and `taski questions --area <term>` (or `taski find <text>`), never by reading `knowledge/` or `questions/` whole. Area terms: `pipeline`, `guards`, `events`, `excalidraw`, `bulk`, `ui`, `obsidian`, `release`.
+
+Rules of work:
+
+- When the user asks for a change while no task is in progress and none is named, bring it into the registry before the first edit: find a matching task and ask whether to take it, or create one, start it and say so in one line - trivial edits aside; an edit that stops being trivial on the way gets its task after the fact, and "no task" from the user covers that one request only.
+- Before starting a task, raise its open questions - hard ones as a decision the user must make, soft ones as a cost to weigh - never start past them silently.
+- Before starting a complex task, offer to lay out the approach in a plan first, instead of editing straight away.
+- When work turns up something only the outside world can answer, write it down as an open question right away, anchored to what raised it - never deferred to a later pass.
+- While working on a task, stay inside it - name any departure out loud, with where it goes, and never fold it into the task silently.
+- While working on a task, never settle a fork on your own - put the options to the user with your recommendation, and wait for the answer.
+- When handing work to a subagent, say beforehand why, what it gets, which files are its and what it returns, and take nothing beyond what its report says; a subagent never writes or regenerates the task registry and never settles a fork - it returns what it found, open questions and choices included, to the agent that dispatched it, and the session's main agent alone writes the registry and puts each choice to the user.
+- Outside the registry - code, comments, docs, CLAUDE.md, README, commit messages - write the fact and its reason in full, so the repository still works with the registry deleted: never a link or path to a file inside the registry, and no task, record or question id unless the project has decided to allow one after the reason in a maintainer-only document.
+- When work on a task is finished, never close it on your own - ask the user what happens next.
+
+Thresholds and mechanics behind these rules live in `reference/principles.md` of the taski plugin.
