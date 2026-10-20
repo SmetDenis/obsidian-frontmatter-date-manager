@@ -77,6 +77,8 @@ Generated: the records this task rests on - those that came out of it, those its
 
 ## Consider
 
+- 2026-10-20. The way every date write is serialised per note, and the way the plugin recognises its own writes, are being reworked as one piece of work: [#2](/docs/taski/tasks/0002-one-write-queue-per-note.md). For this task that settles two of its loose ends rather than leaving them to be invented here - what a pending rename stamp does while a bulk run is under way, and how the pass survives the check that skips the plugin's own writes. Whichever of the two tasks is taken second fits itself to the first; if this one goes first, say in its results what it assumed, so the other task can hold it. Source: the design record for stamping on rename and the write-guard section of the project guidance.
+
 ## Sources
 
 - GitHub issue 26 (link in the frontmatter) - the request, the requester's patch, and the requester's answers of 2026-10-04 that fixed the scope above.
