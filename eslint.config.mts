@@ -114,7 +114,5 @@ export default defineConfig(
     // Downloaded Obsidian builds and third-party community plugins the e2e
     // runner installs (Excalidraw); generated, gitignored, and not ours to lint.
     'e2e/.obsidian-cache/**',
-    // GitNexus index (generated, git-excluded via .git/info/exclude)
-    '.gitnexus/**',
   ]),
 );
