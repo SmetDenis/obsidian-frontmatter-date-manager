@@ -45,6 +45,18 @@ export const STRINGS_KO: Strings = {
       '모든 날짜가 이미 채워져 있고, 마지막 업데이트 이후 노트가 변경되지 않았습니다.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "플러그인 설정의 날짜 속성 이름이 올바르지 않습니다. '>' 양쪽의 각 부분에는 이름이 있어야 합니다. 예: meta > updated",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} 다른 날짜는 평소대로 기록됩니다. 이 메시지는 세션당 한 번만 표시됩니다.',
+    skippedParentNotGroup:
+      '"{name}"을(를) 기록하지 않았습니다: "{parent}"에 그룹이 아닌 값이 있습니다.',
+    skippedSharedGroup:
+      '"{name}"을(를) 기록하지 않았습니다: "{parent}"은(는) YAML 참조(&와 *)로 다른 속성과 공유되어 있어, 기록하면 둘 다 바뀝니다.',
+    skippedHoldsContainer:
+      '"{name}"을(를) 기록하지 않았습니다: 그 자리에 그룹이나 목록이 있으며, 플러그인은 이를 절대 바꾸지 않습니다.',
+    skippedInvalidName:
+      '"{name}"은(는) 올바른 속성 이름이 아닙니다: \'>\' 양쪽의 각 부분에는 이름이 있어야 합니다. 플러그인 설정에서 고치세요.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -79,6 +91,12 @@ export const STRINGS_KO: Strings = {
     failureColumnError: '오류',
     skippedColumnReason: '이유',
     skippedTableIntro: '{count}개의 노트를 건너뛰어 변경하지 않았습니다:',
+    valuesWillNotBeWrittenIntro:
+      '기록되지 않을 값: {count}개. 각 노트의 나머지는 기록됩니다:',
+    valuesNotWrittenIntro:
+      '기록되지 않은 값: {count}개. 각 노트의 나머지는 기록되었습니다:',
+    invalidPropertyNames:
+      "올바른 속성 이름이 아닙니다: {names}. '>' 양쪽의 각 부분에는 이름이 있어야 합니다 - 플러그인 설정에서 고치세요.",
     skippedUnsavedChanges:
       '이 노트에는 열려 있는 편집기에 저장되지 않은 변경 사항이 있습니다. 저장하거나 닫은 후 새 미리보기를 실행하세요.',
     skippedExcalidrawUnsaved:
@@ -89,6 +107,12 @@ export const STRINGS_KO: Strings = {
     validation: {
       propertyNameRequired: '속성 이름을 입력하세요.',
       counterNameCollision: '이 이름은 위의 다른 속성에서 이미 사용 중입니다.',
+      invalidPath:
+        "'>' 양쪽의 각 부분에는 이름이 있어야 합니다. 예: meta > updated",
+      dateNameCollision:
+        '이 플러그인의 다른 날짜가 이미 이 이름을 사용하고 있습니다.',
+      nestingConflict:
+        '이 이름과 이 플러그인의 다른 속성 이름이 서로 겹쳐 있습니다(meta와 meta > updated처럼). 서로를 포함하지 않는 이름을 사용하세요.',
     },
     description: {
       syncIntro:
@@ -98,6 +122,8 @@ export const STRINGS_KO: Strings = {
     },
     dates: {
       enableNoneHint: '플러그인을 설정하려면 위에서 날짜를 하나 이상 켜세요.',
+      dotHint:
+        "이름에 점이 있는 하나의 속성입니다. 그룹 안에 넣으려면 대신 '>'를 사용하세요. 예: meta > updated",
       automatic: {
         name: '자동 날짜',
         desc: '플러그인이 아래 날짜를 스스로 최신 상태로 유지하도록 합니다: 생성 날짜는 노트를 처음 편집할 때 추가되고, 최종 편집 날짜는 편집할 때마다, 최종 열람 날짜는 노트를 열 때 추가됩니다. 꺼져 있으면 날짜는 "현재 파일의 날짜 업데이트" 명령과 일괄 작업을 통해서만 변경됩니다.',
@@ -109,14 +135,16 @@ export const STRINGS_KO: Strings = {
         enableDesc:
           '아직 생성 날짜가 없는 노트에 생성 날짜를 추가합니다. 노트를 처음 편집할 때 추가됩니다.',
         propertyName: '생성 날짜 속성',
-        propertyDesc: '생성 날짜가 저장되는 속성 이름.',
+        propertyDesc:
+          "생성 날짜가 저장되는 속성 이름. 그룹 안에 넣으려면 '>'로 단계를 구분하세요. 예: meta > created",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '마지막 편집 날짜 추적',
         enableDesc: '노트를 편집할 때마다 이 날짜를 업데이트합니다.',
         propertyName: '수정 날짜 속성',
-        propertyDesc: '마지막 편집 날짜가 저장되는 속성 이름.',
+        propertyDesc:
+          "마지막 편집 날짜가 저장되는 속성 이름. 그룹 안에 넣으려면 '>'로 단계를 구분하세요. 예: meta > updated",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -124,13 +152,15 @@ export const STRINGS_KO: Strings = {
         enableDesc:
           '노트를 편집할 때마다 1씩 증가하는 숫자 속성을 추가합니다. 정확한 기록이 아니라 대략적인 활동 횟수입니다.',
         propertyName: '편집 횟수 속성',
-        propertyDesc: '편집 횟수가 저장되는 속성 이름.',
+        propertyDesc:
+          "편집 횟수가 저장되는 속성 이름. 그룹 안에 넣으려면 '>'로 단계를 구분하세요. 예: meta > edits",
       },
       viewed: {
         enableName: '마지막 열람 날짜 추적',
         enableDesc: '노트를 열 때마다 날짜를 저장합니다.',
         propertyName: '열람 날짜 속성',
-        propertyDesc: '마지막 열람 날짜가 저장되는 속성 이름.',
+        propertyDesc:
+          "마지막 열람 날짜가 저장되는 속성 이름. 그룹 안에 넣으려면 '>'로 단계를 구분하세요. 예: meta > viewed",
         propertyPlaceholder: 'Viewed',
       },
     },

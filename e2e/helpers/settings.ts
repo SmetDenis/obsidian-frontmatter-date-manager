@@ -2,6 +2,22 @@ import { browser } from '@wdio/globals';
 
 const PLUGIN_ID = 'frontmatter-date-manager';
 
+/** Read one value from the running plugin's settings. */
+export async function readSetting(key: string): Promise<unknown> {
+  return browser.executeObsidian(
+    ({ app }, id, k) => {
+      const internal = app as unknown as {
+        plugins: {
+          plugins: Record<string, { settings?: Record<string, unknown> }>;
+        };
+      };
+      return internal.plugins.plugins[id]?.settings?.[k];
+    },
+    PLUGIN_ID,
+    key,
+  );
+}
+
 /** Patch the running plugin's settings to a known state for a test. */
 export async function setSettings(
   patch: Record<string, unknown>,

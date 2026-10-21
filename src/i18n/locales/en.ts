@@ -52,6 +52,22 @@ export const STRINGS_EN = {
       'All dates are already filled in, and the note has not changed since the last update.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "The date property names in the plugin settings are not valid. Each part around '>' needs a name, for example meta > updated.",
+    // Shown by an automatic pass, with no action from the user, so it names
+    // the plugin. Once per session.
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Other dates are written as usual. This message is shown once per session.',
+    // Why a property was left unwritten. Shared by the manual command, the
+    // once-per-session notice and the bulk skipped tables.
+    skippedParentNotGroup:
+      '"{name}" was not written: "{parent}" holds a value that is not a group.',
+    skippedSharedGroup:
+      '"{name}" was not written: "{parent}" is shared with another property through a YAML reference (& and *), and writing into it would change both.',
+    skippedHoldsContainer:
+      '"{name}" was not written: it holds a group or a list, which the plugin never replaces.',
+    skippedInvalidName:
+      '"{name}" is not a valid property name: each part around \'>\' needs a name. Fix it in the plugin settings.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -88,6 +104,13 @@ export const STRINGS_EN = {
     failureColumnError: 'Error',
     skippedColumnReason: 'Reason',
     skippedTableIntro: '{count} note(s) were skipped and left unchanged:',
+    // Property-level skips: the rest of the note is (or will be) written.
+    valuesWillNotBeWrittenIntro:
+      '{count} value(s) will not be written, the rest of each note will:',
+    valuesNotWrittenIntro:
+      '{count} value(s) were not written, the rest of each note was:',
+    invalidPropertyNames:
+      "Not a valid property name: {names}. Each part around '>' needs a name - fix it in the plugin settings.",
     skippedUnsavedChanges:
       'The note has unsaved changes in an open editor. Save or close it, then run a new preview.',
     skippedExcalidrawUnsaved:
@@ -100,6 +123,11 @@ export const STRINGS_EN = {
       propertyNameRequired: 'Enter a property name.',
       counterNameCollision:
         'This name is already used by another property above.',
+      invalidPath:
+        "Each part around '>' needs a name, for example meta > updated.",
+      dateNameCollision: 'Another date of this plugin already uses this name.',
+      nestingConflict:
+        "This name and another property name of this plugin sit inside one another (like meta and meta > updated). Use names that don't contain each other.",
     },
     description: {
       syncIntro:
@@ -109,6 +137,8 @@ export const STRINGS_EN = {
     },
     dates: {
       enableNoneHint: 'Turn on at least one date above to set up the plugin.',
+      dotHint:
+        "This is one property with a dot in its name. To put it inside a group, use '>' instead, for example meta > updated.",
       automatic: {
         name: 'Automatic dates',
         desc: "Let the plugin keep the dates below current on its own: the creation date is added on a note's first edit, the last-edited date on every edit, and the last-opened date when you open a note. When off, dates change only through the 'Update timestamps for current file' command and the bulk tools.",
@@ -120,14 +150,16 @@ export const STRINGS_EN = {
         enableDesc:
           "Add a creation date to notes that don't have one yet. It is added on the note's first edit.",
         propertyName: 'Created property',
-        propertyDesc: 'Property name where the creation date is saved.',
+        propertyDesc:
+          "Property name where the creation date is saved. To put it inside a group, separate the levels with '>', for example meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Track last-edited date',
         enableDesc: 'Update this date whenever you edit the note.',
         propertyName: 'Updated property',
-        propertyDesc: 'Property name where the last-edited date is saved.',
+        propertyDesc:
+          "Property name where the last-edited date is saved. To put it inside a group, separate the levels with '>', for example meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -135,13 +167,15 @@ export const STRINGS_EN = {
         enableDesc:
           'Add a number property that goes up by one each time you edit a note. An approximate activity count, not an exact history.',
         propertyName: 'Edit count property',
-        propertyDesc: 'Property name where the edit count is saved.',
+        propertyDesc:
+          "Property name where the edit count is saved. To put it inside a group, separate the levels with '>', for example meta > edits.",
       },
       viewed: {
         enableName: 'Track last-opened date',
         enableDesc: 'Save the date each time you open the note.',
         propertyName: 'Viewed property',
-        propertyDesc: 'Property name where the last-opened date is saved.',
+        propertyDesc:
+          "Property name where the last-opened date is saved. To put it inside a group, separate the levels with '>', for example meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

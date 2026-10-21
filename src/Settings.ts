@@ -7,6 +7,11 @@ import type {
 import FrontmatterDateManagerPlugin from './main';
 import { TimezoneSuggest } from './suggesters/TimezoneSuggest';
 import { getMomentFormatHint, parsePropertyKeys } from './utils';
+import {
+  hasDotWithoutNesting,
+  parsePropertyPath,
+  pathConflict,
+} from './propertyPath';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import { UpdateAllCacheData } from './UpdateAllCacheData';
@@ -171,26 +176,61 @@ export function sanitizeSettings(raw: unknown): FrontmatterDateManagerSettings {
     sanitized.headerUpdateCount = DEFAULT_SETTINGS.headerUpdateCount;
   }
 
-  // Name-collision guard: the counter and a date property cannot share a key, or
-  // they would clobber each other in a single processFrontMatter write. On
-  // collision, DISABLE the counter (never reset the name to the default, which
-  // could itself collide and silently reintroduce the clash). Compare against ALL
-  // three date-key names UNCONDITIONALLY (not just the enabled ones), so this stays
-  // symmetric with the write-boundary guard `counterKeyOrNull()` in main.ts. An
-  // enabled-only check here would leave the counter enabled in settings while
-  // `counterKeyOrNull` silently rejects the same name - a confusing inert toggle.
-  // It also covers the cases where a "disabled" date key still gets written: the
-  // inversion fix can stamp `created`/`updated` even when their toggle is off, and
-  // last-viewed can be re-enabled later.
-  const counterName = (sanitized.headerUpdateCount ?? '').trim();
-  const dateKeys = [
-    sanitized.headerCreated.trim(),
-    sanitized.headerUpdated.trim(),
-    (sanitized.headerLastViewed ?? 'viewed').trim(),
-  ];
+  // Nested-path guard between the date names: one cannot be a group another
+  // writes into (`meta` and `meta > updated`) - a date in `meta` and a group
+  // under it cannot both hold. Reset the LONGER name to its default, repeated
+  // because a default can itself collide with a name nested under it (each
+  // name is reset at most once: a flat default is never the longer one).
+  // Two EQUAL date names are left alone on purpose: the settings form rejects
+  // new ones, but a stored configuration that writes two dates into one
+  // property keeps working as it always has. An invalid path (an empty level,
+  // e.g. `meta >`) is kept as typed: nothing is written for it, and Obsidian
+  // shows the field's validation error when the settings open.
+  const dateFields = [
+    'headerCreated',
+    'headerUpdated',
+    'headerLastViewed',
+  ] as const;
+  const datePath = (field: (typeof dateFields)[number]): string[] | null => {
+    const parsed = parsePropertyPath(sanitized[field] ?? 'viewed');
+    return parsed.ok ? parsed.segments : null;
+  };
+  let reset = true;
+  while (reset) {
+    reset = false;
+    for (let i = 0; i < dateFields.length && !reset; i++) {
+      for (let j = i + 1; j < dateFields.length && !reset; j++) {
+        const a = datePath(dateFields[i]!);
+        const b = datePath(dateFields[j]!);
+        if (a && b && pathConflict(a, b) === 'prefix') {
+          const longer = a.length > b.length ? dateFields[i]! : dateFields[j]!;
+          sanitized[longer] = DEFAULT_SETTINGS[longer] ?? 'viewed';
+          reset = true;
+        }
+      }
+    }
+  }
+
+  // Name-collision guard: the counter and a date property cannot share a key -
+  // or nest in one another - or they would clobber each other in a single
+  // processFrontMatter write. On collision, DISABLE the counter (never reset the
+  // name to the default, which could itself collide and silently reintroduce the
+  // clash). Compare against ALL three date-key names UNCONDITIONALLY (not just
+  // the enabled ones), so this stays symmetric with the write-boundary guard
+  // `propertyPaths()` in main.ts. An enabled-only check here would leave the
+  // counter enabled in settings while the write boundary silently rejects the
+  // same name - a confusing inert toggle. It also covers the cases where a
+  // "disabled" date key still gets written: the inversion fix can stamp
+  // `created`/`updated` even when their toggle is off, and last-viewed can be
+  // re-enabled later.
+  const counterPath = parsePropertyPath(sanitized.headerUpdateCount);
   if (
     sanitized.countUpdatesEnabled === true &&
-    dateKeys.includes(counterName)
+    counterPath.ok &&
+    dateFields.some((field) => {
+      const path = datePath(field);
+      return path !== null && pathConflict(path, counterPath.segments) !== null;
+    })
   ) {
     sanitized.countUpdatesEnabled = false;
   }
@@ -295,24 +335,61 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   // boundary for already-stored data) ---
 
   private validatePropertyName(value: string): string | undefined {
-    return value.trim() === ''
+    const parsed = parsePropertyPath(value);
+    if (parsed.ok) return undefined;
+    return parsed.reason === 'empty'
       ? strings.settings.validation.propertyNameRequired
-      : undefined;
+      : strings.settings.validation.invalidPath;
+  }
+
+  // The stored names other fields compare against, as paths (an invalid one
+  // cannot collide with anything - nothing is written for it).
+  private storedPath(name: string | undefined): string[] | null {
+    const parsed = parsePropertyPath(name);
+    return parsed.ok ? parsed.segments : null;
   }
 
   // Date-key fields reject the counter's name (mirrors the sanitizeSettings /
-  // counterKeyOrNull collision rule, surfaced as an inline error instead of a
-  // silent counter disable at next load). Only guards while the counter is
-  // enabled - with it off there is nothing to clobber.
-  private validateDateKey(value: string): string | undefined {
+  // propertyPaths collision rule, surfaced as an inline error instead of a
+  // silent counter disable at next load) - only while the counter is enabled,
+  // with it off there is nothing to clobber. They also reject another date's
+  // name, and any name nested in one another (`meta` and `meta > updated`).
+  // The equal-dates rule exists ONLY here: a stored configuration with two
+  // dates in one property keeps loading and writing as before.
+  private validateDateKey(
+    value: string,
+    own: 'headerCreated' | 'headerUpdated' | 'headerLastViewed',
+  ): string | undefined {
     const base = this.validatePropertyName(value);
     if (base) return base;
+    const path = this.storedPath(value)!;
     const s = this.plugin.settings;
-    if (
-      (s.countUpdatesEnabled ?? false) &&
-      value.trim() === (s.headerUpdateCount ?? 'updated_count').trim()
-    ) {
+    const counter = this.storedPath(s.headerUpdateCount ?? 'updated_count');
+    const counterConflict =
+      (s.countUpdatesEnabled ?? false) && counter !== null
+        ? pathConflict(path, counter)
+        : null;
+    if (counterConflict === 'equal') {
       return strings.settings.validation.counterNameCollision;
+    }
+    if (counterConflict === 'prefix') {
+      return strings.settings.validation.nestingConflict;
+    }
+    for (const field of [
+      'headerCreated',
+      'headerUpdated',
+      'headerLastViewed',
+    ] as const) {
+      if (field === own) continue;
+      const other = this.storedPath(s[field] ?? 'viewed');
+      if (other === null) continue;
+      const conflict = pathConflict(path, other);
+      if (conflict === 'equal') {
+        return strings.settings.validation.dateNameCollision;
+      }
+      if (conflict === 'prefix') {
+        return strings.settings.validation.nestingConflict;
+      }
     }
     return undefined;
   }
@@ -320,15 +397,24 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
   private validateCounterName(value: string): string | undefined {
     const base = this.validatePropertyName(value);
     if (base) return base;
+    const path = this.storedPath(value)!;
     const s = this.plugin.settings;
-    const dateKeys = [
-      s.headerCreated.trim(),
-      s.headerUpdated.trim(),
-      (s.headerLastViewed ?? 'viewed').trim(),
-    ];
-    return dateKeys.includes(value.trim())
-      ? strings.settings.validation.counterNameCollision
-      : undefined;
+    for (const name of [
+      s.headerCreated,
+      s.headerUpdated,
+      s.headerLastViewed ?? 'viewed',
+    ]) {
+      const other = this.storedPath(name);
+      if (other === null) continue;
+      const conflict = pathConflict(path, other);
+      if (conflict === 'equal') {
+        return strings.settings.validation.counterNameCollision;
+      }
+      if (conflict === 'prefix') {
+        return strings.settings.validation.nestingConflict;
+      }
+    }
+    return undefined;
   }
 
   // --- Tree builders ---
@@ -381,9 +467,14 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           type: 'text',
           key: 'headerCreated',
           placeholder: d.created.propertyPlaceholder,
-          validate: (value: string) => this.validateDateKey(value),
+          validate: (value: string) =>
+            this.validateDateKey(value, 'headerCreated'),
         },
       },
+      this.dotHintItem(
+        () => s().headerCreated,
+        () => s().enableCreateTime,
+      ),
       {
         name: d.updated.enableName,
         desc: d.updated.enableDesc,
@@ -401,9 +492,14 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           type: 'text',
           key: 'headerUpdated',
           placeholder: d.updated.propertyPlaceholder,
-          validate: (value: string) => this.validateDateKey(value),
+          validate: (value: string) =>
+            this.validateDateKey(value, 'headerUpdated'),
         },
       },
+      this.dotHintItem(
+        () => s().headerUpdated,
+        () => s().enableModifiedTime ?? true,
+      ),
       {
         name: d.updateCount.enableName,
         desc: d.updateCount.enableDesc,
@@ -427,6 +523,12 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           validate: (value: string) => this.validateCounterName(value),
         },
       },
+      this.dotHintItem(
+        () => s().headerUpdateCount,
+        () =>
+          (s().enableModifiedTime ?? true) &&
+          (s().countUpdatesEnabled ?? false),
+      ),
       {
         name: d.viewed.enableName,
         desc: d.viewed.enableDesc,
@@ -445,11 +547,39 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           key: 'headerLastViewed',
           placeholder: d.viewed.propertyPlaceholder,
           defaultValue: DEFAULT_SETTINGS.headerLastViewed,
-          validate: (value: string) => this.validateDateKey(value),
+          validate: (value: string) =>
+            this.validateDateKey(value, 'headerLastViewed'),
         },
       },
+      this.dotHintItem(
+        () => s().headerLastViewed,
+        () => s().enableLastViewed ?? false,
+      ),
     ];
     return { type: 'group', items };
+  }
+
+  // A one-line hint under a property-name field holding a dot but no `>`:
+  // that name stays ONE property with a dot in it - the trap for people used
+  // to the dot notation of Bases and Dataview. Obsidian re-evaluates `visible`
+  // after every control change (getControlBinding -> refreshDomState), so the
+  // hint follows the typing without a full update().
+  private dotHintItem(
+    name: () => string | undefined,
+    fieldVisible: () => boolean,
+  ): SettingGroupItem {
+    return {
+      name: '',
+      searchable: false,
+      visible: () => fieldVisible() && hasDotWithoutNesting(name()),
+      render: (setting: Setting) => {
+        const hintEl = setting.settingEl.createDiv({
+          cls: 'frontmatter-date-manager-dot-hint',
+          text: strings.settings.dates.dotHint,
+        });
+        return () => void hintEl.remove();
+      },
+    };
   }
 
   private noneEnabledHintItem(): SettingDefinitionItem {
@@ -587,8 +717,7 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           name: b.excludeKeys.name,
           desc: b.excludeKeys.desc,
           visible: () => this.excludeKeysVisible(),
-          render: (setting: Setting) =>
-            void this.renderExcludeInputRow(setting),
+          render: (setting: Setting) => this.renderExcludeInputRow(setting),
         },
       ],
     };
@@ -1188,14 +1317,28 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
     return () => errorEl?.remove();
   }
 
-  private renderExcludeInputRow(setting: Setting): void {
+  private renderExcludeInputRow(setting: Setting): () => void {
     const ek = strings.settings.behavior.excludeKeys;
     let inputValue = '';
+
+    // Same path syntax as the property-name fields: an entry with an empty
+    // level (`meta >`) is refused with an inline error, and nothing from that
+    // input is added.
+    let errorEl: HTMLElement | null = null;
+    const showError = (show: boolean) => {
+      errorEl ??= setting.settingEl.createDiv({
+        cls: 'frontmatter-date-manager-exclude-error',
+        text: strings.settings.validation.invalidPath,
+      });
+      errorEl.toggleClass('frontmatter-date-manager-hidden', !show);
+    };
 
     const addKeys = async () => {
       const currentList = this.plugin.settings.frontmatterHashExcludeKeys ?? [];
       const newKeys = parsePropertyKeys(inputValue, currentList);
-      if (newKeys.length === 0) return;
+      const invalid = newKeys.some((key) => !parsePropertyPath(key).ok);
+      showError(invalid);
+      if (invalid || newKeys.length === 0) return;
       await this.setControlValue('frontmatterHashExcludeKeys', [
         ...currentList,
         ...newKeys,
@@ -1227,6 +1370,8 @@ export class FrontmatterDateManagerSettingsTab extends PluginSettingTab {
           void addKeys();
         });
       });
+
+    return () => errorEl?.remove();
   }
 
   private async removeExcludeKeyAt(index: number): Promise<void> {

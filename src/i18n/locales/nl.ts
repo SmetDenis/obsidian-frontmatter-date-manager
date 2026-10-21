@@ -46,6 +46,18 @@ export const STRINGS_NL: Strings = {
       'Alle datums zijn al ingevuld en de notitie is niet gewijzigd sinds de laatste update.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "De namen van de datumeigenschappen in de plug-ininstellingen zijn ongeldig. Elk deel rond '>' heeft een naam nodig, bijvoorbeeld meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Andere datums worden gewoon geschreven. Deze melding verschijnt één keer per sessie.',
+    skippedParentNotGroup:
+      '"{name}" is niet geschreven: "{parent}" bevat een waarde die geen groep is.',
+    skippedSharedGroup:
+      '"{name}" is niet geschreven: "{parent}" wordt via een YAML-verwijzing (& en *) gedeeld met een andere eigenschap, en schrijven zou beide wijzigen.',
+    skippedHoldsContainer:
+      '"{name}" is niet geschreven: er staat een groep of lijst, die de plug-in nooit vervangt.',
+    skippedInvalidName:
+      '"{name}" is geen geldige eigenschapsnaam: elk deel rond \'>\' heeft een naam nodig. Pas dit aan in de plug-ininstellingen.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -82,6 +94,12 @@ export const STRINGS_NL: Strings = {
     skippedColumnReason: 'Reden',
     skippedTableIntro:
       '{count} notitie(s) zijn overgeslagen en ongewijzigd gelaten:',
+    valuesWillNotBeWrittenIntro:
+      'Waarden die niet worden geschreven: {count}. De rest van elke notitie wel:',
+    valuesNotWrittenIntro:
+      'Niet geschreven waarden: {count}. De rest van elke notitie is geschreven:',
+    invalidPropertyNames:
+      "Geen geldige eigenschapsnaam: {names}. Elk deel rond '>' heeft een naam nodig - pas dit aan in de plug-ininstellingen.",
     skippedUnsavedChanges:
       'De notitie heeft niet-opgeslagen wijzigingen in een open editor. Sla deze op of sluit deze en voer daarna een nieuwe voorvertoning uit.',
     skippedExcalidrawUnsaved:
@@ -93,6 +111,12 @@ export const STRINGS_NL: Strings = {
       propertyNameRequired: 'Voer een eigenschapsnaam in.',
       counterNameCollision:
         'Deze naam wordt al gebruikt door een andere eigenschap hierboven.',
+      invalidPath:
+        "Elk deel rond '>' heeft een naam nodig, bijvoorbeeld meta > updated.",
+      dateNameCollision:
+        'Een andere datum van deze plug-in gebruikt deze naam al.',
+      nestingConflict:
+        'Deze naam en een andere eigenschapsnaam van deze plug-in zitten in elkaar (zoals meta en meta > updated). Gebruik namen die elkaar niet bevatten.',
     },
     description: {
       syncIntro:
@@ -103,6 +127,8 @@ export const STRINGS_NL: Strings = {
     dates: {
       enableNoneHint:
         'Schakel hierboven minstens één datum in om de plug-in in te stellen.',
+      dotHint:
+        "Dit is één eigenschap met een punt in de naam. Gebruik in plaats daarvan '>' om haar in een groep te plaatsen, bijvoorbeeld meta > updated.",
       automatic: {
         name: 'Automatische datums',
         desc: 'Laat de plug-in de onderstaande datums zelf actueel houden: de aanmaakdatum wordt toegevoegd bij de eerste bewerking van een notitie, de laatst-bewerkt-datum bij elke bewerking en de laatst-geopend-datum wanneer u een notitie opent. Als dit is uitgeschakeld, veranderen datums alleen via de opdracht "Datums in huidig bestand bijwerken" en de bulkbewerkingen.',
@@ -115,7 +141,7 @@ export const STRINGS_NL: Strings = {
           'Voeg een aanmaakdatum toe aan notities die er nog geen hebben. Deze wordt toegevoegd bij de eerste bewerking van de notitie.',
         propertyName: 'Eigenschap voor aanmaakdatum',
         propertyDesc:
-          'Naam van de eigenschap waarin de aanmaakdatum wordt opgeslagen.',
+          "Naam van de eigenschap waarin de aanmaakdatum wordt opgeslagen. Scheid de niveaus met '>' om haar in een groep te plaatsen, bijvoorbeeld meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
@@ -123,7 +149,7 @@ export const STRINGS_NL: Strings = {
         enableDesc: 'Werk deze datum bij telkens wanneer u de notitie bewerkt.',
         propertyName: 'Eigenschap voor laatst-bewerkt-datum',
         propertyDesc:
-          'Naam van de eigenschap waarin de laatst-bewerkt-datum wordt opgeslagen.',
+          "Naam van de eigenschap waarin de laatst-bewerkt-datum wordt opgeslagen. Scheid de niveaus met '>' om haar in een groep te plaatsen, bijvoorbeeld meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -132,14 +158,14 @@ export const STRINGS_NL: Strings = {
           'Voeg een numerieke eigenschap toe die telkens met één omhooggaat wanneer u een notitie bewerkt. Een geschatte activiteitsteller, geen exacte geschiedenis.',
         propertyName: 'Eigenschap voor bewerkingsteller',
         propertyDesc:
-          'Naam van de eigenschap waarin de bewerkingsteller wordt opgeslagen.',
+          "Naam van de eigenschap waarin de bewerkingsteller wordt opgeslagen. Scheid de niveaus met '>' om haar in een groep te plaatsen, bijvoorbeeld meta > edits.",
       },
       viewed: {
         enableName: 'Laatst-geopend-datum bijhouden',
         enableDesc: 'Sla de datum op telkens wanneer u de notitie opent.',
         propertyName: 'Eigenschap voor laatst-geopend-datum',
         propertyDesc:
-          'Naam van de eigenschap waarin de laatst-geopend-datum wordt opgeslagen.',
+          "Naam van de eigenschap waarin de laatst-geopend-datum wordt opgeslagen. Scheid de niveaus met '>' om haar in een groep te plaatsen, bijvoorbeeld meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

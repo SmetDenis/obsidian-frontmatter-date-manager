@@ -22,6 +22,18 @@ import {
   isTFile,
 } from './utils';
 import { sha256 } from 'js-sha256';
+import {
+  PATH_SEPARATOR,
+  PropertySkip,
+  PropertyTarget,
+  formatPropertyPath,
+  parsePropertyPath,
+  pathConflict,
+  readTarget,
+  removeNestedKeyLines,
+  writeTarget,
+} from './propertyPath';
+import { propertySkipMessage } from './propertySkip';
 import { FilterRule, isFileExcluded, parseFilterRules } from './filterRules';
 import { strings, format as t } from './i18n';
 import {
@@ -71,8 +83,21 @@ export type FileChangeIgnoreReason =
   | IgnoreReason
   | 'not-a-file'
   | 'no-date-keys'
+  | 'invalid-property-name'
   | 'invalid-file-times'
   | 'automatic-dates-off';
+
+// Thrown from a processFrontMatter callback that ended up writing nothing.
+// Obsidian re-serializes the whole frontmatter after the callback returns, so
+// returning normally would rewrite the note (comments dropped, formatting
+// normalised) for a write that never happened; throwing stops it before the
+// file is touched. Caught by the caller, never surfaced as an error.
+class NothingWritten extends Error {
+  constructor() {
+    super('nothing written');
+    this.name = 'NothingWritten';
+  }
+}
 
 // Who asked for a pass. Automatic work ('auto': vault events, their debounce,
 // and every retry they schedule) is subject to the "Automatic dates" master
@@ -122,14 +147,22 @@ interface ArmedRename {
   blocked: boolean;
 }
 
-// Result of one handleFileChange pass. `wrote` is true only when
-// processFrontMatter actually ran; `deferred` is true only when a real change
+// Result of one handleFileChange pass. `wrote` is true only when at least one
+// property was actually written; `deferred` is true only when a real change
 // is pending and will be written by a scheduled retry (rate limit, dirty
 // editor buffer, or a concurrent pass holding the lock). `blocked` is set when
 // a dirty/busy Excalidraw view blocked the pass: no write happened and no
 // retry timer exists - the next Excalidraw save re-triggers processing.
+// `skipped` lists the properties this pass deliberately left unwritten (see
+// PropertySkip); the other properties of the note are written as usual.
 export type FileChangeResult =
-  | { status: 'ok'; wrote: boolean; deferred?: boolean; blocked?: 'excalidraw' }
+  | {
+      status: 'ok';
+      wrote: boolean;
+      deferred?: boolean;
+      blocked?: 'excalidraw';
+      skipped?: PropertySkip[];
+    }
   | { status: 'error'; error: unknown }
   | { status: 'ignored'; reason: FileChangeIgnoreReason };
 
@@ -150,6 +183,8 @@ export function ignoreReasonToNotice(reason: FileChangeIgnoreReason): string {
       return strings.notices.ignoredUnchanged;
     case 'no-date-keys':
       return strings.notices.ignoredNoDateKeys;
+    case 'invalid-property-name':
+      return strings.notices.ignoredInvalidPropertyName;
     case 'invalid-file-times':
       return strings.notices.ignoredInvalidFileTimes;
     case 'automatic-dates-off':
@@ -218,6 +253,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   settingsTab: FrontmatterDateManagerSettingsTab | null = null;
   bulkRunning = false;
   private _sessionInversionNoticeShown = false;
+  private _sessionSkipNoticeShown = false;
   // Injected in tests; in prod uses real Notice.
   _noticeFactory: (message: string, timeout?: number) => void = (m, t) => {
     new Notice(m, t);
@@ -227,6 +263,25 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     if (this._sessionInversionNoticeShown) return;
     this._sessionInversionNoticeShown = true;
     this._noticeFactory(strings.notices.inversionDetectedAndFixed, 8000);
+  }
+
+  // An automatic pass reports a property it could not write (a parent that is
+  // not a group, a group or list in the value's place) once per session: the
+  // notice arrives without a user action, and repeating it on every edit of
+  // such a note would be noise. An invalid name stays silent here - the
+  // settings field shows that error. The manual command reports every skip.
+  private showSkipNoticeOnce(file: TFile, skips: PropertySkip[]): void {
+    if (this._sessionSkipNoticeShown) return;
+    const first = skips.find((skip) => skip.reason !== 'invalid-name');
+    if (!first) return;
+    this._sessionSkipNoticeShown = true;
+    this._noticeFactory(
+      t(strings.notices.propertySkippedOnce, {
+        file: file.path,
+        reason: propertySkipMessage(first),
+      }),
+      10000,
+    );
   }
 
   parseDate(input: number | string): Date | undefined {
@@ -422,14 +477,22 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
             this.processFileWithLock(file, 'manual')
               .then((result) => {
                 if (result.status === 'ok') {
+                  // Every property the pass left unwritten gets its own line
+                  // with the reason; "already up to date" would be false then.
+                  const skips = (result.skipped ?? []).map(propertySkipMessage);
+                  const status = result.wrote
+                    ? strings.notices.timestampsUpdated
+                    : result.deferred
+                      ? strings.notices.timestampsUpdateScheduled
+                      : result.blocked === 'excalidraw'
+                        ? strings.notices.excalidrawHasUnsavedChanges
+                        : skips.length > 0
+                          ? null
+                          : strings.notices.timestampsAlreadyCurrent;
                   new Notice(
-                    result.wrote
-                      ? strings.notices.timestampsUpdated
-                      : result.deferred
-                        ? strings.notices.timestampsUpdateScheduled
-                        : result.blocked === 'excalidraw'
-                          ? strings.notices.excalidrawHasUnsavedChanges
-                          : strings.notices.timestampsAlreadyCurrent,
+                    [status, ...skips]
+                      .filter((line) => line !== null)
+                      .join('\n'),
                   );
                 } else if (result.status === 'ignored') {
                   new Notice(ignoreReasonToNotice(result.reason));
@@ -559,13 +622,27 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     // Exclude created/updated keys from hash to prevent infinite loop:
     // plugin writes timestamp -> hash changes -> plugin detects change -> writes again.
+    //
+    // A name without `>` goes through the original flat line filter exactly as
+    // before - its output must stay byte-identical, or every note tracked in
+    // frontmatter/both mode would hash differently after an update and get a
+    // spurious re-stamp. A nested path (`meta > updated`) is removed by a
+    // second, indentation-aware pass instead; an invalid path excludes nothing
+    // (the plugin never writes to it either).
     const excludedKeys = new Set<string>();
-    const createdKey = this.settings.headerCreated.trim();
-    const updatedKey = this.settings.headerUpdated.trim();
-    if (createdKey) excludedKeys.add(createdKey);
-    if (updatedKey) excludedKeys.add(updatedKey);
-    const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
-    if (viewedKey) excludedKeys.add(viewedKey);
+    const excludedPaths: string[][] = [];
+    const exclude = (name: string) => {
+      if (!name.includes(PATH_SEPARATOR)) {
+        const trimmed = name.trim();
+        if (trimmed) excludedKeys.add(trimmed);
+        return;
+      }
+      const parsed = parsePropertyPath(name);
+      if (parsed.ok) excludedPaths.push(parsed.segments);
+    };
+    exclude(this.settings.headerCreated);
+    exclude(this.settings.headerUpdated);
+    exclude(this.settings.headerLastViewed ?? 'viewed');
     // The edit-activity counter is plugin-managed too; exclude its configured key
     // UNCONDITIONALLY (regardless of countUpdatesEnabled). Two reasons: (1) the
     // counter's own write must never re-dirty the tracked hash, or it would drive
@@ -573,18 +650,14 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // exclusion on the enabled flag made toggling the counter on/off flip whether
     // the key is hashed - a one-time spurious `updated` re-stamp on already-counted
     // notes. Always excluding a key the plugin owns keeps the toggle hash-neutral.
-    const countKey = (this.settings.headerUpdateCount ?? '').trim();
-    if (countKey) {
-      excludedKeys.add(countKey);
-    }
+    exclude(this.settings.headerUpdateCount ?? '');
     for (const key of this.settings.frontmatterHashExcludeKeys ?? []) {
-      const trimmed = key.trim();
-      if (trimmed) excludedKeys.add(trimmed);
+      exclude(key);
     }
 
-    const filteredFrontmatter = this.filterFrontmatterKeys(
-      frontmatterBlock,
-      excludedKeys,
+    const filteredFrontmatter = removeNestedKeyLines(
+      this.filterFrontmatterKeys(frontmatterBlock, excludedKeys),
+      excludedPaths,
     );
 
     if (mode === 'frontmatter') {
@@ -799,21 +872,68 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     this.hashCache[file.path] = { hash: sha, lastAccessed: Date.now() };
   }
 
-  // The effective edit-activity counter key, or null when the counter is off,
-  // unnamed, or (defense-in-depth) colliding with a date key. sanitizeSettings
-  // already disables the counter on a date-key collision; this guards the write
-  // boundary too so a colliding key can never clobber a date in a single write.
-  private counterKeyOrNull(): string | null {
-    if (this.settings.countUpdatesEnabled !== true) return null;
-    const key = (this.settings.headerUpdateCount ?? '').trim();
-    if (!key) return null;
-    const dateKeys = [
-      this.settings.headerCreated.trim(),
-      this.settings.headerUpdated.trim(),
-      (this.settings.headerLastViewed ?? 'viewed').trim(),
-    ];
-    if (dateKeys.includes(key)) return null;
-    return key;
+  // Where the four plugin-managed properties are written - the single
+  // write-boundary view of the configured names. A path is null when nothing
+  // may be written there: the name is blank or not a valid path, or
+  // (defense-in-depth - sanitizeSettings and the settings form already prevent
+  // it) one date name is a group another writes into (`meta` and
+  // `meta > updated`), where the longer one is dropped, as sanitizeSettings
+  // resets it. Two date names that are EQUAL stay allowed: the form rejects
+  // new ones, but a stored configuration keeps working as it always has.
+  //
+  // The counter is null when it is off, or when it equals or nests with ANY of
+  // the three date names - enabled or not, because the inversion fix can write
+  // a disabled date and last-viewed can be re-enabled later. sanitizeSettings
+  // disables it on the same rule, so the setting never reads as enabled while
+  // this boundary silently refuses it.
+  propertyPaths(): Record<
+    'created' | 'updated' | 'viewed' | 'counter',
+    PropertyTarget
+  > {
+    const target = (raw: string): PropertyTarget => {
+      const parsed = parsePropertyPath(raw);
+      return parsed.ok
+        ? {
+            name: formatPropertyPath(parsed.segments),
+            path: parsed.segments,
+            invalid: false,
+          }
+        : {
+            name: raw.trim(),
+            path: null,
+            invalid: parsed.reason === 'empty-segment',
+          };
+    };
+    const created = target(this.settings.headerCreated);
+    const updated = target(this.settings.headerUpdated);
+    const viewed = target(this.settings.headerLastViewed ?? 'viewed');
+    const datePaths = [created.path, updated.path, viewed.path];
+
+    const dates = [created, updated, viewed];
+    for (let i = 0; i < dates.length; i++) {
+      for (let j = i + 1; j < dates.length; j++) {
+        const a = dates[i]!;
+        const b = dates[j]!;
+        if (a.path && b.path && pathConflict(a.path, b.path) === 'prefix') {
+          if (a.path.length > b.path.length) a.path = null;
+          else b.path = null;
+        }
+      }
+    }
+
+    const counter = target(this.settings.headerUpdateCount ?? '');
+    const counterPath = counter.path;
+    if (
+      this.settings.countUpdatesEnabled !== true ||
+      (counterPath !== null &&
+        datePaths.some(
+          (p) => p !== null && pathConflict(p, counterPath) !== null,
+        ))
+    ) {
+      counter.path = null;
+    }
+
+    return { created, updated, viewed, counter };
   }
 
   // Every Markdown editor view currently showing this file. Deferred/unloaded
@@ -991,10 +1111,20 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // never here, or a deferred/failed pass would announce a fix that did not
     // happen. This keeps the compute pure (no user-visible side effects).
     inversionFixed?: boolean;
+    // The values before the inversion fix replaced them (set with it).
+    unfixed?: {
+      createdValue?: string | number;
+      updatedValue?: string | number;
+    };
+    // Properties this pass cannot write (see PropertySkip), read from the
+    // metadata cache. The write callback re-checks against the live
+    // frontmatter, since the cache can lag behind the file.
+    skipped: PropertySkip[];
   } | null {
     const fillMissingOnly = options?.fillMissingOnly === true;
-    const updatedKey = this.settings.headerUpdated.trim();
-    const createdKey = this.settings.headerCreated.trim();
+    const paths = this.propertyPaths();
+    const createdPath = paths.created.path;
+    const updatedPath = paths.updated.path;
 
     // Blank keys are pre-checked in handleFileChange (-> 'no-date-keys'), so a
     // null return here means exactly one thing: unparseable file timestamps.
@@ -1015,23 +1145,45 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       retryAfterMs?: number;
       countedEdit?: boolean;
       inversionFixed?: boolean;
-    } = {};
+      unfixed?: {
+        createdValue?: string | number;
+        updatedValue?: string | number;
+      };
+      skipped: PropertySkip[];
+    } = { skipped: [] };
 
-    if (this.settings.enableCreateTime && createdKey) {
-      const existingCreated = cached?.[createdKey] as
-        | string
-        | number
-        | undefined;
-      if (!existingCreated) {
+    // A date that can be written reads as its stored value (undefined when
+    // absent); one that cannot - a parent that is not a group, a shared group,
+    // or a group or list in its place - carries `skip`. Both dates are read
+    // whether or not they are enabled, because the inversion fix below needs
+    // the pair.
+    const readDate = (target: PropertyTarget) => {
+      const read = readTarget(cached, target);
+      return {
+        value: read.value as string | number | undefined,
+        skip: read.skip,
+      };
+    };
+    const createdRead = readDate(paths.created);
+    const updatedRead = readDate(paths.updated);
+
+    if (this.settings.enableCreateTime) {
+      if (createdRead.skip) {
+        result.skipped.push(createdRead.skip);
+      } else if (createdPath && !createdRead.value) {
         result.createdValue = this.formatDate(cTime);
       }
     }
 
-    if ((this.settings.enableModifiedTime ?? true) && updatedKey) {
-      const existingUpdated = cached?.[updatedKey] as
-        | string
-        | number
-        | undefined;
+    if (this.settings.enableModifiedTime ?? true) {
+      if (updatedRead.skip) result.skipped.push(updatedRead.skip);
+    }
+    if (
+      (this.settings.enableModifiedTime ?? true) &&
+      updatedPath &&
+      !updatedRead.skip
+    ) {
+      const existingUpdated = updatedRead.value;
       const candidate = this.formatDate(mTime);
 
       if (!existingUpdated) {
@@ -1080,20 +1232,30 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       }
     }
 
+    // An enabled counter whose name is not a valid path is reported where the
+    // count would have moved, like an invalid date name.
+    if (
+      result.countedEdit === true &&
+      this.settings.countUpdatesEnabled === true &&
+      paths.counter.invalid
+    ) {
+      result.skipped.push({ name: paths.counter.name, reason: 'invalid-name' });
+    }
+
+    // The out-of-order fix rewrites both dates, so it runs only when both can
+    // be written.
     const strategy: InversionFixStrategy =
       this.settings.inversionFixStrategy ?? 'disabled';
     if (
       !fillMissingOnly &&
       strategy !== 'disabled' &&
-      createdKey &&
-      updatedKey
+      createdPath &&
+      updatedPath &&
+      !createdRead.skip &&
+      !updatedRead.skip
     ) {
-      const finalCreatedRaw =
-        result.createdValue ??
-        (cached?.[createdKey] as string | number | undefined);
-      const finalUpdatedRaw =
-        result.updatedValue ??
-        (cached?.[updatedKey] as string | number | undefined);
+      const finalCreatedRaw = result.createdValue ?? createdRead.value;
+      const finalUpdatedRaw = result.updatedValue ?? updatedRead.value;
 
       if (finalCreatedRaw != null && finalUpdatedRaw != null) {
         const finalCreated = this.parseDate(finalCreatedRaw);
@@ -1112,6 +1274,12 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           });
           const newCreated = this.formatDate(fixed.created);
           const newUpdated = this.formatDate(fixed.updated);
+          // Kept so the write can fall back to the ordinary values when the
+          // live frontmatter refuses one date of the fixed pair.
+          result.unfixed = {
+            createdValue: result.createdValue,
+            updatedValue: result.updatedValue,
+          };
           if (newCreated !== undefined) result.createdValue = newCreated;
           if (newUpdated !== undefined) result.updatedValue = newUpdated;
           result.inversionFixed = true;
@@ -1206,12 +1374,17 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
 
     // Blank date-property names mean there is nothing to compute or write.
     // Checked here (not inside the compute) so the compute's null return keeps
-    // a single meaning: unparseable file timestamps.
-    if (
-      !this.settings.headerUpdated.trim() &&
-      !this.settings.headerCreated.trim()
-    ) {
-      return { status: 'ignored', reason: 'no-date-keys' };
+    // a single meaning: unparseable file timestamps. An invalid path (`meta >`)
+    // writes nothing either, and is reported as such.
+    const paths = this.propertyPaths();
+    if (!paths.created.path && !paths.updated.path) {
+      return {
+        status: 'ignored',
+        reason:
+          paths.created.invalid || paths.updated.invalid
+            ? 'invalid-property-name'
+            : 'no-date-keys',
+      };
     }
 
     const updates = this.computeFrontmatterUpdates(file, { fillMissingOnly });
@@ -1240,19 +1413,25 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     const hasChanges =
       updates.createdValue !== undefined || updates.updatedValue !== undefined;
 
-    if (!hasChanges && fillMissingOnly) {
+    if (!hasChanges && fillMissingOnly && updates.skipped.length === 0) {
       // Every date is present and the content has not changed: report it the
       // way the hash gate always has. The cached hash already matches.
       return { status: 'ignored', reason: 'unchanged' };
     }
 
     if (!hasChanges) {
-      // Genuinely no changes needed - cache hash to skip future events.
+      // Genuinely no changes needed - cache hash to skip future events. A
+      // property that cannot be written (see PropertySkip) lands here too: the
+      // note keeps its other dates, and its next edit is detected as usual.
       this.log('Skipping processFrontMatter - no changes needed');
       if (checkResult.fileContent) {
         await this.populateCacheForFile(file, checkResult.fileContent);
       }
-      return { status: 'ok', wrote: false };
+      return this.withSkips(file, origin, {
+        status: 'ok',
+        wrote: false,
+        skipped: updates.skipped,
+      });
     }
 
     // Re-check right before writing: the read and the write-block probe above
@@ -1261,6 +1440,14 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       return { status: 'ignored', reason: 'automatic-dates-off' };
     }
 
+    // Filled by the write callback: whether any property was actually written,
+    // whether the inversion fix was applied, and what the live frontmatter
+    // refused (the cache read can lag behind). Widened on purpose: assigned
+    // inside the callback, which control-flow narrowing cannot see.
+    let wroteAny = false as boolean;
+    let inversionApplied = false as boolean;
+    const skipped = [...updates.skipped];
+
     try {
       await this.app.fileManager.processFrontMatter(
         file,
@@ -1268,25 +1455,66 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
           this.log('current metadata: ', frontmatter);
           this.log('current stat: ', file.stat);
 
-          if (updates.createdValue !== undefined) {
-            frontmatter[this.settings.headerCreated] = updates.createdValue;
+          // A refusal is reported once, however many writes meet it.
+          const skip = (refusal: PropertySkip) => {
+            if (
+              !skipped.some(
+                (s) => s.name === refusal.name && s.reason === refusal.reason,
+              )
+            ) {
+              skipped.push(refusal);
+            }
+          };
+          const write = (target: PropertyTarget, value: unknown): boolean => {
+            const outcome = writeTarget(frontmatter, target, value);
+            if (outcome.skip) skip(outcome.skip);
+            if (outcome.written) wroteAny = true;
+            return outcome.written;
+          };
+
+          // The out-of-order fix rewrites both dates or neither. The cache said
+          // both can be written, but the live frontmatter may disagree: then
+          // the ordinary values are written instead, no fix is announced, and
+          // the refusal is reported like any other.
+          let createdValue = updates.createdValue;
+          let updatedValue = updates.updatedValue;
+          if (updates.inversionFixed === true) {
+            const refused =
+              readTarget(frontmatter, paths.created).skip ??
+              readTarget(frontmatter, paths.updated).skip;
+            if (refused) {
+              skip(refused);
+              createdValue = updates.unfixed?.createdValue;
+              updatedValue = updates.unfixed?.updatedValue;
+            } else {
+              inversionApplied = true;
+            }
           }
-          if (updates.updatedValue !== undefined) {
-            frontmatter[this.settings.headerUpdated] = updates.updatedValue;
-          }
+
+          if (createdValue !== undefined) write(paths.created, createdValue);
+          const updatedWritten =
+            updatedValue !== undefined && write(paths.updated, updatedValue);
           // The edit-activity counter rides ONLY the `updated` write of a Counted
-          // edit - never a created-only fill or the inversion-fix service write.
-          // Read the base from THIS callback's frontmatter (the authoritative
-          // on-disk value, not the possibly-stale metadataCache) so a sync-merged
-          // value is respected. A native number writes unquoted YAML.
-          const counterKey = this.counterKeyOrNull();
-          if (
-            counterKey &&
-            updates.countedEdit === true &&
-            updates.updatedValue !== undefined
-          ) {
-            frontmatter[counterKey] = coerceCount(frontmatter[counterKey]) + 1;
+          // edit - never a created-only fill or the inversion-fix service write,
+          // and never when `updated` itself could not be written. Read the base
+          // from THIS callback's frontmatter (the authoritative on-disk value,
+          // not the possibly-stale metadataCache) so a sync-merged value is
+          // respected. A native number writes unquoted YAML. A group or list in
+          // the counter's place is never replaced.
+          const counter = paths.counter;
+          if (counter.path && updates.countedEdit === true && updatedWritten) {
+            const base = readTarget(frontmatter, counter);
+            if (base.skip) {
+              skip(base.skip);
+            } else {
+              write(counter, coerceCount(base.value) + 1);
+            }
           }
+
+          // Nothing changed: stop before Obsidian re-serializes the block,
+          // which alone would rewrite the note (comments dropped, formatting
+          // normalised) for a write that did not happen.
+          if (!wroteAny) throw new NothingWritten();
         },
         // No { ctime, mtime } pin - deliberately. The write only happens on a
         // clean buffer (guard above), where Obsidian replaces just the
@@ -1300,7 +1528,7 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       this.lastPluginWriteMtime.set(file.path, file.stat.mtime);
       // The write above actually landed - only now may the inversion fix be
       // announced (computeFrontmatterUpdates is pure and never notifies).
-      if (updates.inversionFixed === true) {
+      if (inversionApplied) {
         this.showInversionNoticeOnce();
       }
       // Re-read after processFrontMatter modified the file
@@ -1324,6 +1552,19 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         }
       }
     } catch (e: unknown) {
+      if (e instanceof NothingWritten) {
+        // The live frontmatter refused every value: the file is untouched, so
+        // no self-write token is recorded. Cache the hash like any pass with
+        // nothing to write - the note's next edit is detected as usual.
+        if (checkResult.fileContent) {
+          await this.populateCacheForFile(file, checkResult.fileContent);
+        }
+        return this.withSkips(file, origin, {
+          status: 'ok',
+          wrote: false,
+          skipped,
+        });
+      }
       if (e instanceof Error && e.name === 'YAMLParseError') {
         const errorMessage = t(strings.notices.malformedFrontmatter, {
           filePath: file.path,
@@ -1339,10 +1580,26 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         error: e,
       };
     }
-    return {
+    return this.withSkips(file, origin, {
       status: 'ok',
       wrote: true,
-    };
+      skipped,
+    });
+  }
+
+  // Finish an ok result that may carry skipped properties: drop an empty list
+  // (so a plain pass reads as before), and let an automatic pass announce the
+  // first skip once per session.
+  private withSkips(
+    file: TFile,
+    origin: WorkOrigin,
+    result: { status: 'ok'; wrote: boolean; skipped: PropertySkip[] },
+  ): FileChangeResult {
+    if (result.skipped.length === 0) {
+      return { status: 'ok', wrote: result.wrote };
+    }
+    if (origin === 'auto') this.showSkipNoticeOnce(file, result.skipped);
+    return result;
   }
 
   // processingFiles Set prevents concurrent processFrontMatter on the same file.
@@ -1407,8 +1664,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
   }
 
   private async handleFileOpen(file: TFile): Promise<void> {
-    const viewedKey = (this.settings.headerLastViewed ?? 'viewed').trim();
-    if (!viewedKey) return;
+    const viewed = this.propertyPaths().viewed;
+    const viewedPath = viewed.path;
+    if (!viewedPath) return;
 
     // Single source of truth for ignore checks (extension, Canvas.md,
     // Excalidraw, filter rules, empty files) - never re-implement a subset here,
@@ -1440,10 +1698,18 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // unsaved changes (the D4 scenario).
     if ((await this.getWriteBlock(file)) !== null) return;
 
-    // Rate-limiting via shouldUpdateValue
+    // A parent that is not a group, or a group or list where the date goes:
+    // the stamp is not written, and the reason is announced once per session.
     const cached: Record<string, unknown> | undefined =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
-    const existingViewed = cached?.[viewedKey] as string | number | undefined;
+    const read = readTarget(cached, viewed);
+    if (read.skip) {
+      this.showSkipNoticeOnce(file, [read.skip]);
+      return;
+    }
+
+    // Rate-limiting via shouldUpdateValue
+    const existingViewed = read.value as string | number | undefined;
     if (existingViewed) {
       const existingDate = this.parseDate(existingViewed);
       if (existingDate && !this.shouldUpdateValue(new Date(), existingDate)) {
@@ -1454,6 +1720,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
     // Share processingFiles lock - skip if file is mid-write
     if (this.processingFiles.has(file.path)) return;
 
+    // The live frontmatter can disagree with the cache read above. Widened on
+    // purpose: assigned inside the callback, which narrowing cannot see.
+    let liveSkip = null as PropertySkip | null;
     this.processingFiles.add(file.path);
     try {
       const now = new Date();
@@ -1478,7 +1747,11 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
       await this.app.fileManager.processFrontMatter(
         file,
         (frontmatter: Record<string, unknown>) => {
-          frontmatter[viewedKey] = formattedNow;
+          const outcome = writeTarget(frontmatter, viewed, formattedNow);
+          liveSkip = outcome.skip;
+          // A refusal must not let Obsidian re-serialize the block (see
+          // NothingWritten).
+          if (!outcome.written) throw new NothingWritten();
         },
         // No { ctime, mtime } pin (see handleFileChange): the buffer is clean
         // (guard above), so the editor absorbs the write without a merge.
@@ -1496,7 +1769,9 @@ export default class FrontmatterDateManagerPlugin extends Plugin {
         await this.populateCacheForFile(file);
       }
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'YAMLParseError') {
+      if (e instanceof NothingWritten) {
+        if (liveSkip) this.showSkipNoticeOnce(file, [liveSkip]);
+      } else if (e instanceof Error && e.name === 'YAMLParseError') {
         this.logError(
           'Malformed frontmatter, skipping viewed update:',
           file.path,

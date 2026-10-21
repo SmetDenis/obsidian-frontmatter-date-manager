@@ -45,6 +45,18 @@ export const STRINGS_VI: Strings = {
       'Tất cả các ngày đã được điền đầy đủ, và ghi chú không thay đổi kể từ lần cập nhật gần nhất.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Tên thuộc tính ngày trong cài đặt plugin không hợp lệ. Mỗi phần quanh '>' cần có tên, ví dụ meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Các ngày khác vẫn được ghi như thường. Thông báo này chỉ hiện một lần mỗi phiên.',
+    skippedParentNotGroup:
+      '"{name}" không được ghi: "{parent}" chứa một giá trị không phải là nhóm.',
+    skippedSharedGroup:
+      '"{name}" không được ghi: "{parent}" được dùng chung với một thuộc tính khác qua tham chiếu YAML (& và *), và ghi vào đó sẽ thay đổi cả hai.',
+    skippedHoldsContainer:
+      '"{name}" không được ghi: ở đó có một nhóm hoặc danh sách, thứ mà plugin không bao giờ thay thế.',
+    skippedInvalidName:
+      '"{name}" không phải là tên thuộc tính hợp lệ: mỗi phần quanh \'>\' cần có tên. Hãy sửa trong cài đặt plugin.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -80,6 +92,12 @@ export const STRINGS_VI: Strings = {
     skippedColumnReason: 'Lý do',
     skippedTableIntro:
       'Đã bỏ qua {count} ghi chú và giữ nguyên không thay đổi:',
+    valuesWillNotBeWrittenIntro:
+      'Số giá trị sẽ không được ghi: {count}. Phần còn lại của mỗi ghi chú sẽ được ghi:',
+    valuesNotWrittenIntro:
+      'Số giá trị không được ghi: {count}. Phần còn lại của mỗi ghi chú đã được ghi:',
+    invalidPropertyNames:
+      "Tên thuộc tính không hợp lệ: {names}. Mỗi phần quanh '>' cần có tên - hãy sửa trong cài đặt plugin.",
     skippedUnsavedChanges:
       'Ghi chú có các thay đổi chưa lưu trong trình soạn thảo đang mở. Hãy lưu hoặc đóng ghi chú, sau đó chạy bản xem trước mới.',
     skippedExcalidrawUnsaved:
@@ -91,6 +109,10 @@ export const STRINGS_VI: Strings = {
       propertyNameRequired: 'Nhập tên thuộc tính.',
       counterNameCollision:
         'Tên này đã được dùng bởi một thuộc tính khác ở trên.',
+      invalidPath: "Mỗi phần quanh '>' cần có tên, ví dụ meta > updated.",
+      dateNameCollision: 'Một ngày khác của plugin này đã dùng tên này.',
+      nestingConflict:
+        'Tên này và một tên thuộc tính khác của plugin này lồng vào nhau (như meta và meta > updated). Hãy dùng các tên không chứa nhau.',
     },
     description: {
       syncIntro:
@@ -100,6 +122,8 @@ export const STRINGS_VI: Strings = {
     },
     dates: {
       enableNoneHint: 'Bật ít nhất một ngày ở trên để thiết lập plugin.',
+      dotHint:
+        "Đây là một thuộc tính có dấu chấm trong tên. Để đặt nó vào một nhóm, hãy dùng '>' thay vào đó, ví dụ meta > updated.",
       automatic: {
         name: 'Ngày tự động',
         desc: 'Để plugin tự giữ các ngày bên dưới luôn cập nhật: ngày tạo được thêm vào lần chỉnh sửa đầu tiên của ghi chú, ngày chỉnh sửa cuối ở mỗi lần chỉnh sửa, và ngày mở cuối khi bạn mở ghi chú. Khi tắt, ngày chỉ thay đổi qua lệnh "Cập nhật ngày cho tệp hiện tại" và các công cụ hàng loạt.',
@@ -111,14 +135,16 @@ export const STRINGS_VI: Strings = {
         enableDesc:
           'Thêm ngày tạo cho các ghi chú chưa có. Ngày này được thêm vào lần chỉnh sửa đầu tiên của ghi chú.',
         propertyName: 'Thuộc tính ngày tạo',
-        propertyDesc: 'Tên thuộc tính nơi lưu ngày tạo.',
+        propertyDesc:
+          "Tên thuộc tính nơi lưu ngày tạo. Để đặt nó vào một nhóm, hãy ngăn cách các cấp bằng '>', ví dụ meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Theo dõi ngày chỉnh sửa cuối',
         enableDesc: 'Cập nhật ngày này mỗi khi bạn chỉnh sửa ghi chú.',
         propertyName: 'Thuộc tính ngày cập nhật',
-        propertyDesc: 'Tên thuộc tính nơi lưu ngày chỉnh sửa cuối.',
+        propertyDesc:
+          "Tên thuộc tính nơi lưu ngày chỉnh sửa cuối. Để đặt nó vào một nhóm, hãy ngăn cách các cấp bằng '>', ví dụ meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -126,13 +152,15 @@ export const STRINGS_VI: Strings = {
         enableDesc:
           'Thêm một thuộc tính số tăng lên một mỗi khi bạn chỉnh sửa ghi chú. Đây là số đếm hoạt động gần đúng, không phải lịch sử chính xác.',
         propertyName: 'Thuộc tính số lần chỉnh sửa',
-        propertyDesc: 'Tên thuộc tính nơi lưu số lần chỉnh sửa.',
+        propertyDesc:
+          "Tên thuộc tính nơi lưu số lần chỉnh sửa. Để đặt nó vào một nhóm, hãy ngăn cách các cấp bằng '>', ví dụ meta > edits.",
       },
       viewed: {
         enableName: 'Theo dõi ngày mở cuối',
         enableDesc: 'Lưu ngày mỗi khi bạn mở ghi chú.',
         propertyName: 'Thuộc tính ngày xem',
-        propertyDesc: 'Tên thuộc tính nơi lưu ngày mở cuối.',
+        propertyDesc:
+          "Tên thuộc tính nơi lưu ngày mở cuối. Để đặt nó vào một nhóm, hãy ngăn cách các cấp bằng '>', ví dụ meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },
