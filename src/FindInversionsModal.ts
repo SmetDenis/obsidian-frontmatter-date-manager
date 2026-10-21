@@ -1,7 +1,9 @@
 import { App, Notice, Setting, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
+import { readTarget, writeTarget } from './propertyPath';
+import { propertySkipMessage } from './propertySkip';
 import { PhaseModal } from './bulk/PhaseModal';
-import { applyFrontmatterWrite } from './bulk/write';
+import { BulkSkipped, applyFrontmatterWrite } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
 import { downloadPreviewAsFile } from './bulk/export';
@@ -76,13 +78,18 @@ export class FindInversionsModal extends PhaseModal {
   // freeze. Detection is independent of the chosen fix strategy.
   private computeInvertedForFile(file: TFile): InvertedFileEntry | null {
     const tolerance = this.plugin.settings.inversionToleranceSec ?? 0;
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    if (!createdKey || !updatedKey) return null;
-    const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const paths = this.plugin.propertyPaths();
+    const fm: Record<string, unknown> | undefined =
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
     if (!fm) return null;
-    const rawCreated = fm[createdKey] as string | number | undefined;
-    const rawUpdated = fm[updatedKey] as string | number | undefined;
+    // A fix rewrites both dates, so both must hold plain values: a parent that
+    // is not a group, a shared group, or a group or list in a date's place
+    // leaves the note out of the report (there is no pair to compare).
+    const createdRead = readTarget(fm, paths.created);
+    const updatedRead = readTarget(fm, paths.updated);
+    if (createdRead.skip || updatedRead.skip) return null;
+    const rawCreated = createdRead.value as string | number | undefined;
+    const rawUpdated = updatedRead.value as string | number | undefined;
     if (rawCreated == null || rawUpdated == null) return null;
     const created = this.plugin.parseDate(rawCreated);
     const updated = this.plugin.parseDate(rawUpdated);
@@ -116,14 +123,36 @@ export class FindInversionsModal extends PhaseModal {
     const newCreated = this.plugin.formatDate(fixed.created);
     const newUpdated = this.plugin.formatDate(fixed.updated);
     if (newCreated === undefined || newUpdated === undefined) return;
+    const paths = this.plugin.propertyPaths();
+    // Both or neither also when a name changed since the scan (a settings
+    // sync): without a place for one date, the note is skipped visibly.
+    const unwritable = [paths.created, paths.updated].find((t) => !t.path);
+    if (unwritable) {
+      throw new BulkSkipped(
+        unwritable.invalid
+          ? propertySkipMessage({
+              name: unwritable.name,
+              reason: 'invalid-name',
+            })
+          : strings.notices.ignoredNoDateKeys,
+      );
+    }
 
     await applyFrontmatterWrite(
       this.app,
       this.plugin,
       file,
       (frontmatter: Record<string, unknown>) => {
-        frontmatter[this.plugin.settings.headerCreated] = newCreated;
-        frontmatter[this.plugin.settings.headerUpdated] = newUpdated;
+        // Both or neither: fixing one date of the pair would leave the note
+        // out of order in a new way. The live frontmatter can disagree with
+        // the scan's cache read, so check both places before writing either;
+        // a refusal skips the note visibly, without a write.
+        const refused =
+          readTarget(frontmatter, paths.created).skip ??
+          readTarget(frontmatter, paths.updated).skip;
+        if (refused) throw new BulkSkipped(propertySkipMessage(refused));
+        writeTarget(frontmatter, paths.created, newCreated);
+        writeTarget(frontmatter, paths.updated, newUpdated);
       },
     );
   }
@@ -143,6 +172,21 @@ export class FindInversionsModal extends PhaseModal {
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
+    // An invalid date name (an empty level around '>') would make every note
+    // read as "no dates" and the scan report a clean vault: say so instead.
+    const paths = this.plugin.propertyPaths();
+    const invalid = [paths.created, paths.updated]
+      .filter((target) => target.invalid)
+      .map((target) => target.name);
+    if (invalid.length > 0) {
+      new Notice(
+        format(strings.bulkChrome.invalidPropertyNames, {
+          names: invalid.join(', '),
+        }),
+      );
+      this.close();
+      return;
+    }
     renderHeader(contentEl, strings.modals.inversions.scanningTitle);
 
     const allFiles = await this.plugin.getAllFilesPossiblyAffected({
@@ -266,7 +310,6 @@ export class FindInversionsModal extends PhaseModal {
 
     const items = this.invertedEntries.map((e) => e.file);
     const progress = renderProgress(contentEl, items.length);
-
     const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
       items,

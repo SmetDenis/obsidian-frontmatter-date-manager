@@ -1,8 +1,11 @@
 import { App, Notice, Platform, Setting, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from './main';
+import { PropertyTarget, readTarget } from './propertyPath';
+import { propertySkipMessage } from './propertySkip';
 import { strings, format } from './i18n';
+import { ExecuteSkip } from './bulk/executePhase';
 import { PhaseModal } from './bulk/PhaseModal';
-import { applyFrontmatterWrite } from './bulk/write';
+import { applyFrontmatterWrite, writeTargetsOrSkip } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
 import { downloadPreviewAsFile } from './bulk/export';
@@ -28,6 +31,8 @@ export interface FilePreviewEntry {
   existingCreated: string | number | null;
   existingUpdated: string | number | null;
   willChange: boolean;
+  /** Why a selected date cannot be written in this note (see PropertySkip). */
+  skipped: string[];
 }
 
 export class BulkPopulateTimestampsModal extends PhaseModal {
@@ -35,6 +40,8 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
   private populateMode: PopulateMode = 'both';
   private overrideMode: OverrideMode = 'fill-missing';
   private previewEntries: FilePreviewEntry[] = [];
+  /** Dates the live frontmatter refused during the run (the cache lagged). */
+  private notWritten: ExecuteSkip[] = [];
 
   constructor(app: App, plugin: FrontmatterDateManagerPlugin) {
     super(app);
@@ -236,19 +243,27 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
   // --- Computation ---
 
   computePreviewEntry(file: TFile): FilePreviewEntry {
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const paths = this.plugin.propertyPaths();
     const cached: Record<string, unknown> | undefined =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
 
-    const existingCreated: string | number | null =
-      createdKey && cached?.[createdKey] != null
-        ? (cached[createdKey] as string | number)
-        : null;
-    const existingUpdated: string | number | null =
-      updatedKey && cached?.[updatedKey] != null
-        ? (cached[updatedKey] as string | number)
-        : null;
+    // A date whose place cannot take a value (a parent that is not a group, a
+    // shared group, a group or list in its place) is never proposed: the
+    // preview must show exactly what the run will write.
+    const readExisting = (
+      target: PropertyTarget,
+    ): { value: string | number | null; skip: string | null } => {
+      const read = readTarget(cached, target);
+      return {
+        value: read.value != null ? (read.value as string | number) : null,
+        skip: read.skip ? propertySkipMessage(read.skip) : null,
+      };
+    };
+    const created = readExisting(paths.created);
+    const updated = readExisting(paths.updated);
+    const existingCreated = created.value;
+    const existingUpdated = updated.value;
+    const skipped: string[] = [];
 
     let proposedCreated: string | number | null = null;
     let proposedUpdated: string | number | null = null;
@@ -258,7 +273,10 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     const includeUpdated =
       this.populateMode === 'updated' || this.populateMode === 'both';
 
-    if (includeCreated && createdKey) {
+    if (includeCreated && created.skip) skipped.push(created.skip);
+    if (includeUpdated && updated.skip) skipped.push(updated.skip);
+
+    if (includeCreated && paths.created.path && !created.skip) {
       const shouldSet =
         this.overrideMode === 'overwrite-all' || existingCreated == null;
       if (shouldSet) {
@@ -269,7 +287,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       }
     }
 
-    if (includeUpdated && updatedKey) {
+    if (includeUpdated && paths.updated.path && !updated.skip) {
       const shouldSet =
         this.overrideMode === 'overwrite-all' || existingUpdated == null;
       if (shouldSet) {
@@ -304,6 +322,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       existingCreated,
       existingUpdated,
       willChange: proposedCreated !== null || proposedUpdated !== null,
+      skipped,
     };
   }
 
@@ -311,12 +330,29 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const paths = this.plugin.propertyPaths();
+    const createdKey = paths.created.path ? paths.created.name : '';
+    const updatedKey = paths.updated.path ? paths.updated.name : '';
     const includeCreated =
       this.populateMode === 'created' || this.populateMode === 'both';
     const includeUpdated =
       this.populateMode === 'updated' || this.populateMode === 'both';
+
+    const invalid = [];
+    if (includeCreated && paths.created.invalid) {
+      invalid.push(paths.created.name);
+    }
+    if (includeUpdated && paths.updated.invalid) {
+      invalid.push(paths.updated.name);
+    }
+    if (invalid.length > 0) {
+      new Notice(
+        format(strings.bulkChrome.invalidPropertyNames, {
+          names: invalid.join(', '),
+        }),
+      );
+      return;
+    }
 
     if ((includeCreated && !createdKey) || (includeUpdated && !updatedKey)) {
       const missing = [];
@@ -350,6 +386,9 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     const willChange = this.previewEntries.filter((e) => e.willChange);
     const skipped = this.previewEntries.filter((e) => !e.willChange);
+    const notWritable: ExecuteSkip[] = this.previewEntries.flatMap((e) =>
+      e.skipped.map((reason) => ({ label: e.file.path, reason })),
+    );
 
     renderHeader(contentEl, strings.modals.populate.previewTitle);
 
@@ -358,6 +397,14 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
         text: strings.modals.populate.noFilesNeedUpdating,
         cls: 'frontmatter-date-manager-bulk-summary',
       });
+      if (notWritable.length > 0) {
+        renderSkippedTable(
+          contentEl,
+          this.plugin,
+          notWritable,
+          strings.bulkChrome.valuesWillNotBeWrittenIntro,
+        );
+      }
       renderButtonBar(contentEl, {
         footer: {
           kind: 'close',
@@ -396,6 +443,15 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     });
 
     renderPaginatedDiffTable(contentEl, { columns, rows });
+
+    if (notWritable.length > 0) {
+      renderSkippedTable(
+        contentEl,
+        this.plugin,
+        notWritable,
+        strings.bulkChrome.valuesWillNotBeWrittenIntro,
+      );
+    }
 
     const isOverwrite = this.overrideMode === 'overwrite-all';
     if (isOverwrite) {
@@ -446,6 +502,7 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
 
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
+    this.notWritten = [];
 
     const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
@@ -479,6 +536,14 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     if (skipped.length > 0) {
       renderSkippedTable(contentEl, this.plugin, skipped);
     }
+    if (this.notWritten.length > 0) {
+      renderSkippedTable(
+        contentEl,
+        this.plugin,
+        this.notWritten,
+        strings.bulkChrome.valuesNotWrittenIntro,
+      );
+    }
     renderButtonBar(contentEl, {
       footer: {
         kind: 'close',
@@ -490,24 +555,28 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
   }
 
   protected async applyTimestamps(entry: FilePreviewEntry): Promise<void> {
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
+    const paths = this.plugin.propertyPaths();
 
     const currentFile = this.app.vault.getAbstractFileByPath(entry.file.path);
     if (!currentFile || !(currentFile instanceof TFile)) return;
 
+    // The live frontmatter can disagree with the preview's cache read: a date
+    // it refuses is reported, the rest of the note is still written (a note it
+    // refuses entirely is skipped - see writeTargetsOrSkip).
+    let refused: string[] = [];
     await applyFrontmatterWrite(
       this.app,
       this.plugin,
       currentFile,
       (frontmatter: Record<string, unknown>) => {
-        if (entry.proposedCreated !== null && createdKey) {
-          frontmatter[createdKey] = entry.proposedCreated;
-        }
-        if (entry.proposedUpdated !== null && updatedKey) {
-          frontmatter[updatedKey] = entry.proposedUpdated;
-        }
+        refused = writeTargetsOrSkip(frontmatter, [
+          [paths.created, entry.proposedCreated],
+          [paths.updated, entry.proposedUpdated],
+        ]);
       },
     );
+    for (const reason of refused) {
+      this.notWritten.push({ label: entry.file.path, reason });
+    }
   }
 }

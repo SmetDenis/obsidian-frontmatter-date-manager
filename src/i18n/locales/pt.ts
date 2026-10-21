@@ -46,6 +46,18 @@ export const STRINGS_PT: Strings = {
       'Todas as datas já estão preenchidas e a nota não foi alterada desde a última atualização.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Os nomes das propriedades de data nas definições do plugin não são válidos. Cada parte em torno de '>' precisa de um nome, por exemplo meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} As outras datas são escritas normalmente. Esta mensagem é mostrada uma vez por sessão.',
+    skippedParentNotGroup:
+      '"{name}" não foi escrito: "{parent}" contém um valor que não é um grupo.',
+    skippedSharedGroup:
+      '"{name}" não foi escrito: "{parent}" é partilhado com outra propriedade através de uma referência YAML (& e *), e escrever nele alteraria ambas.',
+    skippedHoldsContainer:
+      '"{name}" não foi escrito: contém um grupo ou uma lista, que o plugin nunca substitui.',
+    skippedInvalidName:
+      '"{name}" não é um nome de propriedade válido: cada parte em torno de \'>\' precisa de um nome. Corrija-o nas definições do plugin.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -83,6 +95,12 @@ export const STRINGS_PT: Strings = {
     skippedColumnReason: 'Motivo',
     skippedTableIntro:
       '{count} nota(s) foram ignoradas e deixadas sem alterações:',
+    valuesWillNotBeWrittenIntro:
+      'Valores que não serão escritos: {count}. O resto de cada nota será:',
+    valuesNotWrittenIntro:
+      'Valores não escritos: {count}. O resto de cada nota foi escrito:',
+    invalidPropertyNames:
+      "Nome de propriedade inválido: {names}. Cada parte em torno de '>' precisa de um nome - corrija-o nas definições do plugin.",
     skippedUnsavedChanges:
       'A nota tem alterações não guardadas num editor aberto. Guarde-a ou feche-a e execute uma nova pré-visualização.',
     skippedExcalidrawUnsaved:
@@ -94,6 +112,11 @@ export const STRINGS_PT: Strings = {
       propertyNameRequired: 'Introduza um nome de propriedade.',
       counterNameCollision:
         'Este nome já está a ser utilizado por outra propriedade acima.',
+      invalidPath:
+        "Cada parte em torno de '>' precisa de um nome, por exemplo meta > updated.",
+      dateNameCollision: 'Outra data deste plugin já usa este nome.',
+      nestingConflict:
+        'Este nome e outro nome de propriedade deste plugin estão um dentro do outro (como meta e meta > updated). Use nomes que não se contenham.',
     },
     description: {
       syncIntro:
@@ -104,6 +127,8 @@ export const STRINGS_PT: Strings = {
     dates: {
       enableNoneHint:
         'Ative pelo menos uma data acima para configurar o plugin.',
+      dotHint:
+        "Esta é uma única propriedade com um ponto no nome. Para a colocar num grupo, use '>' em vez disso, por exemplo meta > updated.",
       automatic: {
         name: 'Datas automáticas',
         desc: 'Permita que o plugin mantenha as datas abaixo atualizadas por conta própria: a data de criação é adicionada na primeira edição de uma nota, a data de última edição em cada edição, e a data de última abertura quando abre uma nota. Quando desativado, as datas só mudam através do comando "Atualizar datas no ficheiro atual" e das ferramentas em massa.',
@@ -115,7 +140,8 @@ export const STRINGS_PT: Strings = {
         enableDesc:
           'Adicionar uma data de criação às notas que ainda não a têm. É adicionada na primeira edição da nota.',
         propertyName: 'Propriedade de criação',
-        propertyDesc: 'Nome da propriedade onde é guardada a data de criação.',
+        propertyDesc:
+          "Nome da propriedade onde é guardada a data de criação. Para a colocar num grupo, separe os níveis com '>', por exemplo meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
@@ -123,7 +149,7 @@ export const STRINGS_PT: Strings = {
         enableDesc: 'Atualizar esta data sempre que editar a nota.',
         propertyName: 'Propriedade de atualização',
         propertyDesc:
-          'Nome da propriedade onde é guardada a data da última edição.',
+          "Nome da propriedade onde é guardada a data da última edição. Para a colocar num grupo, separe os níveis com '>', por exemplo meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -132,14 +158,14 @@ export const STRINGS_PT: Strings = {
           'Adicionar uma propriedade numérica que aumenta em um sempre que editar uma nota. Uma contagem de atividade aproximada, não um histórico exato.',
         propertyName: 'Propriedade da contagem de edições',
         propertyDesc:
-          'Nome da propriedade onde é guardada a contagem de edições.',
+          "Nome da propriedade onde é guardada a contagem de edições. Para a colocar num grupo, separe os níveis com '>', por exemplo meta > edits.",
       },
       viewed: {
         enableName: 'Acompanhar a data da última abertura',
         enableDesc: 'Guardar a data sempre que abrir a nota.',
         propertyName: 'Propriedade de visualização',
         propertyDesc:
-          'Nome da propriedade onde é guardada a data da última abertura.',
+          "Nome da propriedade onde é guardada a data da última abertura. Para a colocar num grupo, separe os níveis com '>', por exemplo meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

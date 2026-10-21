@@ -3,6 +3,9 @@ import { browser, $, $$ } from '@wdio/globals';
 const PLUGIN_ID = 'frontmatter-date-manager';
 
 const EXCLUDE_INPUT = '.frontmatter-date-manager-exclude-input';
+const EXCLUDE_ERROR = '.frontmatter-date-manager-exclude-error';
+const DOT_HINT = '.frontmatter-date-manager-dot-hint';
+const SETTING_ROW = '.setting-item';
 const AUTOMATIC_OFF_HINT = '.frontmatter-date-manager-automatic-off-hint';
 const EXCLUDE_ADD = '.frontmatter-date-manager-exclude-add';
 const EXCLUDE_LIST = '.frontmatter-date-manager-exclude-list';
@@ -111,6 +114,47 @@ export const settingsTab = {
       }
     }
     throw new Error(`no exclude-list row named "${label}"`);
+  },
+
+  /** True when an inline error is shown under the exclude input. */
+  async excludeErrorShown(): Promise<boolean> {
+    for (const el of await $$(EXCLUDE_ERROR).getElements()) {
+      if (await el.isDisplayed()) return true;
+    }
+    return false;
+  },
+
+  // --- Property-name fields (declarative text controls, no class hook) ---
+
+  /** The displayed settings row with this visible name (English-only e2e). */
+  async rowNamed(name: string) {
+    for (const row of await $$(SETTING_ROW).getElements()) {
+      if (!(await row.isDisplayed())) continue;
+      const label = row.$(ROW_NAME);
+      if ((await label.isExisting()) && (await label.getText()) === name) {
+        return row;
+      }
+    }
+    throw new Error(`no displayed settings row named "${name}"`);
+  },
+
+  /** Type a value into the text field of the named row (one keystroke at a time). */
+  async typeInto(name: string, value: string): Promise<void> {
+    const row = await this.rowNamed(name);
+    await row.$('input[type="text"]').setValue(value);
+  },
+
+  /** Visible text of the named row, including any inline validation error. */
+  async rowText(name: string): Promise<string> {
+    return (await this.rowNamed(name)).getText();
+  },
+
+  /** True when the "one property with a dot" hint row is displayed. */
+  async dotHintShown(): Promise<boolean> {
+    for (const el of await $$(DOT_HINT).getElements()) {
+      if (await el.isDisplayed()) return true;
+    }
+    return false;
   },
 
   // --- "Automatic dates are off" hint (issue #24) ---

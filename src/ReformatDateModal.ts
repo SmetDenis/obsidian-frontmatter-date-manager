@@ -2,6 +2,9 @@ import { App, Notice, Setting, TFile } from 'obsidian';
 import { format } from 'date-fns';
 import { tz } from '@date-fns/tz';
 import FrontmatterDateManagerPlugin from './main';
+import { PropertyTarget, readTarget } from './propertyPath';
+import { propertySkipMessage } from './propertySkip';
+import { ExecuteSkip } from './bulk/executePhase';
 import {
   parseDateValueWithZone,
   detectSlashDateReadings,
@@ -9,7 +12,7 @@ import {
 } from './utils';
 import { strings, format as t } from './i18n';
 import { PhaseModal } from './bulk/PhaseModal';
-import { applyFrontmatterWrite } from './bulk/write';
+import { applyFrontmatterWrite, writeTargetsOrSkip } from './bulk/write';
 import { runBatchedScan } from './bulk/scan';
 import { runExecutePhase } from './bulk/executePhase';
 import { downloadPreviewAsFile } from './bulk/export';
@@ -50,12 +53,16 @@ export interface ReformatPreviewEntry {
   viewedError: boolean;
   viewedAmbiguous: boolean;
   willChange: boolean;
+  /** Why an in-scope date cannot be rewritten in this note (see PropertySkip). */
+  skipped: string[];
 }
 
 export class ReformatDateModal extends PhaseModal {
   private plugin: FrontmatterDateManagerPlugin;
   private reformatScope: ReformatScope = 'all';
   private previewEntries: ReformatPreviewEntry[] = [];
+  /** Dates the live frontmatter refused during the run (the cache lagged). */
+  private notWritten: ExecuteSkip[] = [];
   /** Files scanned this run, retained so an order change re-renders without a re-scan. */
   private scannedFiles: TFile[] = [];
   /** How ambiguous day/month dates are read this run. Default: leave unchanged. */
@@ -184,13 +191,23 @@ export class ReformatDateModal extends PhaseModal {
   // --- Computation ---
 
   computePreviewEntry(file: TFile): ReformatPreviewEntry {
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    const viewedKey = (
-      this.plugin.settings.headerLastViewed ?? 'viewed'
-    ).trim();
+    const paths = this.plugin.propertyPaths();
     const cached: Record<string, unknown> | undefined =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
+    const skipped: string[] = [];
+
+    // The stored value of an in-scope date, or null when there is none or its
+    // place cannot be rewritten (a parent that is not a group, a shared group,
+    // a group or list in its place) - the latter goes to `skipped` with its
+    // reason, so a group is never misreported as an unreadable date.
+    const readStored = (target: PropertyTarget): string | number | null => {
+      const read = readTarget(cached, target);
+      if (read.skip) {
+        skipped.push(propertySkipMessage(read.skip));
+        return null;
+      }
+      return read.value != null ? (read.value as string | number) : null;
+    };
 
     const scopeAll =
       this.reformatScope === 'all' || this.reformatScope === 'both';
@@ -213,29 +230,30 @@ export class ReformatDateModal extends PhaseModal {
     let viewedError = false;
     let viewedAmbiguous = false;
 
-    if (includeCreated && createdKey && cached?.[createdKey] != null) {
-      createdOldValue = cached[createdKey] as string | number;
+    const storedCreated = includeCreated ? readStored(paths.created) : null;
+    if (storedCreated !== null) {
+      createdOldValue = storedCreated;
       const r = this.resolveField(createdOldValue);
       createdNewValue = r.newValue;
       createdError = r.error;
       createdAmbiguous = r.ambiguous;
     }
 
-    if (includeUpdated && updatedKey && cached?.[updatedKey] != null) {
-      updatedOldValue = cached[updatedKey] as string | number;
+    const storedUpdated = includeUpdated ? readStored(paths.updated) : null;
+    if (storedUpdated !== null) {
+      updatedOldValue = storedUpdated;
       const r = this.resolveField(updatedOldValue);
       updatedNewValue = r.newValue;
       updatedError = r.error;
       updatedAmbiguous = r.ambiguous;
     }
 
-    if (
-      includeViewed &&
-      viewedKey &&
-      (this.plugin.settings.enableLastViewed ?? false) &&
-      cached?.[viewedKey] != null
-    ) {
-      viewedOldValue = cached[viewedKey] as string | number;
+    const storedViewed =
+      includeViewed && (this.plugin.settings.enableLastViewed ?? false)
+        ? readStored(paths.viewed)
+        : null;
+    if (storedViewed !== null) {
+      viewedOldValue = storedViewed;
       const r = this.resolveField(viewedOldValue);
       viewedNewValue = r.newValue;
       viewedError = r.error;
@@ -260,6 +278,7 @@ export class ReformatDateModal extends PhaseModal {
         createdNewValue !== null ||
         updatedNewValue !== null ||
         viewedNewValue !== null,
+      skipped,
     };
   }
 
@@ -314,17 +333,35 @@ export class ReformatDateModal extends PhaseModal {
 
   private async renderPreviewPhase() {
     const { contentEl } = this;
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    const viewedKey = (
-      this.plugin.settings.headerLastViewed ?? 'viewed'
-    ).trim();
+    const paths = this.plugin.propertyPaths();
+    const createdKey = paths.created.path ? paths.created.name : '';
+    const updatedKey = paths.updated.path ? paths.updated.name : '';
+    const viewedKey = paths.viewed.path ? paths.viewed.name : '';
 
     const scopeAll =
       this.reformatScope === 'all' || this.reformatScope === 'both';
     const includeCreated = this.reformatScope === 'created' || scopeAll;
     const includeUpdated = this.reformatScope === 'updated' || scopeAll;
     const includeViewed = this.reformatScope === 'viewed' || scopeAll;
+
+    const invalid = [];
+    if (includeCreated && paths.created.invalid) {
+      invalid.push(paths.created.name);
+    }
+    if (includeUpdated && paths.updated.invalid) {
+      invalid.push(paths.updated.name);
+    }
+    if (includeViewed && paths.viewed.invalid) {
+      invalid.push(paths.viewed.name);
+    }
+    if (invalid.length > 0) {
+      new Notice(
+        t(strings.bulkChrome.invalidPropertyNames, {
+          names: invalid.join(', '),
+        }),
+      );
+      return;
+    }
 
     const missing = [];
     if (includeCreated && !createdKey) missing.push('created');
@@ -366,11 +403,13 @@ export class ReformatDateModal extends PhaseModal {
     const { contentEl } = this;
     contentEl.empty();
 
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    const viewedKey = (
-      this.plugin.settings.headerLastViewed ?? 'viewed'
-    ).trim();
+    const paths = this.plugin.propertyPaths();
+    const createdKey = paths.created.path ? paths.created.name : '';
+    const updatedKey = paths.updated.path ? paths.updated.name : '';
+    const viewedKey = paths.viewed.path ? paths.viewed.name : '';
+    const notWritable: ExecuteSkip[] = this.previewEntries.flatMap((e) =>
+      e.skipped.map((reason) => ({ label: e.file.path, reason })),
+    );
     const scopeAll =
       this.reformatScope === 'all' || this.reformatScope === 'both';
     const includeCreated = this.reformatScope === 'created' || scopeAll;
@@ -409,6 +448,14 @@ export class ReformatDateModal extends PhaseModal {
           t(strings.modals.reformat.errorWarningNoChange, {
             errorCount: errorEntries.length,
           }),
+        );
+      }
+      if (notWritable.length > 0) {
+        renderSkippedTable(
+          contentEl,
+          this.plugin,
+          notWritable,
+          strings.bulkChrome.valuesWillNotBeWrittenIntro,
         );
       }
       renderButtonBar(contentEl, {
@@ -480,6 +527,15 @@ export class ReformatDateModal extends PhaseModal {
     });
 
     renderPaginatedDiffTable(contentEl, { columns, rows });
+
+    if (notWritable.length > 0) {
+      renderSkippedTable(
+        contentEl,
+        this.plugin,
+        notWritable,
+        strings.bulkChrome.valuesWillNotBeWrittenIntro,
+      );
+    }
 
     if (this.slashOrder !== 'skip' && ambiguousCount > 0) {
       contentEl.createDiv({
@@ -597,6 +653,7 @@ export class ReformatDateModal extends PhaseModal {
 
     const items = this.previewEntries.filter((e) => e.willChange);
     const progress = renderProgress(contentEl, items.length);
+    this.notWritten = [];
 
     const { processed, errors, failures, skipped } = await runExecutePhase({
       plugin: this.plugin,
@@ -636,6 +693,14 @@ export class ReformatDateModal extends PhaseModal {
     if (skipped.length > 0) {
       renderSkippedTable(contentEl, this.plugin, skipped);
     }
+    if (this.notWritten.length > 0) {
+      renderSkippedTable(
+        contentEl,
+        this.plugin,
+        this.notWritten,
+        strings.bulkChrome.valuesNotWrittenIntro,
+      );
+    }
     renderButtonBar(contentEl, {
       footer: {
         kind: 'close',
@@ -650,26 +715,25 @@ export class ReformatDateModal extends PhaseModal {
     currentFile: TFile,
     entry: ReformatPreviewEntry,
   ): Promise<void> {
-    const createdKey = this.plugin.settings.headerCreated.trim();
-    const updatedKey = this.plugin.settings.headerUpdated.trim();
-    const viewedKey = (
-      this.plugin.settings.headerLastViewed ?? 'viewed'
-    ).trim();
+    const paths = this.plugin.propertyPaths();
+    // The live frontmatter can disagree with the preview's cache read: a date
+    // it refuses is reported, the rest of the note is still written (a note it
+    // refuses entirely is skipped - see writeTargetsOrSkip).
+    let refused: string[] = [];
     await applyFrontmatterWrite(
       this.app,
       this.plugin,
       currentFile,
       (frontmatter: Record<string, unknown>) => {
-        if (entry.createdNewValue !== null && createdKey) {
-          frontmatter[createdKey] = entry.createdNewValue;
-        }
-        if (entry.updatedNewValue !== null && updatedKey) {
-          frontmatter[updatedKey] = entry.updatedNewValue;
-        }
-        if (entry.viewedNewValue !== null && viewedKey) {
-          frontmatter[viewedKey] = entry.viewedNewValue;
-        }
+        refused = writeTargetsOrSkip(frontmatter, [
+          [paths.created, entry.createdNewValue],
+          [paths.updated, entry.updatedNewValue],
+          [paths.viewed, entry.viewedNewValue],
+        ]);
       },
     );
+    for (const reason of refused) {
+      this.notWritten.push({ label: currentFile.path, reason });
+    }
   }
 }

@@ -49,6 +49,17 @@ export const STRINGS_ZH_CN: Strings = {
     ignoredUnchanged: '所有日期均已填写，且笔记自上次更新以来未发生变化。',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "插件设置中的日期属性名称无效。'>' 两侧的每一部分都需要名称，例如 meta > updated。",
+    propertySkippedOnce:
+      'Frontmatter Date Manager，{file}：{reason} 其他日期照常写入。此消息每个会话只显示一次。',
+    skippedParentNotGroup: '未写入 "{name}"："{parent}" 中的值不是分组。',
+    skippedSharedGroup:
+      '未写入 "{name}"："{parent}" 通过 YAML 引用（& 和 *）与另一个属性共用，写入会同时改变两者。',
+    skippedHoldsContainer:
+      '未写入 "{name}"：该位置是一个分组或列表，插件从不替换它们。',
+    skippedInvalidName:
+      '"{name}" 不是有效的属性名称：\'>\' 两侧的每一部分都需要名称。请在插件设置中修正。',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -80,6 +91,11 @@ export const STRINGS_ZH_CN: Strings = {
     failureColumnError: '错误',
     skippedColumnReason: '原因',
     skippedTableIntro: '{count} 个笔记已跳过且未被更改:',
+    valuesWillNotBeWrittenIntro:
+      '将不会写入的值：{count} 个。每个笔记的其余部分将会写入：',
+    valuesNotWrittenIntro: '未写入的值：{count} 个。每个笔记的其余部分已写入：',
+    invalidPropertyNames:
+      "无效的属性名称：{names}。'>' 两侧的每一部分都需要名称 - 请在插件设置中修正。",
     skippedUnsavedChanges:
       '该笔记在打开的编辑器中有未保存的更改。请保存或关闭它，然后运行新的预览。',
     skippedExcalidrawUnsaved:
@@ -90,6 +106,10 @@ export const STRINGS_ZH_CN: Strings = {
     validation: {
       propertyNameRequired: '请输入属性名称。',
       counterNameCollision: '该名称已被上面的另一个属性使用。',
+      invalidPath: "'>' 两侧的每一部分都需要名称，例如 meta > updated。",
+      dateNameCollision: '此插件的另一个日期已在使用该名称。',
+      nestingConflict:
+        '该名称与此插件的另一个属性名称互相嵌套（如 meta 和 meta > updated）。请使用互不包含的名称。',
     },
     description: {
       syncIntro:
@@ -99,6 +119,8 @@ export const STRINGS_ZH_CN: Strings = {
     },
     dates: {
       enableNoneHint: '请至少开启上方的一项日期来设置插件。',
+      dotHint:
+        "这是一个名称中带点的单个属性。若要将其放入分组，请改用 '>'，例如 meta > updated。",
       automatic: {
         name: '自动日期',
         desc: '让插件自动保持以下日期为最新：创建日期在笔记首次编辑时添加，最后编辑日期在每次编辑时更新，最后打开日期在打开笔记时添加。关闭后，日期只能通过“更新当前文件的日期”命令和批量工具更改。',
@@ -110,14 +132,16 @@ export const STRINGS_ZH_CN: Strings = {
         enableDesc:
           '为还没有创建日期的笔记添加创建日期。该日期在笔记首次编辑时添加。',
         propertyName: '创建日期属性',
-        propertyDesc: '保存创建日期的属性名。',
+        propertyDesc:
+          "保存创建日期的属性名。若要将其放入分组，请用 '>' 分隔层级，例如 meta > created。",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '跟踪最后编辑日期',
         enableDesc: '每次编辑笔记时更新此日期。',
         propertyName: '修改日期属性',
-        propertyDesc: '保存最后编辑日期的属性名。',
+        propertyDesc:
+          "保存最后编辑日期的属性名。若要将其放入分组，请用 '>' 分隔层级，例如 meta > updated。",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -125,13 +149,15 @@ export const STRINGS_ZH_CN: Strings = {
         enableDesc:
           '添加一个数字属性，每次编辑笔记时加一。这是一个大致的活跃度计数，而非精确的历史记录。',
         propertyName: '编辑次数属性',
-        propertyDesc: '保存编辑次数的属性名。',
+        propertyDesc:
+          "保存编辑次数的属性名。若要将其放入分组，请用 '>' 分隔层级，例如 meta > edits。",
       },
       viewed: {
         enableName: '跟踪最后打开日期',
         enableDesc: '每次打开笔记时保存日期。',
         propertyName: '查看日期属性',
-        propertyDesc: '保存最后打开日期的属性名。',
+        propertyDesc:
+          "保存最后打开日期的属性名。若要将其放入分组，请用 '>' 分隔层级，例如 meta > viewed。",
         propertyPlaceholder: 'Viewed',
       },
     },

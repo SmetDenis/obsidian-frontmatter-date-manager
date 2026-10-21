@@ -46,6 +46,18 @@ export const STRINGS_PL: Strings = {
       'Wszystkie daty są już uzupełnione, a notatka nie zmieniła się od ostatniej aktualizacji.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Nazwy właściwości dat w ustawieniach wtyczki są nieprawidłowe. Każda część wokół '>' musi mieć nazwę, na przykład meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Pozostałe daty są zapisywane jak zwykle. Ten komunikat pojawia się raz na sesję.',
+    skippedParentNotGroup:
+      'Nie zapisano "{name}": "{parent}" zawiera wartość, która nie jest grupą.',
+    skippedSharedGroup:
+      'Nie zapisano "{name}": "{parent}" jest współdzielona z inną właściwością przez odwołanie YAML (& i *), a zapis zmieniłby obie.',
+    skippedHoldsContainer:
+      'Nie zapisano "{name}": znajduje się tam grupa lub lista, których wtyczka nigdy nie zastępuje.',
+    skippedInvalidName:
+      '"{name}" nie jest prawidłową nazwą właściwości: każda część wokół \'>\' musi mieć nazwę. Popraw ją w ustawieniach wtyczki.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -81,6 +93,12 @@ export const STRINGS_PL: Strings = {
     failureColumnError: 'Błąd',
     skippedColumnReason: 'Powód',
     skippedTableIntro: '{count} notatek pominięto i pozostawiono bez zmian:',
+    valuesWillNotBeWrittenIntro:
+      'Wartości, które nie zostaną zapisane: {count}. Reszta każdej notatki zostanie zapisana:',
+    valuesNotWrittenIntro:
+      'Niezapisane wartości: {count}. Reszta każdej notatki została zapisana:',
+    invalidPropertyNames:
+      "Nieprawidłowa nazwa właściwości: {names}. Każda część wokół '>' musi mieć nazwę - popraw ją w ustawieniach wtyczki.",
     skippedUnsavedChanges:
       'Notatka ma niezapisane zmiany w otwartym edytorze. Zapisz ją lub zamknij, a następnie uruchom nowy podgląd.',
     skippedExcalidrawUnsaved:
@@ -92,6 +110,11 @@ export const STRINGS_PL: Strings = {
       propertyNameRequired: 'Podaj nazwę właściwości.',
       counterNameCollision:
         'Ta nazwa jest już używana przez inną właściwość powyżej.',
+      invalidPath:
+        "Każda część wokół '>' musi mieć nazwę, na przykład meta > updated.",
+      dateNameCollision: 'Inna data tej wtyczki używa już tej nazwy.',
+      nestingConflict:
+        'Ta nazwa i inna nazwa właściwości tej wtyczki zawierają się w sobie (jak meta i meta > updated). Użyj nazw, które nawzajem się nie zawierają.',
     },
     description: {
       syncIntro:
@@ -102,6 +125,8 @@ export const STRINGS_PL: Strings = {
     dates: {
       enableNoneHint:
         'Włącz powyżej co najmniej jedną datę, aby skonfigurować wtyczkę.',
+      dotHint:
+        "To jedna właściwość z kropką w nazwie. Aby umieścić ją w grupie, użyj zamiast tego '>', na przykład meta > updated.",
       automatic: {
         name: 'Automatyczne daty',
         desc: 'Pozwól wtyczce samodzielnie aktualizować poniższe daty: data utworzenia jest dodawana przy pierwszej edycji notatki, data ostatniej edycji przy każdej edycji, a data ostatniego otwarcia przy otwarciu notatki. Gdy wyłączone, daty zmieniają się tylko przez polecenie "Zaktualizuj daty w bieżącym pliku" i narzędzia zbiorcze.',
@@ -114,7 +139,7 @@ export const STRINGS_PL: Strings = {
           'Dodaj datę utworzenia notatkom, które jej jeszcze nie mają. Jest dodawana przy pierwszej edycji notatki.',
         propertyName: 'Właściwość daty utworzenia',
         propertyDesc:
-          'Nazwa właściwości, w której zapisywana jest data utworzenia.',
+          "Nazwa właściwości, w której zapisywana jest data utworzenia. Aby umieścić ją w grupie, oddziel poziomy znakiem '>', na przykład meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
@@ -122,7 +147,7 @@ export const STRINGS_PL: Strings = {
         enableDesc: 'Aktualizuj tę datę przy każdej edycji notatki.',
         propertyName: 'Właściwość daty edycji',
         propertyDesc:
-          'Nazwa właściwości, w której zapisywana jest data ostatniej edycji.',
+          "Nazwa właściwości, w której zapisywana jest data ostatniej edycji. Aby umieścić ją w grupie, oddziel poziomy znakiem '>', na przykład meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -131,14 +156,14 @@ export const STRINGS_PL: Strings = {
           'Dodaj właściwość liczbową, która rośnie o jeden przy każdej edycji notatki. Przybliżony licznik aktywności, a nie dokładna historia.',
         propertyName: 'Właściwość licznika edycji',
         propertyDesc:
-          'Nazwa właściwości, w której zapisywany jest licznik edycji.',
+          "Nazwa właściwości, w której zapisywany jest licznik edycji. Aby umieścić ją w grupie, oddziel poziomy znakiem '>', na przykład meta > edits.",
       },
       viewed: {
         enableName: 'Śledź datę ostatniego otwarcia',
         enableDesc: 'Zapisuj datę przy każdym otwarciu notatki.',
         propertyName: 'Właściwość daty otwarcia',
         propertyDesc:
-          'Nazwa właściwości, w której zapisywana jest data ostatniego otwarcia.',
+          "Nazwa właściwości, w której zapisywana jest data ostatniego otwarcia. Aby umieścić ją w grupie, oddziel poziomy znakiem '>', na przykład meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

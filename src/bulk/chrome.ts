@@ -279,15 +279,17 @@ export function renderSkippedTable(
   parent: HTMLElement,
   plugin: FrontmatterDateManagerPlugin,
   skipped: ExecuteSkip[],
+  // A `{count}` template. Defaults to "notes skipped and left unchanged"; the
+  // property-level tables (a value that cannot be written while the rest of
+  // the note is) pass their own.
+  intro: string = strings.bulkChrome.skippedTableIntro,
 ): void {
   const section = parent.createDiv({
     cls: 'frontmatter-date-manager-bulk-skipped',
   });
   section.createEl('p', {
     cls: 'frontmatter-date-manager-bulk-skipped-intro',
-    text: format(strings.bulkChrome.skippedTableIntro, {
-      count: skipped.length,
-    }),
+    text: format(intro, { count: skipped.length }),
   });
   const columns = [strings.common.file, strings.bulkChrome.skippedColumnReason];
   const rows = skipped.map((s) => [s.label, s.reason]);

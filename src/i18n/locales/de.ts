@@ -46,6 +46,18 @@ export const STRINGS_DE: Strings = {
       'Alle Daten sind bereits ausgefüllt, und die Notiz hat sich seit der letzten Aktualisierung nicht geändert.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Die Namen der Datumseigenschaften in den Plugin-Einstellungen sind ungültig. Jeder Teil um '>' braucht einen Namen, zum Beispiel meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Andere Daten werden wie gewohnt geschrieben. Diese Meldung erscheint einmal pro Sitzung.',
+    skippedParentNotGroup:
+      '"{name}" wurde nicht geschrieben: "{parent}" enthält einen Wert, der keine Gruppe ist.',
+    skippedSharedGroup:
+      '"{name}" wurde nicht geschrieben: "{parent}" wird über einen YAML-Verweis (& und *) mit einer anderen Eigenschaft geteilt, und ein Schreiben würde beide ändern.',
+    skippedHoldsContainer:
+      '"{name}" wurde nicht geschrieben: Dort steht eine Gruppe oder Liste, die das Plugin nie ersetzt.',
+    skippedInvalidName:
+      '"{name}" ist kein gültiger Eigenschaftsname: Jeder Teil um \'>\' braucht einen Namen. Korrigieren Sie ihn in den Plugin-Einstellungen.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -83,6 +95,12 @@ export const STRINGS_DE: Strings = {
     skippedColumnReason: 'Grund',
     skippedTableIntro:
       '{count} Notiz(en) wurden übersprungen und unverändert gelassen:',
+    valuesWillNotBeWrittenIntro:
+      'Werte, die nicht geschrieben werden: {count}. Der Rest jeder Notiz wird geschrieben:',
+    valuesNotWrittenIntro:
+      'Nicht geschriebene Werte: {count}. Der Rest jeder Notiz wurde geschrieben:',
+    invalidPropertyNames:
+      "Kein gültiger Eigenschaftsname: {names}. Jeder Teil um '>' braucht einen Namen - korrigieren Sie ihn in den Plugin-Einstellungen.",
     skippedUnsavedChanges:
       'Die Notiz hat ungespeicherte Änderungen in einem offenen Editor. Speichern oder schließen Sie sie und führen Sie dann eine neue Vorschau aus.',
     skippedExcalidrawUnsaved:
@@ -94,6 +112,12 @@ export const STRINGS_DE: Strings = {
       propertyNameRequired: 'Geben Sie einen Eigenschaftsnamen ein.',
       counterNameCollision:
         'Dieser Name wird bereits von einer anderen Eigenschaft oben verwendet.',
+      invalidPath:
+        "Jeder Teil um '>' braucht einen Namen, zum Beispiel meta > updated.",
+      dateNameCollision:
+        'Ein anderes Datum dieses Plugins verwendet diesen Namen bereits.',
+      nestingConflict:
+        'Dieser Name und ein anderer Eigenschaftsname dieses Plugins liegen ineinander (wie meta und meta > updated). Verwenden Sie Namen, die einander nicht enthalten.',
     },
     description: {
       syncIntro:
@@ -104,6 +128,8 @@ export const STRINGS_DE: Strings = {
     dates: {
       enableNoneHint:
         'Aktivieren Sie oben mindestens ein Datum, um das Plugin einzurichten.',
+      dotHint:
+        "Das ist eine Eigenschaft mit einem Punkt im Namen. Um sie in eine Gruppe zu legen, verwenden Sie stattdessen '>', zum Beispiel meta > updated.",
       automatic: {
         name: 'Automatische Daten',
         desc: 'Lässt das Plugin die Daten unten von selbst aktuell halten: Das Erstellungsdatum wird bei der ersten Bearbeitung einer Notiz hinzugefügt, das letzte Bearbeitungsdatum bei jeder Bearbeitung und das Datum des letzten Öffnens beim Öffnen einer Notiz. Wenn ausgeschaltet, ändern sich die Daten nur über den Befehl "Daten der aktuellen Datei aktualisieren" und die Massenwerkzeuge.',
@@ -116,7 +142,7 @@ export const STRINGS_DE: Strings = {
           'Notizen, die noch keines haben, ein Erstellungsdatum hinzufügen. Es wird bei der ersten Bearbeitung der Notiz hinzugefügt.',
         propertyName: 'Eigenschaft für Erstellungsdatum',
         propertyDesc:
-          'Name der Eigenschaft, in der das Erstellungsdatum gespeichert wird.',
+          "Name der Eigenschaft, in der das Erstellungsdatum gespeichert wird. Um sie in eine Gruppe zu legen, trennen Sie die Ebenen mit '>', zum Beispiel meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
@@ -125,7 +151,7 @@ export const STRINGS_DE: Strings = {
           'Dieses Datum aktualisieren, wann immer Sie die Notiz bearbeiten.',
         propertyName: 'Eigenschaft für Bearbeitungsdatum',
         propertyDesc:
-          'Name der Eigenschaft, in der das letzte Bearbeitungsdatum gespeichert wird.',
+          "Name der Eigenschaft, in der das letzte Bearbeitungsdatum gespeichert wird. Um sie in eine Gruppe zu legen, trennen Sie die Ebenen mit '>', zum Beispiel meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -134,14 +160,14 @@ export const STRINGS_DE: Strings = {
           'Eine Zahleneigenschaft hinzufügen, die bei jeder Bearbeitung einer Notiz um eins steigt. Ein ungefährer Aktivitätszähler, kein exakter Verlauf.',
         propertyName: 'Eigenschaft für Bearbeitungszähler',
         propertyDesc:
-          'Name der Eigenschaft, in der der Bearbeitungszähler gespeichert wird.',
+          "Name der Eigenschaft, in der der Bearbeitungszähler gespeichert wird. Um sie in eine Gruppe zu legen, trennen Sie die Ebenen mit '>', zum Beispiel meta > edits.",
       },
       viewed: {
         enableName: 'Datum des letzten Öffnens verfolgen',
         enableDesc: 'Das Datum bei jedem Öffnen der Notiz speichern.',
         propertyName: 'Eigenschaft für Öffnungsdatum',
         propertyDesc:
-          'Name der Eigenschaft, in der das Datum des letzten Öffnens gespeichert wird.',
+          "Name der Eigenschaft, in der das Datum des letzten Öffnens gespeichert wird. Um sie in eine Gruppe zu legen, trennen Sie die Ebenen mit '>', zum Beispiel meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

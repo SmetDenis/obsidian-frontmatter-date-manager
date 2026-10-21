@@ -42,6 +42,15 @@
   border-inline-start: 3px solid var(--text-accent);
 }
 
+/* One-line hint under a property-name field whose name has a dot but no '>'.
+   Full width: the parent .setting-item is a flex row with an empty info
+   column, which would push a bare block to the right. */
+.frontmatter-date-manager-dot-hint {
+  width: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
+
 .frontmatter-date-manager-filter-setting {
   flex-direction: column;
   align-items: flex-start;
@@ -154,8 +163,11 @@
   font-style: italic;
 }
 
-/* Inline error under the timezone input (invalid IANA name typed) */
-.frontmatter-date-manager-timezone-error {
+/* Inline error under the timezone input (invalid IANA name typed) and under
+   the "Ignore these properties" input (an entry with an empty level around
+   '>'). Both belong under the input on the right, so no full width. */
+.frontmatter-date-manager-timezone-error,
+.frontmatter-date-manager-exclude-error {
   color: var(--text-error);
   font-size: var(--font-smaller);
   margin-block-start: 0.25rem;

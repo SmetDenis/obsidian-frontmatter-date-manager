@@ -332,7 +332,7 @@ describe('sanitizeSettings (pure)', () => {
       expect(r.headerUpdateCount).toBe('updated_count');
     });
 
-    it('disables even when the collision is with a DISABLED date key (symmetric with counterKeyOrNull)', () => {
+    it('disables even when the collision is with a DISABLED date key (symmetric with propertyPaths)', () => {
       // The collision check covers all three date-key names unconditionally, so the
       // settings state stays consistent with the write-boundary guard - no silently
       // inert "enabled but never writes" counter.

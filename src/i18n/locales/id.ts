@@ -46,6 +46,18 @@ export const STRINGS_ID: Strings = {
       'Semua tanggal sudah terisi, dan catatan tidak berubah sejak pembaruan terakhir.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Nama properti tanggal di pengaturan plugin tidak valid. Setiap bagian di sekitar '>' harus memiliki nama, misalnya meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Tanggal lain tetap ditulis seperti biasa. Pesan ini ditampilkan sekali per sesi.',
+    skippedParentNotGroup:
+      '"{name}" tidak ditulis: "{parent}" berisi nilai yang bukan grup.',
+    skippedSharedGroup:
+      '"{name}" tidak ditulis: "{parent}" dipakai bersama properti lain lewat referensi YAML (& dan *), dan menulis ke sana akan mengubah keduanya.',
+    skippedHoldsContainer:
+      '"{name}" tidak ditulis: isinya grup atau daftar, yang tidak pernah diganti oleh plugin.',
+    skippedInvalidName:
+      '"{name}" bukan nama properti yang valid: setiap bagian di sekitar \'>\' harus memiliki nama. Perbaiki di pengaturan plugin.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -81,6 +93,12 @@ export const STRINGS_ID: Strings = {
     failureColumnError: 'Kesalahan',
     skippedColumnReason: 'Alasan',
     skippedTableIntro: '{count} catatan dilewati dan dibiarkan tidak berubah:',
+    valuesWillNotBeWrittenIntro:
+      'Nilai yang tidak akan ditulis: {count}. Sisa setiap catatan akan ditulis:',
+    valuesNotWrittenIntro:
+      'Nilai yang tidak ditulis: {count}. Sisa setiap catatan sudah ditulis:',
+    invalidPropertyNames:
+      "Nama properti tidak valid: {names}. Setiap bagian di sekitar '>' harus memiliki nama - perbaiki di pengaturan plugin.",
     skippedUnsavedChanges:
       'Catatan ini memiliki perubahan yang belum disimpan di editor yang terbuka. Simpan atau tutup catatan tersebut, lalu jalankan pratinjau baru.',
     skippedExcalidrawUnsaved:
@@ -92,6 +110,11 @@ export const STRINGS_ID: Strings = {
       propertyNameRequired: 'Masukkan nama properti.',
       counterNameCollision:
         'Nama ini sudah digunakan oleh properti lain di atas.',
+      invalidPath:
+        "Setiap bagian di sekitar '>' harus memiliki nama, misalnya meta > updated.",
+      dateNameCollision: 'Tanggal lain dari plugin ini sudah memakai nama ini.',
+      nestingConflict:
+        'Nama ini dan nama properti lain dari plugin ini saling bersarang (seperti meta dan meta > updated). Gunakan nama yang tidak saling memuat.',
     },
     description: {
       syncIntro:
@@ -102,6 +125,8 @@ export const STRINGS_ID: Strings = {
     dates: {
       enableNoneHint:
         'Aktifkan setidaknya satu tanggal di atas untuk menyiapkan plugin.',
+      dotHint:
+        "Ini adalah satu properti dengan titik di namanya. Untuk menaruhnya di dalam grup, gunakan '>' sebagai gantinya, misalnya meta > updated.",
       automatic: {
         name: 'Tanggal otomatis',
         desc: 'Biarkan plugin menjaga tanggal di bawah tetap terkini secara otomatis: tanggal pembuatan ditambahkan saat pengeditan pertama catatan, tanggal terakhir diedit pada setiap suntingan, dan tanggal terakhir dibuka saat Anda membuka catatan. Saat nonaktif, tanggal hanya berubah melalui perintah "Perbarui tanggal untuk berkas saat ini" dan alat massal.',
@@ -113,14 +138,16 @@ export const STRINGS_ID: Strings = {
         enableDesc:
           'Tambahkan tanggal pembuatan ke catatan yang belum memilikinya. Ditambahkan saat pengeditan pertama catatan.',
         propertyName: 'Properti dibuat',
-        propertyDesc: 'Nama properti tempat tanggal pembuatan disimpan.',
+        propertyDesc:
+          "Nama properti tempat tanggal pembuatan disimpan. Untuk menaruhnya di dalam grup, pisahkan level dengan '>', misalnya meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Lacak tanggal terakhir diedit',
         enableDesc: 'Perbarui tanggal ini setiap kali Anda mengedit catatan.',
         propertyName: 'Properti diperbarui',
-        propertyDesc: 'Nama properti tempat tanggal terakhir diedit disimpan.',
+        propertyDesc:
+          "Nama properti tempat tanggal terakhir diedit disimpan. Untuk menaruhnya di dalam grup, pisahkan level dengan '>', misalnya meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -128,13 +155,15 @@ export const STRINGS_ID: Strings = {
         enableDesc:
           'Tambahkan properti angka yang naik satu setiap kali Anda mengedit catatan. Hitungan aktivitas perkiraan, bukan riwayat yang tepat.',
         propertyName: 'Properti hitungan suntingan',
-        propertyDesc: 'Nama properti tempat hitungan suntingan disimpan.',
+        propertyDesc:
+          "Nama properti tempat hitungan suntingan disimpan. Untuk menaruhnya di dalam grup, pisahkan level dengan '>', misalnya meta > edits.",
       },
       viewed: {
         enableName: 'Lacak tanggal terakhir dibuka',
         enableDesc: 'Simpan tanggal setiap kali Anda membuka catatan.',
         propertyName: 'Properti dilihat',
-        propertyDesc: 'Nama properti tempat tanggal terakhir dibuka disimpan.',
+        propertyDesc:
+          "Nama properti tempat tanggal terakhir dibuka disimpan. Untuk menaruhnya di dalam grup, pisahkan level dengan '>', misalnya meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },
