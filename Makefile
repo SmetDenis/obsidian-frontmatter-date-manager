@@ -11,6 +11,13 @@ PLUGIN_DIR := $(OBSIDIAN_VAULT_TEST)/.obsidian/plugins/$(PLUGIN_ID)
 #   make test-e2e E2E_NODE_DIR=/path/to/node22/bin
 E2E_NODE_DIR ?= /opt/homebrew/opt/node@22/bin
 
+# Prettier formats exactly the files git sees: tracked ones plus new files not
+# ignored by .gitignore or .git/info/exclude. Prettier itself reads only
+# .gitignore and .prettierignore, so a local-only file hidden through
+# .git/info/exclude would otherwise fail format-check although it never reaches
+# the repository. The npm format scripts keep the plain glob (portable shell).
+PRETTIER_FILES := git ls-files -z --cached --others --exclude-standard -- '*.ts' '*.json'
+
 .PHONY: help install build dev lint typecheck-e2e format format-check test test-watch test-e2e test-e2e-spec screenshots pre-commit local-test
 
 help: ## Show available commands
@@ -32,10 +39,10 @@ typecheck-e2e: ## Type-check e2e specs (no Obsidian needed)
 	npm run typecheck:e2e
 
 format: ## Fix formatting with Prettier
-	npm run format:write
+	$(PRETTIER_FILES) | xargs -0 npx prettier --write --no-error-on-unmatched-pattern
 
 format-check: ## Check formatting with Prettier
-	npm run format:check
+	$(PRETTIER_FILES) | xargs -0 npx prettier --list-different --no-error-on-unmatched-pattern
 
 test: ## Run all tests
 	npm test
