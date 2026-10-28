@@ -97,4 +97,25 @@ describe('getContentForHashing - first nested write', () => {
       ),
     ).toBe(plugin.getContentForHashing('---\ntitle: T\n---\nBody'));
   });
+
+  it('filling an empty group that was already there does not change the hash', () => {
+    const plugin = createPlugin({
+      hashTrackingMode: 'both',
+      headerUpdated: 'meta > updated',
+      headerLastViewed: 'parent > meta > viewed',
+    });
+    const filled = plugin.getContentForHashing(
+      '---\ntitle: T\nmeta:\n  updated: 2024-01-01\nparent:\n  meta:\n    viewed: 2024-01-01\n---\nBody',
+    );
+    expect(
+      plugin.getContentForHashing(
+        '---\ntitle: T\nmeta:\nparent:\n  meta: {}\n---\nBody',
+      ),
+    ).toBe(filled);
+    expect(
+      plugin.getContentForHashing(
+        '---\ntitle: T\nmeta: {}\nparent:\n---\nBody',
+      ),
+    ).toBe(filled);
+  });
 });

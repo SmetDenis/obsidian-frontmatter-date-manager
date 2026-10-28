@@ -537,12 +537,49 @@ describe('removeNestedKeyLines - review cases', () => {
     ).toBe('title: t');
   });
 
-  it('keeps a group that still has content, and an empty group nobody touched', () => {
+  it('keeps a group that still has content, and an empty group off every excluded path', () => {
     expect(
       removeNestedKeyLines('meta:\n  lastSync: x\n  source: web', paths),
     ).toBe('meta:\n  source: web');
-    expect(removeNestedKeyLines('meta:\ntitle: t', paths)).toBe(
-      'meta:\ntitle: t',
+    expect(removeNestedKeyLines('other:\ntitle: t', paths)).toBe(
+      'other:\ntitle: t',
     );
+    expect(removeNestedKeyLines('other: {}\ntitle: t', paths)).toBe(
+      'other: {}\ntitle: t',
+    );
+  });
+
+  it('drops an empty group on an excluded path, so filling it keeps the hash', () => {
+    const filled = removeNestedKeyLines(
+      'title: t\nmeta:\n  lastSync: x',
+      paths,
+    );
+    for (const empty of ['meta:', 'meta: {}', 'meta: null', 'meta: ~']) {
+      expect(removeNestedKeyLines(`title: t\n${empty}`, paths)).toBe(filled);
+    }
+    expect(filled).toBe('title: t');
+  });
+
+  it('drops empty groups at every level of a deep path', () => {
+    const deep = [['parent', 'meta', 'viewed']];
+    const filled = removeNestedKeyLines(
+      'parent:\n  meta:\n    viewed: v\ntitle: t',
+      deep,
+    );
+    expect(removeNestedKeyLines('parent:\ntitle: t', deep)).toBe(filled);
+    expect(removeNestedKeyLines('parent:\n  meta:\ntitle: t', deep)).toBe(
+      filled,
+    );
+    expect(removeNestedKeyLines('parent:\n  meta: {}\ntitle: t', deep)).toBe(
+      filled,
+    );
+  });
+
+  it('an empty group on the path that holds anything else still counts', () => {
+    expect(removeNestedKeyLines('meta:\n  source: web', paths)).toBe(
+      'meta:\n  source: web',
+    );
+    expect(removeNestedKeyLines('meta: draft', paths)).toBe('meta: draft');
+    expect(removeNestedKeyLines('meta: ""', paths)).toBe('meta: ""');
   });
 });

@@ -320,8 +320,10 @@ const isListItem = (rest: string) => rest === '-' || rest.startsWith('- ');
  * with every deeper line under it and the list items written at its own
  * indent. Other keys of the same group stay, so an edit by another plugin
  * inside the group still counts; a group left with nothing but excluded keys
- * is dropped too, so the plugin's first write - which creates the group - does
- * not change the hash either.
+ * is dropped too, and so is an empty group on an excluded key's path
+ * (`meta:`, `meta: {}`, `meta: null` for `meta > updated`), so the plugin's
+ * first write - which creates or fills the group - does not change the hash
+ * either. An empty group off every excluded path stays in the hash.
  *
  * Only multi-level paths are handled here; flat keys go through the original
  * line filter, which must stay byte-identical. A key line that carries a value
@@ -346,6 +348,10 @@ export function removeNestedKeyLines(
     dropped: number;
     // A key with no inline value is a group (or an empty value).
     opensGroup: boolean;
+    // An empty group on the way to an excluded key (`meta:`, `meta: {}` for
+    // `meta > updated`): the plugin's first write fills it, so it is dropped
+    // while it holds nothing else.
+    emptyOnPath: boolean;
   }
   const result: (string | null)[] = [];
   const stack: Entry[] = [];
@@ -362,10 +368,14 @@ export function removeNestedKeyLines(
   let opaqueDeeperThan: number | null = null;
 
   // Close the innermost open key. A group whose every child was an excluded
-  // key goes with them, and counts as dropped in its own parent.
+  // key goes with them, and so does an empty group on an excluded key's path;
+  // either counts as dropped in its own parent.
   const closeTop = () => {
     const entry = stack.pop()!;
-    if (entry.opensGroup && entry.dropped > 0 && entry.kept === 0) {
+    if (
+      entry.kept === 0 &&
+      ((entry.opensGroup && entry.dropped > 0) || entry.emptyOnPath)
+    ) {
       result[entry.line] = null;
       const parent = stack[stack.length - 1];
       if (parent) {
@@ -423,6 +433,7 @@ export function removeNestedKeyLines(
         kept: 0,
         dropped: 0,
         opensGroup: false,
+        emptyOnPath: false,
       });
       result.push(line);
       continue;
@@ -445,6 +456,15 @@ export function removeNestedKeyLines(
     // or both (`meta: &dates`, `meta: !!map &dates`) still open a group.
     const value = (keyMatch[3] ?? '').replace(/(^|\s+)#.*$/, '').trim();
     const opensGroup = value === '' || /^[&!]\S*(\s+[&!]\S*)?$/.test(value);
+    // The plugin writes into a parent that is absent, empty or null - so on
+    // an excluded key's path such a parent counts as empty: no value, `{}`, or
+    // a YAML null.
+    const emptyOnPath =
+      (opensGroup || /^(\{\s*\}|~|null|Null|NULL)$/.test(value)) &&
+      paths.some((excluded) => {
+        const conflict = pathConflict(excluded, path);
+        return conflict === 'prefix' && path.length < excluded.length;
+      });
     if (top) top.kept++;
     stack.push({
       indent,
@@ -453,6 +473,7 @@ export function removeNestedKeyLines(
       kept: 0,
       dropped: 0,
       opensGroup,
+      emptyOnPath,
     });
     result.push(line);
     if (!opensGroup) opaqueDeeperThan = indent;
