@@ -26,6 +26,7 @@ Automatically update `created`, `updated`, and `viewed` dates in YAML frontmatte
 - Auto-set a missing `created` field on a note's first edit (syncs with `ctime`)
 - Auto-set `viewed` field when a file is opened - unique feature not found in other plugins (disabled by default)
 - Count how often you edit each note (`updated_count`, disabled by default) - an approximate activity signal you can sort or filter in Bases/Dataview to find your most-edited notes
+- Keep any date or the edit count inside a group (`meta > updated`), mixed freely with top-level properties
 - Customizable date format (uses [date-fns](https://date-fns.org/v4.1.0/docs/format) syntax)
 - Timezone support with IANA timezone autocomplete
 - String and number property types (number useful for Unix timestamps)
@@ -97,13 +98,13 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | Automatic dates                    | `true`                  | Let the plugin add and update the dates below on its own; when off, only the command and bulk tools write |
 | Track creation date                | `true`                  | Add a creation date to notes that don't have one yet, on the note's first edit   |
-| Created property                   | `created`               | Property name where the creation date is saved                                   |
+| Created property                   | `created`               | Property name where the creation date is saved; `>` puts it in a group, e.g. `meta > created` (see [Nested properties](#nested-properties)) |
 | Track last-edited date             | `true`                  | Update this date whenever you edit the note                                      |
-| Updated property                   | `updated`               | Property name where the last-edited date is saved                                |
+| Updated property                   | `updated`               | Property name where the last-edited date is saved; `>` puts it in a group        |
 | Count edits                        | `false`                 | Add a number property that goes up by one on each edit (an approximate activity count, not an exact history) |
-| Edit count property                | `updated_count`         | Property name where the edit count is saved                                       |
+| Edit count property                | `updated_count`         | Property name where the edit count is saved; `>` puts it in a group               |
 | Track last-opened date             | `false`                 | Save the date each time you open the note                                        |
-| Viewed property                    | `viewed`                | Property name where the last-opened date is saved                                |
+| Viewed property                    | `viewed`                | Property name where the last-opened date is saved; `>` puts it in a group        |
 | Date format                        | `yyyy-MM-dd'T'HH:mm:ss` | Date & time format ([date-fns syntax](https://date-fns.org/v4.1.0/docs/format))  |
 | Timezone                           | `""` (system)           | IANA timezone identifier; empty uses the system timezone                         |
 | Save number-only dates without quotes | `false`              | Output numbers instead of quoted text for digit-only formats                     |
@@ -113,7 +114,7 @@ Every option is findable through Obsidian's settings search. The gitignore-style
 | Files and folders to skip          | `""` (all files)        | Gitignore-style rules: lines exclude, `!` re-includes, `#` comments (own sub-page) |
 | Change detection (content hashing) | `true`                  | Write the date only when content actually changes (SHA-256 hashing)             |
 | What counts as a change            | `body`                  | What triggers updates: `body`, `frontmatter`, or `both`                          |
-| Ignore these properties            | `[]`                    | Properties to ignore in change detection; add several at once, comma-separated   |
+| Ignore these properties            | `[]`                    | Properties to ignore in change detection; add several at once, comma-separated; nested names with `>` work too |
 | New file delay                     | `5000` ms               | Wait before processing newly created notes                                       |
 | Auto-populate cache on startup     | `true`                  | Build change-detection data for uncached notes when the plugin loads             |
 | Maximum cache entries              | `10000`                 | Oldest unused entries are removed when the cache exceeds this limit              |
@@ -141,6 +142,37 @@ Available strategies: `Set creation date to the last-edited date`, `Set last-edi
 | `T`                     | 1776268200000 (Unix ms)   |
 
 > **Note:** This plugin uses **date-fns**, not Moment.js. Common migration: `YYYY` -> `yyyy`, `DD` -> `dd`.
+
+## Nested properties
+
+Any of the four property names - creation date, last-edited date, last-opened date and edit count - can point inside a group: separate the levels with `>`. Mix top-level and nested names freely, at any depth:
+
+| Setting          | Value                    |
+|------------------|--------------------------|
+| Created property | `created`                |
+| Updated property | `meta > updated`         |
+| Viewed property  | `parent > meta > viewed` |
+
+```yaml
+created: 2026-10-21T09:00:00
+meta:
+  source: web
+  updated: 2026-10-21T10:30:00
+parent:
+  meta:
+    viewed: 2026-10-21T10:35:00
+```
+
+- A name without `>` works as before, with one exception for safety: a group or list sitting where a date goes is no longer replaced (see below). A dot stays part of the name: `meta.updated` is one top-level property, and the settings say so under the field.
+- A missing group is created at the end of the properties, and a new date goes at the end of its group. Other keys of the group and their order are never touched; an empty `meta:` simply becomes the group.
+- Only groups are supported, not lists of items (`meta:` followed by `- updated: ...`).
+- If the group's place holds something else (`meta: draft`, a list, a number), only that date is skipped, and the plugin tells you why: the **Update timestamps for current file** command in its notice, the bulk tools in a table, automatic updates once per session. A group or list sitting where a date goes is never replaced - for top-level names too.
+- A group shared with another property through a YAML reference (`base: &shared` and `meta: *shared`) is never written into - a date there would also appear under the other property. That date is skipped, and the plugin says why. Obsidian itself turns such a reference into two separate copies whenever it saves any other property of the note; after that, the date is written as usual.
+- Two names can't sit inside one another (`meta` and `meta > updated`) - the settings show an error.
+- **Ignore these properties** understands the same syntax (`meta > lastSync`).
+- Obsidian's Properties panel can't edit nested values - edit them in source mode. Bases and Dataview read them with a dot: `meta.updated`.
+- Changing a name doesn't move dates already written under the old one.
+- Update the plugin on all your devices before switching to a nested name: an older version writes `meta > updated` as one top-level property with that literal name.
 
 ## Finding your most-edited notes (optional)
 
@@ -266,7 +298,7 @@ For **iCloud, Syncthing, Dropbox, or other file-based sync**: add `hash-cache.js
 This plugin is fully local. It has no backend, makes no network requests, and collects no telemetry or analytics of any kind. The community plugin scorecard lists the capabilities a plugin's code can use; here is exactly what this plugin uses each one for:
 
 - **Reads markdown files in your vault.** The bulk tools (fill dates, rename a property, reformat dates, find out-of-order dates, rebuild the change-detection cache) operate across the whole vault, so they list your markdown notes via Obsidian's `getMarkdownFiles()`. The plugin never enumerates non-markdown files (`getFiles()` is not used), so attachments, images, and other binaries are never touched.
-- **Writes only the configured date properties.** All changes go through Obsidian's `processFrontMatter()`, which touches only the `created` / `updated` / `viewed` properties you configure and leaves the note body, key order, comments, and unrelated properties untouched.
+- **Writes only the configured date properties.** All changes go through Obsidian's `processFrontMatter()`, which touches only the `created` / `updated` / `viewed` properties you configure (top-level or inside a group you name) and leaves the note body, key order, comments, unrelated properties - and any group or list sitting where a date would go - untouched.
 - **Never writes into a note you are editing.** If a note has unsaved changes in an open editor, the plugin waits (or, for bulk operations, skips it and tells you) instead of writing - so a date update can never be merged into the text you are typing.
 - **Writes one sidecar file in its own plugin folder.** The SHA-256 change-detection cache (`hash-cache.json`) is written inside `.obsidian/plugins/frontmatter-date-manager/`, never into your notes.
 - **Local export only.** The "Download full preview" button saves the diff as a local `.tsv` file via the browser and writes no file into your vault. File download is desktop only - on mobile the full diff stays readable in the on-screen table.

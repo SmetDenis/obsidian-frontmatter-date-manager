@@ -46,6 +46,18 @@ export const STRINGS_AR: Strings = {
       'جميع التواريخ مكتملة بالفعل، ولم تتغيّر الملاحظة منذ آخر تحديث.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "أسماء خصائص التاريخ في إعدادات الإضافة غير صالحة. يحتاج كل جزء حول '>' إلى اسم، مثل meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager، {file}: {reason} تُكتب التواريخ الأخرى كالمعتاد. تظهر هذه الرسالة مرة واحدة في كل جلسة.',
+    skippedParentNotGroup:
+      'لم تُكتب "{name}": تحتوي "{parent}" على قيمة ليست مجموعة.',
+    skippedSharedGroup:
+      'لم تُكتب "{name}": "{parent}" مشتركة مع خاصية أخرى عبر مرجع YAML (& و *)، والكتابة فيها ستغيّر الاثنتين.',
+    skippedHoldsContainer:
+      'لم تُكتب "{name}": توجد هناك مجموعة أو قائمة، ولا تستبدلها الإضافة أبدًا.',
+    skippedInvalidName:
+      '"{name}" ليس اسم خاصية صالحًا: يحتاج كل جزء حول \'>\' إلى اسم. صحّحه في إعدادات الإضافة.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -74,12 +86,18 @@ export const STRINGS_AR: Strings = {
     pagerNext: 'التالي',
     pageInfo: 'الصفحة {current} من {total}',
     downloadFullPreview: 'تنزيل المعاينة الكاملة',
+    downloadThisList: 'تنزيل هذه القائمة',
     downloadSuccess:
       'تم تنزيل عدد الصفوف: {count}. الملف {filename} في مجلد التنزيلات.',
     downloadFailed: 'تعذّر تنزيل ملف المعاينة.',
     failureColumnError: 'خطأ',
     skippedColumnReason: 'السبب',
     skippedTableIntro: 'تم تخطي {count} ملاحظة/ملاحظات وتُركت دون تغيير:',
+    valuesWillNotBeWrittenIntro:
+      'قيم لن تُكتب: {count}. ستُكتب بقية كل ملاحظة:',
+    valuesNotWrittenIntro: 'قيم لم تُكتب: {count}. كُتبت بقية كل ملاحظة:',
+    invalidPropertyNames:
+      "اسم خاصية غير صالح: {names}. يحتاج كل جزء حول '>' إلى اسم - صحّحه في إعدادات الإضافة.",
     skippedUnsavedChanges:
       'تحتوي الملاحظة على تغييرات غير محفوظة في محرر مفتوح. احفظها أو أغلقها، ثم شغّل معاينة جديدة.',
     skippedExcalidrawUnsaved:
@@ -90,6 +108,10 @@ export const STRINGS_AR: Strings = {
     validation: {
       propertyNameRequired: 'أدخل اسم خاصية.',
       counterNameCollision: 'هذا الاسم مستخدم بالفعل بواسطة خاصية أخرى أعلاه.',
+      invalidPath: "يحتاج كل جزء حول '>' إلى اسم، مثل meta > updated.",
+      dateNameCollision: 'يستخدم تاريخ آخر لهذه الإضافة هذا الاسم بالفعل.',
+      nestingConflict:
+        'هذا الاسم واسم خاصية آخر لهذه الإضافة متداخلان (مثل meta و meta > updated). استخدم أسماء لا يحتوي أحدها على الآخر.',
     },
     description: {
       syncIntro:
@@ -99,6 +121,8 @@ export const STRINGS_AR: Strings = {
     },
     dates: {
       enableNoneHint: 'فعّل تاريخًا واحدًا على الأقل أعلاه لإعداد الإضافة.',
+      dotHint:
+        "هذه خاصية واحدة في اسمها نقطة. لوضعها داخل مجموعة، استخدم '>' بدلًا من ذلك، مثل meta > updated.",
       automatic: {
         name: 'التواريخ التلقائية',
         desc: 'دع الإضافة تُبقي التواريخ أدناه محدّثة من تلقاء نفسها: يُضاف تاريخ الإنشاء عند أول تعديل للملاحظة، ويُحدَّث تاريخ آخر تعديل عند كل تعديل، ويُضاف تاريخ آخر فتح عند فتح الملاحظة. عند الإيقاف، لا تتغيّر التواريخ إلا عبر أمر "تحديث التواريخ في الملف الحالي" والأدوات الجماعية.',
@@ -110,14 +134,16 @@ export const STRINGS_AR: Strings = {
         enableDesc:
           'إضافة تاريخ إنشاء للملاحظات التي ليس لها واحد بعد. يُضاف عند أول تعديل للملاحظة.',
         propertyName: 'خاصية تاريخ الإنشاء',
-        propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ الإنشاء.',
+        propertyDesc:
+          "اسم الخاصية التي يُحفظ فيها تاريخ الإنشاء. لوضعها داخل مجموعة، افصل المستويات بـ '>'، مثل meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'تتبّع تاريخ آخر تعديل',
         enableDesc: 'تحديث هذا التاريخ في كل مرة تعدّل فيها الملاحظة.',
         propertyName: 'خاصية تاريخ التعديل',
-        propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ آخر تعديل.',
+        propertyDesc:
+          "اسم الخاصية التي يُحفظ فيها تاريخ آخر تعديل. لوضعها داخل مجموعة، افصل المستويات بـ '>'، مثل meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -125,13 +151,15 @@ export const STRINGS_AR: Strings = {
         enableDesc:
           'إضافة خاصية رقمية تزيد بمقدار واحد في كل مرة تعدّل فيها الملاحظة. عدّاد نشاط تقريبي وليس سجلًا دقيقًا.',
         propertyName: 'خاصية عدّاد التعديلات',
-        propertyDesc: 'اسم الخاصية التي يُحفظ فيها عدّاد التعديلات.',
+        propertyDesc:
+          "اسم الخاصية التي يُحفظ فيها عدّاد التعديلات. لوضعها داخل مجموعة، افصل المستويات بـ '>'، مثل meta > edits.",
       },
       viewed: {
         enableName: 'تتبّع تاريخ آخر فتح',
         enableDesc: 'حفظ التاريخ في كل مرة تفتح فيها الملاحظة.',
         propertyName: 'خاصية تاريخ الفتح',
-        propertyDesc: 'اسم الخاصية التي يُحفظ فيها تاريخ آخر فتح.',
+        propertyDesc:
+          "اسم الخاصية التي يُحفظ فيها تاريخ آخر فتح. لوضعها داخل مجموعة، افصل المستويات بـ '>'، مثل meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

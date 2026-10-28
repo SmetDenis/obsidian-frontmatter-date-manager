@@ -45,6 +45,18 @@ export const STRINGS_TH: Strings = {
       'วันที่ทั้งหมดถูกกรอกไว้แล้ว และโน้ตนี้ไม่มีการเปลี่ยนแปลงตั้งแต่การอัปเดตครั้งล่าสุด',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "ชื่อพร็อพเพอร์ตี้วันที่ในการตั้งค่าปลั๊กอินไม่ถูกต้อง แต่ละส่วนรอบ '>' ต้องมีชื่อ เช่น meta > updated",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} วันที่อื่นยังเขียนตามปกติ ข้อความนี้แสดงครั้งเดียวต่อเซสชัน',
+    skippedParentNotGroup:
+      'ไม่ได้เขียน "{name}": "{parent}" มีค่าที่ไม่ใช่กลุ่ม',
+    skippedSharedGroup:
+      'ไม่ได้เขียน "{name}": "{parent}" ใช้ร่วมกับพร็อพเพอร์ตี้อื่นผ่านการอ้างอิง YAML (& และ *) การเขียนลงไปจะเปลี่ยนทั้งสอง',
+    skippedHoldsContainer:
+      'ไม่ได้เขียน "{name}": ตรงนั้นมีกลุ่มหรือรายการ ซึ่งปลั๊กอินไม่เคยแทนที่',
+    skippedInvalidName:
+      '"{name}" ไม่ใช่ชื่อพร็อพเพอร์ตี้ที่ถูกต้อง: แต่ละส่วนรอบ \'>\' ต้องมีชื่อ แก้ไขในการตั้งค่าปลั๊กอิน',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -73,12 +85,19 @@ export const STRINGS_TH: Strings = {
     pagerNext: 'ถัดไป',
     pageInfo: 'หน้า {current} จาก {total}',
     downloadFullPreview: 'ดาวน์โหลดตัวอย่างทั้งหมด',
+    downloadThisList: 'ดาวน์โหลดรายการนี้',
     downloadSuccess:
       'ดาวน์โหลด {count} แถวเป็นไฟล์ {filename} ไปยังโฟลเดอร์ดาวน์โหลดแล้ว',
     downloadFailed: 'ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้',
     failureColumnError: 'ข้อผิดพลาด',
     skippedColumnReason: 'เหตุผล',
     skippedTableIntro: 'ข้าม {count} โน้ตและปล่อยไว้โดยไม่เปลี่ยนแปลง:',
+    valuesWillNotBeWrittenIntro:
+      'ค่าที่จะไม่ถูกเขียน: {count} ส่วนที่เหลือของแต่ละโน้ตจะถูกเขียน:',
+    valuesNotWrittenIntro:
+      'ค่าที่ไม่ได้เขียน: {count} ส่วนที่เหลือของแต่ละโน้ตถูกเขียนแล้ว:',
+    invalidPropertyNames:
+      "ชื่อพร็อพเพอร์ตี้ไม่ถูกต้อง: {names} แต่ละส่วนรอบ '>' ต้องมีชื่อ - แก้ไขในการตั้งค่าปลั๊กอิน",
     skippedUnsavedChanges:
       'โน้ตนี้มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึกในตัวแก้ไขที่เปิดอยู่ บันทึกหรือปิดโน้ต แล้วเรียกใช้ตัวอย่างใหม่',
     skippedExcalidrawUnsaved:
@@ -89,6 +108,10 @@ export const STRINGS_TH: Strings = {
     validation: {
       propertyNameRequired: 'กรอกชื่อพร็อพเพอร์ตี้',
       counterNameCollision: 'ชื่อนี้ถูกใช้โดยพร็อพเพอร์ตี้อื่นด้านบนแล้ว',
+      invalidPath: "แต่ละส่วนรอบ '>' ต้องมีชื่อ เช่น meta > updated",
+      dateNameCollision: 'วันที่อื่นของปลั๊กอินนี้ใช้ชื่อนี้อยู่แล้ว',
+      nestingConflict:
+        'ชื่อนี้และชื่อพร็อพเพอร์ตี้อื่นของปลั๊กอินนี้ซ้อนอยู่ในกันและกัน (เช่น meta และ meta > updated) ใช้ชื่อที่ไม่ครอบกันและกัน',
     },
     description: {
       syncIntro:
@@ -99,6 +122,8 @@ export const STRINGS_TH: Strings = {
     dates: {
       enableNoneHint:
         'เปิดวันที่อย่างน้อยหนึ่งรายการด้านบนเพื่อตั้งค่าปลั๊กอิน',
+      dotHint:
+        "นี่คือพร็อพเพอร์ตี้เดียวที่มีจุดในชื่อ หากต้องการใส่ไว้ในกลุ่ม ให้ใช้ '>' แทน เช่น meta > updated",
       automatic: {
         name: 'วันที่อัตโนมัติ',
         desc: 'ให้ปลั๊กอินอัปเดตวันที่ด้านล่างให้ทันสมัยอยู่เสมอโดยอัตโนมัติ: วันที่สร้างจะถูกเพิ่มเมื่อแก้ไขโน้ตครั้งแรก วันที่แก้ไขล่าสุดทุกครั้งที่แก้ไข และวันที่เปิดล่าสุดเมื่อคุณเปิดโน้ต เมื่อปิดอยู่ วันที่จะเปลี่ยนแปลงผ่านคำสั่ง "อัปเดตวันที่ในไฟล์ปัจจุบัน" และเครื่องมือแบบกลุ่มเท่านั้น',
@@ -110,14 +135,16 @@ export const STRINGS_TH: Strings = {
         enableDesc:
           'เพิ่มวันที่สร้างให้กับโน้ตที่ยังไม่มี วันที่นี้จะถูกเพิ่มเมื่อแก้ไขโน้ตครั้งแรก',
         propertyName: 'คุณสมบัติวันที่สร้าง',
-        propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่สร้าง',
+        propertyDesc:
+          "ชื่อคุณสมบัติที่บันทึกวันที่สร้าง หากต้องการใส่ไว้ในกลุ่ม ให้คั่นระดับด้วย '>' เช่น meta > created",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'ติดตามวันที่แก้ไขล่าสุด',
         enableDesc: 'อัปเดตวันที่นี้ทุกครั้งที่คุณแก้ไขโน้ต',
         propertyName: 'คุณสมบัติวันที่แก้ไข',
-        propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่แก้ไขล่าสุด',
+        propertyDesc:
+          "ชื่อคุณสมบัติที่บันทึกวันที่แก้ไขล่าสุด หากต้องการใส่ไว้ในกลุ่ม ให้คั่นระดับด้วย '>' เช่น meta > updated",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -125,13 +152,15 @@ export const STRINGS_TH: Strings = {
         enableDesc:
           'เพิ่มคุณสมบัติตัวเลขที่เพิ่มขึ้นทีละหนึ่งทุกครั้งที่คุณแก้ไขโน้ต เป็นจำนวนกิจกรรมโดยประมาณ ไม่ใช่ประวัติที่แม่นยำ',
         propertyName: 'คุณสมบัติจำนวนการแก้ไข',
-        propertyDesc: 'ชื่อคุณสมบัติที่บันทึกจำนวนการแก้ไข',
+        propertyDesc:
+          "ชื่อคุณสมบัติที่บันทึกจำนวนการแก้ไข หากต้องการใส่ไว้ในกลุ่ม ให้คั่นระดับด้วย '>' เช่น meta > edits",
       },
       viewed: {
         enableName: 'ติดตามวันที่เปิดล่าสุด',
         enableDesc: 'บันทึกวันที่ทุกครั้งที่คุณเปิดโน้ต',
         propertyName: 'คุณสมบัติวันที่เปิด',
-        propertyDesc: 'ชื่อคุณสมบัติที่บันทึกวันที่เปิดล่าสุด',
+        propertyDesc:
+          "ชื่อคุณสมบัติที่บันทึกวันที่เปิดล่าสุด หากต้องการใส่ไว้ในกลุ่ม ให้คั่นระดับด้วย '>' เช่น meta > viewed",
         propertyPlaceholder: 'Viewed',
       },
     },

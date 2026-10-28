@@ -46,6 +46,18 @@ export const STRINGS_TR: Strings = {
       'Tüm tarihler zaten dolu ve not son güncellemeden bu yana değişmedi.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "Eklenti ayarlarındaki tarih özelliği adları geçersiz. '>' etrafındaki her parçanın bir adı olmalıdır, örneğin meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} Diğer tarihler her zamanki gibi yazılır. Bu mesaj oturum başına bir kez gösterilir.',
+    skippedParentNotGroup:
+      '"{name}" yazılmadı: "{parent}" grup olmayan bir değer içeriyor.',
+    skippedSharedGroup:
+      '"{name}" yazılmadı: "{parent}" bir YAML başvurusuyla (& ve *) başka bir özellikle paylaşılıyor; yazmak ikisini de değiştirirdi.',
+    skippedHoldsContainer:
+      '"{name}" yazılmadı: orada eklentinin asla değiştirmediği bir grup veya liste var.',
+    skippedInvalidName:
+      '"{name}" geçerli bir özellik adı değil: \'>\' etrafındaki her parçanın bir adı olmalıdır. Eklenti ayarlarında düzeltin.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -75,12 +87,19 @@ export const STRINGS_TR: Strings = {
     pagerNext: 'Sonraki',
     pageInfo: 'Sayfa {current} / {total}',
     downloadFullPreview: 'Tam önizlemeyi indir',
+    downloadThisList: 'Bu listeyi indir',
     downloadSuccess:
       'İndirilen satır sayısı: {count}. {filename} dosyası indirilenler klasörünüze kaydedildi.',
     downloadFailed: 'Önizleme dosyası indirilemedi.',
     failureColumnError: 'Hata',
     skippedColumnReason: 'Neden',
     skippedTableIntro: '{count} not atlandı ve değiştirilmedi:',
+    valuesWillNotBeWrittenIntro:
+      'Yazılmayacak değerler: {count}. Her notun geri kalanı yazılacak:',
+    valuesNotWrittenIntro:
+      'Yazılmayan değerler: {count}. Her notun geri kalanı yazıldı:',
+    invalidPropertyNames:
+      "Geçerli bir özellik adı değil: {names}. '>' etrafındaki her parçanın bir adı olmalıdır - eklenti ayarlarında düzeltin.",
     skippedUnsavedChanges:
       'Notta açık bir düzenleyicide kaydedilmemiş değişiklikler var. Kaydedin veya kapatın, ardından yeni bir önizleme çalıştırın.',
     skippedExcalidrawUnsaved:
@@ -92,6 +111,12 @@ export const STRINGS_TR: Strings = {
       propertyNameRequired: 'Bir özellik adı girin.',
       counterNameCollision:
         'Bu ad zaten yukarıdaki başka bir özellik tarafından kullanılıyor.',
+      invalidPath:
+        "'>' etrafındaki her parçanın bir adı olmalıdır, örneğin meta > updated.",
+      dateNameCollision:
+        'Bu eklentinin başka bir tarihi bu adı zaten kullanıyor.',
+      nestingConflict:
+        'Bu ad ile bu eklentinin başka bir özellik adı iç içe (meta ve meta > updated gibi). Birbirini içermeyen adlar kullanın.',
     },
     description: {
       syncIntro:
@@ -102,6 +127,8 @@ export const STRINGS_TR: Strings = {
     dates: {
       enableNoneHint:
         'Eklentiyi kurmak için yukarıdaki tarihlerden en az birini açın.',
+      dotHint:
+        "Bu, adında nokta olan tek bir özelliktir. Onu bir grubun içine koymak için bunun yerine '>' kullanın, örneğin meta > updated.",
       automatic: {
         name: 'Otomatik tarihler',
         desc: 'Eklentinin aşağıdaki tarihleri kendiliğinden güncel tutmasına izin verin: oluşturma tarihi bir notun ilk düzenlemesinde eklenir, son düzenleme tarihi her düzenlemede ve son açılma tarihi bir notu açtığınızda eklenir. Kapalıyken tarihler yalnızca "Geçerli dosyadaki tarihleri güncelle" komutu ve toplu araçlar üzerinden değişir.',
@@ -113,14 +140,16 @@ export const STRINGS_TR: Strings = {
         enableDesc:
           'Henüz oluşturma tarihi olmayan notlara bir tarih ekle. Notun ilk düzenlemesinde eklenir.',
         propertyName: 'Oluşturma özelliği',
-        propertyDesc: 'Oluşturma tarihinin kaydedildiği özellik adı.',
+        propertyDesc:
+          "Oluşturma tarihinin kaydedildiği özellik adı. Bir grubun içine koymak için seviyeleri '>' ile ayırın, örneğin meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: 'Son düzenleme tarihini izle',
         enableDesc: 'Notu her düzenlediğinizde bu tarihi güncelle.',
         propertyName: 'Güncelleme özelliği',
-        propertyDesc: 'Son düzenleme tarihinin kaydedildiği özellik adı.',
+        propertyDesc:
+          "Son düzenleme tarihinin kaydedildiği özellik adı. Bir grubun içine koymak için seviyeleri '>' ile ayırın, örneğin meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -128,13 +157,15 @@ export const STRINGS_TR: Strings = {
         enableDesc:
           'Bir notu her düzenlediğinizde bir artan sayısal bir özellik ekle. Kesin bir geçmiş değil, yaklaşık bir etkinlik sayacıdır.',
         propertyName: 'Düzenleme sayacı özelliği',
-        propertyDesc: 'Düzenleme sayacının kaydedildiği özellik adı.',
+        propertyDesc:
+          "Düzenleme sayacının kaydedildiği özellik adı. Bir grubun içine koymak için seviyeleri '>' ile ayırın, örneğin meta > edits.",
       },
       viewed: {
         enableName: 'Son açılma tarihini izle',
         enableDesc: 'Notu her açtığınızda tarihi kaydet.',
         propertyName: 'Görüntüleme özelliği',
-        propertyDesc: 'Son açılma tarihinin kaydedildiği özellik adı.',
+        propertyDesc:
+          "Son açılma tarihinin kaydedildiği özellik adı. Bir grubun içine koymak için seviyeleri '>' ile ayırın, örneğin meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

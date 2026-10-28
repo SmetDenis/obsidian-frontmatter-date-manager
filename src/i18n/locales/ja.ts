@@ -51,6 +51,18 @@ export const STRINGS_JA: Strings = {
       'すべての日付は入力済みで、前回の更新以降ノートは変更されていません。',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "プラグイン設定の日付プロパティ名が正しくありません。'>' の前後の各部分に名前が必要です。例: meta > updated",
+    propertySkippedOnce:
+      'Frontmatter Date Manager, {file}: {reason} ほかの日付は通常どおり書き込まれます。このメッセージはセッションごとに1回表示されます。',
+    skippedParentNotGroup:
+      '"{name}" は書き込まれませんでした: "{parent}" にグループではない値があります。',
+    skippedSharedGroup:
+      '"{name}" は書き込まれませんでした: "{parent}" は YAML の参照 (& と *) で別のプロパティと共有されており、書き込むと両方が変わります。',
+    skippedHoldsContainer:
+      '"{name}" は書き込まれませんでした: そこにはグループまたはリストがあり、プラグインはそれを置き換えません。',
+    skippedInvalidName:
+      '"{name}" は有効なプロパティ名ではありません: \'>\' の前後の各部分に名前が必要です。プラグイン設定で修正してください。',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -80,6 +92,7 @@ export const STRINGS_JA: Strings = {
     pagerNext: '次へ',
     pageInfo: '{total} ページ中 {current} ページ',
     downloadFullPreview: '完全なプレビューをダウンロード',
+    downloadThisList: 'この一覧をダウンロード',
     downloadSuccess:
       '{count} 行をダウンロードしました。ファイル {filename} がダウンロードフォルダにあります。',
     downloadFailed: 'プレビューファイルをダウンロードできませんでした。',
@@ -87,6 +100,12 @@ export const STRINGS_JA: Strings = {
     skippedColumnReason: '理由',
     skippedTableIntro:
       '{count} 件のノートはスキップされ、変更されませんでした:',
+    valuesWillNotBeWrittenIntro:
+      '書き込まれない値: {count} 件。各ノートの残りは書き込まれます:',
+    valuesNotWrittenIntro:
+      '書き込まれなかった値: {count} 件。各ノートの残りは書き込まれました:',
+    invalidPropertyNames:
+      "有効なプロパティ名ではありません: {names}。'>' の前後の各部分に名前が必要です - プラグイン設定で修正してください。",
     skippedUnsavedChanges:
       'このノートには開いているエディタに未保存の変更があります。保存するか閉じてから、新しいプレビューを実行してください。',
     skippedExcalidrawUnsaved:
@@ -98,6 +117,11 @@ export const STRINGS_JA: Strings = {
       propertyNameRequired: 'プロパティ名を入力してください。',
       counterNameCollision:
         'この名前は上の別のプロパティですでに使われています。',
+      invalidPath: "'>' の前後の各部分に名前が必要です。例: meta > updated",
+      dateNameCollision:
+        'このプラグインの別の日付がすでにこの名前を使っています。',
+      nestingConflict:
+        'この名前とこのプラグインの別のプロパティ名が入れ子になっています(meta と meta > updated のように)。互いを含まない名前を使ってください。',
     },
     description: {
       syncIntro:
@@ -108,6 +132,8 @@ export const STRINGS_JA: Strings = {
     dates: {
       enableNoneHint:
         'プラグインを設定するには、上の日付を少なくとも1つ有効にしてください。',
+      dotHint:
+        "これは名前にドットを含む1つのプロパティです。グループの中に入れるには、代わりに '>' を使ってください。例: meta > updated",
       automatic: {
         name: '自動日付更新',
         desc: 'プラグインが以下の日付を自動的に最新の状態に保つようにします: 作成日はノートの最初の編集時に追加され、最終編集日は編集のたびに、最終閲覧日はノートを開いたときに追加されます。オフの場合、日付は「現在のファイルの日付を更新」コマンドと一括操作からのみ変更されます。',
@@ -119,14 +145,16 @@ export const STRINGS_JA: Strings = {
         enableDesc:
           'まだ作成日のないノートに作成日を追加します。ノートの最初の編集時に追加されます。',
         propertyName: '作成日のプロパティ',
-        propertyDesc: '作成日を保存するプロパティ名。',
+        propertyDesc:
+          "作成日を保存するプロパティ名。グループの中に入れるには、階層を '>' で区切ります。例: meta > created",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '最終編集日を追跡',
         enableDesc: 'ノートを編集するたびにこの日付を更新します。',
         propertyName: '更新日のプロパティ',
-        propertyDesc: '最終編集日を保存するプロパティ名。',
+        propertyDesc:
+          "最終編集日を保存するプロパティ名。グループの中に入れるには、階層を '>' で区切ります。例: meta > updated",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -134,13 +162,15 @@ export const STRINGS_JA: Strings = {
         enableDesc:
           'ノートを編集するたびに1ずつ増える数値プロパティを追加します。正確な履歴ではなく、おおよその活動量の目安です。',
         propertyName: '編集回数のプロパティ',
-        propertyDesc: '編集回数を保存するプロパティ名。',
+        propertyDesc:
+          "編集回数を保存するプロパティ名。グループの中に入れるには、階層を '>' で区切ります。例: meta > edits",
       },
       viewed: {
         enableName: '最終閲覧日を追跡',
         enableDesc: 'ノートを開くたびに日付を保存します。',
         propertyName: '閲覧日のプロパティ',
-        propertyDesc: '最終閲覧日を保存するプロパティ名。',
+        propertyDesc:
+          "最終閲覧日を保存するプロパティ名。グループの中に入れるには、階層を '>' で区切ります。例: meta > viewed",
         propertyPlaceholder: 'Viewed',
       },
     },

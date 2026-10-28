@@ -46,6 +46,18 @@ export const STRINGS_FA: Strings = {
       'همه تاریخ‌ها از پیش پر شده‌اند و محتوای یادداشت از آخرین به‌روزرسانی تغییر نکرده است.',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "نام‌های ویژگی تاریخ در تنظیمات افزونه معتبر نیستند. هر بخش در دو طرف '>' باید نام داشته باشد، مثلاً meta > updated.",
+    propertySkippedOnce:
+      'Frontmatter Date Manager، {file}: {reason} تاریخ‌های دیگر طبق معمول نوشته می‌شوند. این پیام در هر نشست یک بار نمایش داده می‌شود.',
+    skippedParentNotGroup:
+      '"{name}" نوشته نشد: "{parent}" مقداری دارد که گروه نیست.',
+    skippedSharedGroup:
+      '"{name}" نوشته نشد: "{parent}" از راه یک ارجاع YAML (& و *) با ویژگی دیگری مشترک است و نوشتن در آن هر دو را تغییر می‌دهد.',
+    skippedHoldsContainer:
+      '"{name}" نوشته نشد: آنجا یک گروه یا فهرست است که افزونه هرگز آن را جایگزین نمی‌کند.',
+    skippedInvalidName:
+      '"{name}" نام ویژگی معتبری نیست: هر بخش در دو طرف \'>\' باید نام داشته باشد. آن را در تنظیمات افزونه اصلاح کنید.',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -75,12 +87,19 @@ export const STRINGS_FA: Strings = {
     pagerNext: 'بعدی',
     pageInfo: 'صفحه {current} از {total}',
     downloadFullPreview: 'دانلود پیش‌نمایش کامل',
+    downloadThisList: 'دانلود این فهرست',
     downloadSuccess:
       'تعداد {count} ردیف به‌صورت {filename} در پوشه دانلودهای شما دانلود شد.',
     downloadFailed: 'دانلود پرونده پیش‌نمایش ممکن نشد.',
     failureColumnError: 'خطا',
     skippedColumnReason: 'دلیل',
     skippedTableIntro: '{count} یادداشت رد شد و بدون تغییر باقی ماند:',
+    valuesWillNotBeWrittenIntro:
+      'مقدارهایی که نوشته نمی‌شوند: {count}. بقیهٔ هر یادداشت نوشته می‌شود:',
+    valuesNotWrittenIntro:
+      'مقدارهایی که نوشته نشدند: {count}. بقیهٔ هر یادداشت نوشته شد:',
+    invalidPropertyNames:
+      "نام ویژگی نامعتبر: {names}. هر بخش در دو طرف '>' باید نام داشته باشد - آن را در تنظیمات افزونه اصلاح کنید.",
     skippedUnsavedChanges:
       'این یادداشت تغییرات ذخیره‌نشده‌ای در یک ویرایشگر باز دارد. آن را ذخیره یا ببندید، سپس پیش‌نمایش جدیدی اجرا کنید.',
     skippedExcalidrawUnsaved:
@@ -92,6 +111,12 @@ export const STRINGS_FA: Strings = {
       propertyNameRequired: 'نام یک ویژگی را وارد کنید.',
       counterNameCollision:
         'این نام قبلاً توسط ویژگی دیگری در بالا استفاده شده است.',
+      invalidPath:
+        "هر بخش در دو طرف '>' باید نام داشته باشد، مثلاً meta > updated.",
+      dateNameCollision:
+        'تاریخ دیگری از این افزونه از قبل از این نام استفاده می‌کند.',
+      nestingConflict:
+        'این نام و نام ویژگی دیگری از این افزونه درون یکدیگرند (مانند meta و meta > updated). از نام‌هایی استفاده کنید که یکدیگر را در بر نمی‌گیرند.',
     },
     description: {
       syncIntro:
@@ -102,6 +127,8 @@ export const STRINGS_FA: Strings = {
     dates: {
       enableNoneHint:
         'برای راه‌اندازی افزونه، دست‌کم یکی از تاریخ‌های بالا را روشن کنید.',
+      dotHint:
+        "این یک ویژگی با نقطه در نامش است. برای قرار دادن آن درون یک گروه، به جای آن از '>' استفاده کنید، مثلاً meta > updated.",
       automatic: {
         name: 'تاریخ‌های خودکار',
         desc: 'اجازه بده افزونه تاریخ‌های زیر را خودش به‌روز نگه دارد: تاریخ ایجاد در نخستین ویرایش یادداشت افزوده می‌شود، تاریخ آخرین ویرایش در هر ویرایش، و تاریخ آخرین بازکردن هنگام بازکردن یادداشت. وقتی خاموش باشد، تاریخ‌ها فقط از طریق فرمان «به‌روزرسانی تاریخ‌ها در پرونده فعلی» و ابزارهای گروهی تغییر می‌کنند.',
@@ -113,7 +140,8 @@ export const STRINGS_FA: Strings = {
         enableDesc:
           'افزودن تاریخ ایجاد به یادداشت‌هایی که هنوز آن را ندارند. در نخستین ویرایش یادداشت افزوده می‌شود.',
         propertyName: 'ویژگی تاریخ ایجاد',
-        propertyDesc: 'نام ویژگی‌ای که تاریخ ایجاد در آن ذخیره می‌شود.',
+        propertyDesc:
+          "نام ویژگی‌ای که تاریخ ایجاد در آن ذخیره می‌شود. برای قرار دادن آن درون یک گروه، سطح‌ها را با '>' جدا کنید، مثلاً meta > created.",
         propertyPlaceholder: 'Created',
       },
       updated: {
@@ -121,7 +149,8 @@ export const STRINGS_FA: Strings = {
         enableDesc:
           'هر بار که یادداشت را ویرایش می‌کنید این تاریخ را به‌روز کن.',
         propertyName: 'ویژگی به‌روزرسانی',
-        propertyDesc: 'نام ویژگی‌ای که تاریخ آخرین ویرایش در آن ذخیره می‌شود.',
+        propertyDesc:
+          "نام ویژگی‌ای که تاریخ آخرین ویرایش در آن ذخیره می‌شود. برای قرار دادن آن درون یک گروه، سطح‌ها را با '>' جدا کنید، مثلاً meta > updated.",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -129,13 +158,15 @@ export const STRINGS_FA: Strings = {
         enableDesc:
           'افزودن یک ویژگی عددی که هر بار یادداشتی را ویرایش می‌کنید یک واحد بالا می‌رود. یک شمارنده تقریبی فعالیت، نه یک تاریخچه دقیق.',
         propertyName: 'ویژگی شمار ویرایش‌ها',
-        propertyDesc: 'نام ویژگی‌ای که شمار ویرایش‌ها در آن ذخیره می‌شود.',
+        propertyDesc:
+          "نام ویژگی‌ای که شمار ویرایش‌ها در آن ذخیره می‌شود. برای قرار دادن آن درون یک گروه، سطح‌ها را با '>' جدا کنید، مثلاً meta > edits.",
       },
       viewed: {
         enableName: 'ردیابی تاریخ آخرین بازکردن',
         enableDesc: 'ذخیره تاریخ هر بار که یادداشت را باز می‌کنید.',
         propertyName: 'ویژگی مشاهده',
-        propertyDesc: 'نام ویژگی‌ای که تاریخ آخرین بازکردن در آن ذخیره می‌شود.',
+        propertyDesc:
+          "نام ویژگی‌ای که تاریخ آخرین بازکردن در آن ذخیره می‌شود. برای قرار دادن آن درون یک گروه، سطح‌ها را با '>' جدا کنید، مثلاً meta > viewed.",
         propertyPlaceholder: 'Viewed',
       },
     },

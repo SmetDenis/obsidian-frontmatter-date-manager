@@ -20,6 +20,9 @@ obsidian-frontmatter-date-manager/
 │   ├── inversionDetection.ts         # Pure isInversion() + applyInversionFix() strategies.
 │   ├── renamePrediction.ts           # Pure wikilink-rewrite prediction for the experimental
 │   │                                 #   rename-link suppression (no Obsidian dep).
+│   ├── propertyPath.ts               # Pure nested property paths (`meta > updated`): parse,
+│   │                                 #   read/write inside groups, conflicts, hash 2nd pass.
+│   ├── propertySkip.ts               # Translated reason a property was left unwritten.
 │   ├── picomatch.d.ts                # Type decls for picomatch/posix.
 │   │
 │   ├── BulkPopulateTimestampsModal.ts  # Bulk wizard: fill dates from ctime/mtime.
@@ -30,7 +33,7 @@ obsidian-frontmatter-date-manager/
 │   │
 │   ├── bulk/                         # Shared building blocks composed by all 5 modals
 │   │   ├── PhaseModal.ts             #   Modal host: phase navigation + lifecycle only.
-│   │   ├── write.ts                  #   applyFrontmatterWrite + BulkSkipped sentinel.
+│   │   ├── write.ts                  #   applyFrontmatterWrite + BulkSkipped + writeTargetsOrSkip.
 │   │   ├── scan.ts                   #   runBatchedScan - batched compute + abort.
 │   │   ├── executePhase.ts           #   runExecutePhase - execute loop, failures + skips.
 │   │   ├── chrome.ts                 #   Render helpers (header/diff/failure/skipped table/...).
@@ -47,7 +50,7 @@ obsidian-frontmatter-date-manager/
 │   │
 │   ├── __mocks__/
 │   │   └── obsidian.ts               # Unit-test mock of the obsidian module (DOM no-ops; getLanguage stub).
-│   └── __tests__/                    # 39 vitest spec files + helpers/setup (incl. bulk/).
+│   └── __tests__/                    # 45 vitest spec files + helpers/setup (incl. bulk/).
 │
 ├── e2e/                             # WebdriverIO + real Obsidian (1.13.4). Manual, not CI.
 │   ├── specs/                       #   *.e2e.ts (Group A auto path, Group B bulk modals,
@@ -86,7 +89,7 @@ obsidian-frontmatter-date-manager/
 | --- | --- | --- |
 | `src/` | All production code | Bundled from `main.ts`; tests/mocks excluded from `tsconfig`. |
 | `src/bulk/` | Shared bulk toolkit | The testable seams: `write`, `scan`, `executePhase`, `pagination`, `export`. `chrome`/`PhaseModal` are DOM and not unit-tested. |
-| `src/__tests__/` | Unit tests | 36 specs (incl. `bulk/` + i18n `format`/`i18n`); mirrors the pure logic and computable seams. |
+| `src/__tests__/` | Unit tests | 45 specs (incl. `bulk/` + i18n `format`/`i18n`); mirrors the pure logic and computable seams. |
 | `e2e/` | Real-Obsidian integration | Only seams the mock cannot reach; needs Node <= 22 and a display. |
 | `screenshots/` | Marketing assets | Regenerated via `make screenshots`; a stale shot is a store regression. |
 

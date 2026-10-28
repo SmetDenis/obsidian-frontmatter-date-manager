@@ -1,6 +1,8 @@
 import { App, TFile } from 'obsidian';
 import FrontmatterDateManagerPlugin from '../main';
 import { strings } from '../i18n';
+import { PropertyTarget, writeTarget } from '../propertyPath';
+import { propertySkipMessage } from '../propertySkip';
 
 /**
  * Sentinel thrown by applyFrontmatterWrite when the target note's editor buffer
@@ -58,4 +60,29 @@ export async function applyFrontmatterWrite(
   if (plugin.settings.enableContentHashCheck ?? true) {
     await plugin.populateCacheForFile(file);
   }
+}
+
+/**
+ * Write a bulk run's values into the live frontmatter, from inside an
+ * `applyFrontmatterWrite` mutator. Returns the reasons for the values the live
+ * frontmatter refused while others were written (it can disagree with the
+ * preview's metadata-cache read). When it refuses every value, throws
+ * `BulkSkipped` with those reasons instead: the note is listed as skipped,
+ * and Obsidian does not re-serialize - and so rewrite - a note nothing was
+ * written to.
+ */
+export function writeTargetsOrSkip(
+  frontmatter: Record<string, unknown>,
+  values: Array<[PropertyTarget, string | number | null]>,
+): string[] {
+  const refused: string[] = [];
+  let written = false;
+  for (const [target, value] of values) {
+    if (value === null) continue;
+    const outcome = writeTarget(frontmatter, target, value);
+    if (outcome.written) written = true;
+    if (outcome.skip) refused.push(propertySkipMessage(outcome.skip));
+  }
+  if (!written) throw new BulkSkipped(refused.join(' '));
+  return refused;
 }

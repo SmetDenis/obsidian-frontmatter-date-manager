@@ -230,21 +230,23 @@ export function renderPaginatedDiffTable(
 export function renderDownloadPreviewButton(
   parent: HTMLElement,
   onClick: () => void,
+  // Under a list of skipped or failed notes the button says what it downloads
+  // ("Download this list"): a modal can show such a list next to the full
+  // preview, and two identical labels would not tell the files apart.
+  label: string = strings.bulkChrome.downloadFullPreview,
 ): void {
   if (Platform.isMobileApp) return;
   const wrapper = parent.createDiv({
     cls: 'frontmatter-date-manager-bulk-download',
   });
-  new ButtonComponent(wrapper)
-    .setButtonText(strings.bulkChrome.downloadFullPreview)
-    .onClick(() => {
-      onClick();
-    });
+  new ButtonComponent(wrapper).setButtonText(label).onClick(() => {
+    onClick();
+  });
 }
 
 /**
  * Render the list of items that failed during execution as a paginated
- * `File | Error` table plus a "Download full preview" button. This is the
+ * `File | Error` table plus a "Download this list" button. This is the
  * user-facing channel for execute-phase failures: `logError` is a no-op in
  * production, so the console shows nothing - the failing paths and reasons must
  * be presented here.
@@ -257,14 +259,18 @@ export function renderFailureTable(
   const columns = [strings.common.file, strings.bulkChrome.failureColumnError];
   const rows = failures.map((f) => [f.label, f.message]);
   renderPaginatedDiffTable(parent, { columns, rows });
-  renderDownloadPreviewButton(parent, () => {
-    downloadPreviewAsFile(
-      plugin,
-      columns,
-      rows,
-      'frontmatter-date-manager-failures',
-    );
-  });
+  renderDownloadPreviewButton(
+    parent,
+    () => {
+      downloadPreviewAsFile(
+        plugin,
+        columns,
+        rows,
+        'frontmatter-date-manager-failures',
+      );
+    },
+    strings.bulkChrome.downloadThisList,
+  );
 }
 
 /**
@@ -279,27 +285,33 @@ export function renderSkippedTable(
   parent: HTMLElement,
   plugin: FrontmatterDateManagerPlugin,
   skipped: ExecuteSkip[],
+  // A `{count}` template. Defaults to "notes skipped and left unchanged"; the
+  // property-level tables (a value that cannot be written while the rest of
+  // the note is) pass their own.
+  intro: string = strings.bulkChrome.skippedTableIntro,
 ): void {
   const section = parent.createDiv({
     cls: 'frontmatter-date-manager-bulk-skipped',
   });
   section.createEl('p', {
     cls: 'frontmatter-date-manager-bulk-skipped-intro',
-    text: format(strings.bulkChrome.skippedTableIntro, {
-      count: skipped.length,
-    }),
+    text: format(intro, { count: skipped.length }),
   });
   const columns = [strings.common.file, strings.bulkChrome.skippedColumnReason];
   const rows = skipped.map((s) => [s.label, s.reason]);
   renderPaginatedDiffTable(section, { columns, rows });
-  renderDownloadPreviewButton(section, () => {
-    downloadPreviewAsFile(
-      plugin,
-      columns,
-      rows,
-      'frontmatter-date-manager-skipped',
-    );
-  });
+  renderDownloadPreviewButton(
+    section,
+    () => {
+      downloadPreviewAsFile(
+        plugin,
+        columns,
+        rows,
+        'frontmatter-date-manager-skipped',
+      );
+    },
+    strings.bulkChrome.downloadThisList,
+  );
 }
 
 export interface ProgressHandle {

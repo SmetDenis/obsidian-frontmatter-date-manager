@@ -28,6 +28,7 @@ Aktualisiert automatisch die Datumsangaben `created`, `updated` und `viewed` im 
 - Automatisches Setzen eines fehlenden Feldes `created` bei der ersten Bearbeitung einer Notiz (synchron mit `ctime`)
 - Automatisches Setzen des Feldes `viewed` beim Öffnen einer Datei - eine einzigartige Funktion, die andere Plugins nicht bieten (standardmäßig deaktiviert)
 - Zähle, wie oft du jede Notiz bearbeitest (`updated_count`, standardmäßig deaktiviert) - ein ungefähres Aktivitätssignal, das du in Bases/Dataview sortieren oder filtern kannst, um deine meistbearbeiteten Notizen zu finden
+- Lege jedes Datum oder den Bearbeitungszähler in eine Gruppe (`meta > updated`), frei gemischt mit Eigenschaften der obersten Ebene
 - Anpassbares Datumsformat (verwendet die [date-fns](https://date-fns.org/v4.1.0/docs/format)-Syntax)
 - Zeitzonenunterstützung mit Autovervollständigung für IANA-Zeitzonen
 - Eigenschaftstypen Text und Zahl (Zahl nützlich für Unix-Zeitstempel)
@@ -99,13 +100,13 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 |------------------------------------|-------------------------|----------------------------------------------------------------------------------|
 | Automatische Daten                 | `true`                  | Lässt das Plugin die untenstehenden Daten selbstständig hinzufügen und aktualisieren; ist der Schalter aus, schreiben nur der Befehl und die Massen-Tools |
 | Erstellungsdatum erfassen          | `true`                  | Fügt Notizen, die noch keines haben, bei der ersten Bearbeitung der Notiz ein Erstellungsdatum hinzu |
-| Eigenschaft für Erstellung         | `created`               | Eigenschaftsname, unter dem das Erstellungsdatum gespeichert wird                |
+| Eigenschaft für Erstellung         | `created`               | Eigenschaftsname, unter dem das Erstellungsdatum gespeichert wird; `>` legt sie in eine Gruppe, z. B. `meta > created` (siehe „Verschachtelte Eigenschaften") |
 | Datum der letzten Bearbeitung erfassen | `true`              | Aktualisiert dieses Datum jedes Mal, wenn du die Notiz bearbeitest               |
-| Eigenschaft für Aktualisierung     | `updated`               | Eigenschaftsname, unter dem das Datum der letzten Bearbeitung gespeichert wird   |
+| Eigenschaft für Aktualisierung     | `updated`               | Eigenschaftsname, unter dem das Datum der letzten Bearbeitung gespeichert wird; `>` legt sie in eine Gruppe |
 | Bearbeitungen zählen               | `false`                 | Fügt eine Zahleneigenschaft hinzu, die bei jeder Bearbeitung um eins steigt (ein ungefährer Aktivitätszähler, keine exakte Historie) |
-| Eigenschaft für Bearbeitungszähler | `updated_count`         | Eigenschaftsname, unter dem der Bearbeitungszähler gespeichert wird              |
+| Eigenschaft für Bearbeitungszähler | `updated_count`         | Eigenschaftsname, unter dem der Bearbeitungszähler gespeichert wird; `>` legt sie in eine Gruppe |
 | Datum „zuletzt geöffnet" erfassen  | `false`                 | Speichert das Datum bei jedem Öffnen der Notiz                                   |
-| Eigenschaft für „angesehen"        | `viewed`                | Eigenschaftsname, unter dem das Datum „zuletzt geöffnet" gespeichert wird        |
+| Eigenschaft für „angesehen"        | `viewed`                | Eigenschaftsname, unter dem das Datum „zuletzt geöffnet" gespeichert wird; `>` legt sie in eine Gruppe |
 | Datumsformat                       | `yyyy-MM-dd'T'HH:mm:ss` | Datums- und Zeitformat ([date-fns-Syntax](https://date-fns.org/v4.1.0/docs/format)) |
 | Zeitzone                           | `""` (System)           | IANA-Zeitzonenkennung; leer verwendet die Systemzeitzone                         |
 | Nur-Zahlen-Datumsangaben ohne Anführungszeichen speichern | `false` | Gibt für reine Ziffernformate Zahlen statt Text in Anführungszeichen aus       |
@@ -115,7 +116,7 @@ Jede Option lässt sich über die Einstellungssuche von Obsidian finden. Die Üb
 | Zu überspringende Dateien und Ordner | `""` (alle Dateien)   | Regeln im Gitignore-Stil: Zeilen schließen aus, `!` schließt wieder ein, `#` für Kommentare (eigene Unterseite) |
 | Änderungserkennung (Inhalts-Hashing) | `true`                | Schreibt das Datum nur, wenn sich der Inhalt tatsächlich ändert (SHA-256-Hashing) |
 | Was als Änderung gilt              | `body`                  | Was Aktualisierungen auslöst: `body`, `frontmatter` oder `both`                  |
-| Diese Eigenschaften ignorieren     | `[]`                    | Eigenschaften, die bei der Änderungserkennung ignoriert werden; mehrere auf einmal hinzufügen, durch Kommas getrennt |
+| Diese Eigenschaften ignorieren     | `[]`                    | Eigenschaften, die bei der Änderungserkennung ignoriert werden; mehrere auf einmal hinzufügen, durch Kommas getrennt; verschachtelte Namen mit `>` funktionieren auch |
 | Verzögerung für neue Dateien       | `5000` ms               | Wartezeit, bevor neu erstellte Notizen verarbeitet werden                        |
 | Cache beim Start automatisch befüllen | `true`               | Erstellt Änderungserkennungsdaten für nicht zwischengespeicherte Notizen beim Laden des Plugins |
 | Maximale Cache-Einträge            | `10000`                 | Die ältesten ungenutzten Einträge werden entfernt, wenn der Cache dieses Limit überschreitet |
@@ -143,6 +144,37 @@ Verfügbare Strategien: `Erstellungsdatum auf das Datum der letzten Bearbeitung 
 | `T`                     | 1776268200000 (Unix-ms)   |
 
 > **Hinweis:** Dieses Plugin verwendet **date-fns**, nicht Moment.js. Häufige Migration: `YYYY` -> `yyyy`, `DD` -> `dd`.
+
+## Verschachtelte Eigenschaften
+
+Jeder der vier Eigenschaftsnamen - Erstellungsdatum, Datum der letzten Bearbeitung, Datum „zuletzt geöffnet" und Bearbeitungszähler - kann in eine Gruppe zeigen: Trenne die Ebenen mit `>`. Namen der obersten Ebene und verschachtelte Namen lassen sich frei mischen, in beliebiger Tiefe:
+
+| Einstellung                    | Wert                     |
+|--------------------------------|--------------------------|
+| Eigenschaft für Erstellung     | `created`                |
+| Eigenschaft für Aktualisierung | `meta > updated`         |
+| Eigenschaft für „angesehen"    | `parent > meta > viewed` |
+
+```yaml
+created: 2026-10-21T09:00:00
+meta:
+  source: web
+  updated: 2026-10-21T10:30:00
+parent:
+  meta:
+    viewed: 2026-10-21T10:35:00
+```
+
+- Ein Name ohne `>` funktioniert wie bisher, mit einer Ausnahme zum Schutz deiner Daten: Eine Gruppe oder Liste an der Stelle eines Datums wird nicht mehr ersetzt (siehe unten). Ein Punkt bleibt Teil des Namens: `meta.updated` ist eine Eigenschaft der obersten Ebene, und die Einstellungen weisen unter dem Feld darauf hin.
+- Eine fehlende Gruppe wird am Ende der Eigenschaften angelegt, ein neues Datum kommt ans Ende seiner Gruppe. Andere Schlüssel der Gruppe und ihre Reihenfolge werden nie angefasst; ein leeres `meta:` wird einfach zur Gruppe.
+- Unterstützt werden nur Gruppen, keine Listen von Einträgen (`meta:` gefolgt von `- updated: ...`).
+- Steht an der Stelle der Gruppe etwas anderes (`meta: Entwurf`, eine Liste, eine Zahl), wird nur dieses Datum übersprungen, und das Plugin sagt dir warum: der Befehl **Zeitstempel für aktuelle Datei aktualisieren** in seiner Meldung, die Massenwerkzeuge in einer Tabelle, automatische Aktualisierungen einmal pro Sitzung. Eine Gruppe oder Liste an der Stelle eines Datums wird nie ersetzt - auch bei Namen der obersten Ebene.
+- In eine Gruppe, die über einen YAML-Verweis mit einer anderen Eigenschaft geteilt wird (`base: &shared` und `meta: *shared`), schreibt das Plugin nie - ein Datum dort würde auch unter der anderen Eigenschaft erscheinen. Dieses Datum wird übersprungen, und das Plugin sagt dir warum. Beachte: Obsidian selbst wandelt einen solchen Verweis in zwei getrennte Kopien um, sobald eine andere Eigenschaft der Notiz gespeichert wird; danach wird das Datum wie gewohnt geschrieben.
+- Zwei Namen können nicht ineinander liegen (`meta` und `meta > updated`) - die Einstellungen zeigen einen Fehler.
+- **Diese Eigenschaften ignorieren** versteht dieselbe Schreibweise (`meta > lastSync`).
+- Das Eigenschaften-Panel von Obsidian kann verschachtelte Werte nicht bearbeiten - bearbeite sie im Quellmodus. Bases und Dataview lesen sie mit einem Punkt: `meta.updated`.
+- Eine Namensänderung verschiebt keine Daten, die bereits unter dem alten Namen geschrieben wurden.
+- Aktualisiere das Plugin auf allen Geräten, bevor du zu einem verschachtelten Namen wechselst: Eine ältere Version schreibt `meta > updated` als eine Eigenschaft der obersten Ebene mit genau diesem Namen.
 
 ## Deine meistbearbeiteten Notizen finden (optional)
 
@@ -260,7 +292,7 @@ Für **iCloud, Syncthing, Dropbox oder andere dateibasierte Synchronisierung**: 
 Dieses Plugin ist vollständig lokal. Es hat kein Backend, stellt keine Netzwerkanfragen und sammelt keinerlei Telemetrie oder Analysedaten. Die Community-Plugin-Bewertungskarte listet die Berechtigungen auf, die der Code eines Plugins nutzen kann; hier ist genau, wofür dieses Plugin jede einzelne verwendet:
 
 - **Liest Markdown-Dateien in deinem Vault.** Die Massen-Tools (Datumsangaben befüllen, eine Eigenschaft umbenennen, Datumsangaben umformatieren, Datumsangaben außer der Reihe finden, den Änderungserkennungs-Cache neu aufbauen) arbeiten über den gesamten Vault hinweg, sodass sie deine Markdown-Notizen über Obsidians `getMarkdownFiles()` auflisten. Das Plugin zählt niemals Nicht-Markdown-Dateien auf (`getFiles()` wird nicht verwendet), sodass Anhänge, Bilder und andere Binärdateien niemals berührt werden.
-- **Schreibt nur die konfigurierten Datumseigenschaften.** Alle Änderungen laufen über Obsidians `processFrontMatter()`, das nur die von dir konfigurierten Eigenschaften `created` / `updated` / `viewed` berührt und den Notiztext, die Schlüsselreihenfolge, Kommentare und unbeteiligte Eigenschaften unberührt lässt.
+- **Schreibt nur die konfigurierten Datumseigenschaften.** Alle Änderungen laufen über Obsidians `processFrontMatter()`, das nur die von dir konfigurierten Eigenschaften `created` / `updated` / `viewed` berührt (auf oberster Ebene oder in einer von dir benannten Gruppe) und den Notiztext, die Schlüsselreihenfolge, Kommentare, unbeteiligte Eigenschaften - und jede Gruppe oder Liste an der Stelle eines Datums - unberührt lässt.
 - **Schreibt eine Begleitdatei in seinem eigenen Plugin-Ordner.** Der SHA-256-Änderungserkennungs-Cache (`hash-cache.json`) wird innerhalb von `.obsidian/plugins/frontmatter-date-manager/` geschrieben, niemals in deine Notizen.
 - **Nur lokaler Export.** Die Schaltfläche „Vollständige Vorschau herunterladen" speichert das Diff über den Browser als lokale `.tsv`-Datei und schreibt keine Datei in deinen Vault. Der Dateidownload ist nur am Desktop verfügbar - auf Mobilgeräten bleibt das vollständige Diff in der Tabelle auf dem Bildschirm lesbar.
 

@@ -44,6 +44,17 @@ export const STRINGS_ZH_TW: Strings = {
     ignoredUnchanged: '所有日期都已填寫完成，且此筆記自上次更新後未曾變更。',
     ignoredNoDateKeys:
       'No date property names are configured in the plugin settings.',
+    ignoredInvalidPropertyName:
+      "外掛設定中的日期屬性名稱無效。'>' 兩側的每一部分都需要名稱，例如 meta > updated。",
+    propertySkippedOnce:
+      'Frontmatter Date Manager，{file}：{reason} 其他日期照常寫入。此訊息每個工作階段只顯示一次。',
+    skippedParentNotGroup: '未寫入 "{name}"："{parent}" 中的值不是群組。',
+    skippedSharedGroup:
+      '未寫入 "{name}"："{parent}" 透過 YAML 參照（& 和 *）與另一個屬性共用，寫入會同時改變兩者。',
+    skippedHoldsContainer:
+      '未寫入 "{name}"：該位置是一個群組或清單，外掛從不取代它們。',
+    skippedInvalidName:
+      '"{name}" 不是有效的屬性名稱：\'>\' 兩側的每一部分都需要名稱。請在外掛設定中修正。',
     ignoredInvalidFileTimes:
       "The file's creation or modification time could not be read.",
     ignoredNotMarkdown: 'Only Markdown notes get date properties.',
@@ -70,11 +81,17 @@ export const STRINGS_ZH_TW: Strings = {
     pagerNext: '下一頁',
     pageInfo: '第 {current} 頁，共 {total} 頁',
     downloadFullPreview: '下載完整預覽',
+    downloadThisList: '下載此清單',
     downloadSuccess: '已下載 {count} 列為 {filename} 至您的下載資料夾。',
     downloadFailed: '無法下載預覽檔案。',
     failureColumnError: '錯誤',
     skippedColumnReason: '原因',
     skippedTableIntro: '{count} 個筆記已略過且未被變更:',
+    valuesWillNotBeWrittenIntro:
+      '將不會寫入的值：{count} 個。每則筆記的其餘部分將會寫入：',
+    valuesNotWrittenIntro: '未寫入的值：{count} 個。每則筆記的其餘部分已寫入：',
+    invalidPropertyNames:
+      "無效的屬性名稱：{names}。'>' 兩側的每一部分都需要名稱 - 請在外掛設定中修正。",
     skippedUnsavedChanges:
       '該筆記在開啟的編輯器中有未儲存的變更。請儲存或關閉它，然後執行新的預覽。',
     skippedExcalidrawUnsaved:
@@ -85,6 +102,10 @@ export const STRINGS_ZH_TW: Strings = {
     validation: {
       propertyNameRequired: '請輸入屬性名稱。',
       counterNameCollision: '此名稱已被上面的另一個屬性使用。',
+      invalidPath: "'>' 兩側的每一部分都需要名稱，例如 meta > updated。",
+      dateNameCollision: '此外掛的另一個日期已在使用這個名稱。',
+      nestingConflict:
+        '這個名稱與此外掛的另一個屬性名稱互相巢狀（如 meta 和 meta > updated）。請使用互不包含的名稱。',
     },
     description: {
       syncIntro:
@@ -94,6 +115,8 @@ export const STRINGS_ZH_TW: Strings = {
     },
     dates: {
       enableNoneHint: '請在上方至少開啟一個日期，以設定此外掛。',
+      dotHint:
+        "這是一個名稱中含有點的單一屬性。若要將它放入群組，請改用 '>'，例如 meta > updated。",
       automatic: {
         name: '自動日期',
         desc: '讓外掛自動將下方的日期保持在最新狀態：建立日期會在筆記首次編輯時新增，上次編輯日期會在每次編輯時更新，上次開啟日期會在您開啟筆記時新增。關閉後，日期僅能透過「更新目前檔案的日期」命令和批次工具變更。',
@@ -105,14 +128,16 @@ export const STRINGS_ZH_TW: Strings = {
         enableDesc:
           '為尚未擁有建立日期的筆記新增建立日期。此日期會在筆記首次編輯時新增。',
         propertyName: '建立日期屬性',
-        propertyDesc: '儲存建立日期的屬性名稱。',
+        propertyDesc:
+          "儲存建立日期的屬性名稱。若要將它放入群組，請用 '>' 分隔層級，例如 meta > created。",
         propertyPlaceholder: 'Created',
       },
       updated: {
         enableName: '追蹤上次編輯日期',
         enableDesc: '每當您編輯筆記時更新此日期。',
         propertyName: '更新日期屬性',
-        propertyDesc: '儲存上次編輯日期的屬性名稱。',
+        propertyDesc:
+          "儲存上次編輯日期的屬性名稱。若要將它放入群組，請用 '>' 分隔層級，例如 meta > updated。",
         propertyPlaceholder: 'Updated',
       },
       updateCount: {
@@ -120,13 +145,15 @@ export const STRINGS_ZH_TW: Strings = {
         enableDesc:
           '新增一個數字屬性，每次編輯筆記時加一。這是大略的活動次數，並非精確的歷史紀錄。',
         propertyName: '編輯次數屬性',
-        propertyDesc: '儲存編輯次數的屬性名稱。',
+        propertyDesc:
+          "儲存編輯次數的屬性名稱。若要將它放入群組，請用 '>' 分隔層級，例如 meta > edits。",
       },
       viewed: {
         enableName: '追蹤上次開啟日期',
         enableDesc: '每次開啟筆記時儲存日期。',
         propertyName: '檢視日期屬性',
-        propertyDesc: '儲存上次開啟日期的屬性名稱。',
+        propertyDesc:
+          "儲存上次開啟日期的屬性名稱。若要將它放入群組，請用 '>' 分隔層級，例如 meta > viewed。",
         propertyPlaceholder: 'Viewed',
       },
     },

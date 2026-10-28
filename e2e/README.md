@@ -101,6 +101,26 @@ here.
   - UC3 - R11 stale-base: an externally-set `updated_count: 45` is read from disk
     and increments to `46` (native number), not clobbered from a stale cache.
   - UC4 - with the counter OFF an edit never writes `updated_count`.
+- `specs/nested-properties.e2e.ts` - property names with `>` (`meta > updated`)
+  through the real `processFrontMatter` serializer.
+  - N1 - `meta > updated` lands in an existing group, appended after its other
+    keys (whose order survives); `created` stays on top, the body survives;
+    opening the note writes `parent > meta > viewed` into new nested groups.
+  - N2 - a counter at `meta > edits` increments as a native unquoted number.
+  - N3 - a note with `meta: черновик` stays byte for byte unchanged; in a note
+    missing `created`, the flat `created` is still written and `meta` is kept.
+  - N4 - in "frontmatter" tracking mode a change to ONLY the plugin's nested
+    key (as a sync from another device would make) is not an edit - no
+    re-stamp, `mtime` unmoved; a change to another key of the same group is.
+  - N5 - an empty `meta:` becomes the group in place, keeping key order.
+  - N7 - a group shared through a YAML reference (`base: &shared`,
+    `meta: *shared`) is never written into: that note stays byte for byte
+    unchanged, while a control note edited at the same time gets its date.
+  - N6 - the settings form: typing `meta.updated` shows the "one property
+    with a dot" hint at once (the 1.13 runtime re-evaluates `visible` after
+    every control change), `meta > updated` hides it, `meta >` is never stored
+    and shows its error in the row, and the "Ignore these properties" input
+    refuses the same invalid entry.
 - `specs/external-fresh-updated.e2e.ts`
   - F1 - freshness / no-op-write guard: an external write that changes the body
     **and** carries a fresh, correctly-formatted `updated` is preserved
