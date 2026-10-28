@@ -526,7 +526,21 @@ export class ReformatDateModal extends PhaseModal {
       return row;
     });
 
+    // Each download button sits right under the table it downloads (the
+    // `[check]` note explains rows of the diff, so it stays with it), and the
+    // warning stays next to the Run button it is about.
     renderPaginatedDiffTable(contentEl, { columns, rows });
+
+    if (this.slashOrder !== 'skip' && ambiguousCount > 0) {
+      contentEl.createDiv({
+        cls: 'frontmatter-date-manager-reformat-note',
+        text: strings.modals.reformat.checkNote,
+      });
+    }
+
+    renderDownloadPreviewButton(contentEl, () => {
+      downloadPreviewAsFile(this.plugin, columns, rows);
+    });
 
     if (notWritable.length > 0) {
       renderSkippedTable(
@@ -537,18 +551,7 @@ export class ReformatDateModal extends PhaseModal {
       );
     }
 
-    if (this.slashOrder !== 'skip' && ambiguousCount > 0) {
-      contentEl.createDiv({
-        cls: 'frontmatter-date-manager-reformat-note',
-        text: strings.modals.reformat.checkNote,
-      });
-    }
-
     renderWarning(contentEl, strings.modals.reformat.rewriteWarning);
-
-    renderDownloadPreviewButton(contentEl, () => {
-      downloadPreviewAsFile(this.plugin, columns, rows);
-    });
 
     renderButtonBar(contentEl, {
       primary: {

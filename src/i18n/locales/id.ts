@@ -87,6 +87,7 @@ export const STRINGS_ID: Strings = {
     pagerNext: 'Berikutnya',
     pageInfo: 'Halaman {current} dari {total}',
     downloadFullPreview: 'Unduh pratinjau lengkap',
+    downloadThisList: 'Unduh daftar ini',
     downloadSuccess:
       'Mengunduh {count} baris sebagai {filename} ke folder unduhan Anda.',
     downloadFailed: 'Tidak dapat mengunduh berkas pratinjau.',

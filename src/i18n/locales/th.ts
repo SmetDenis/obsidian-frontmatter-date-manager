@@ -85,6 +85,7 @@ export const STRINGS_TH: Strings = {
     pagerNext: 'ถัดไป',
     pageInfo: 'หน้า {current} จาก {total}',
     downloadFullPreview: 'ดาวน์โหลดตัวอย่างทั้งหมด',
+    downloadThisList: 'ดาวน์โหลดรายการนี้',
     downloadSuccess:
       'ดาวน์โหลด {count} แถวเป็นไฟล์ {filename} ไปยังโฟลเดอร์ดาวน์โหลดแล้ว',
     downloadFailed: 'ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้',

@@ -86,6 +86,7 @@ export const STRINGS_ZH_CN: Strings = {
     pagerNext: '下一页',
     pageInfo: '第 {current} 页，共 {total} 页',
     downloadFullPreview: '下载完整预览',
+    downloadThisList: '下载此列表',
     downloadSuccess: '已下载 {count} 行，文件 {filename} 已保存到下载文件夹。',
     downloadFailed: '无法下载预览文件。',
     failureColumnError: '错误',

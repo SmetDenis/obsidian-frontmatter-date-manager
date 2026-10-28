@@ -88,6 +88,7 @@ export const STRINGS_DE: Strings = {
     pagerNext: 'Weiter',
     pageInfo: 'Seite {current} von {total}',
     downloadFullPreview: 'Vollständige Vorschau herunterladen',
+    downloadThisList: 'Diese Liste herunterladen',
     downloadSuccess:
       '{count} Zeile(n) als {filename} in Ihren Downloads-Ordner heruntergeladen.',
     downloadFailed: 'Die Vorschaudatei konnte nicht heruntergeladen werden.',

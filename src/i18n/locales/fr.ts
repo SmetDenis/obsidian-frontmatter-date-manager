@@ -87,6 +87,7 @@ export const STRINGS_FR: Strings = {
     pagerNext: 'Suivant',
     pageInfo: 'Page {current} sur {total}',
     downloadFullPreview: 'Télécharger l’aperçu complet',
+    downloadThisList: 'Télécharger cette liste',
     downloadSuccess:
       '{count} ligne(s) téléchargées sous {filename} dans votre dossier de téléchargements.',
     downloadFailed: 'Impossible de télécharger le fichier d’aperçu.',

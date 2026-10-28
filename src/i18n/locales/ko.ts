@@ -85,6 +85,7 @@ export const STRINGS_KO: Strings = {
     pagerNext: '다음',
     pageInfo: '{total} 중 {current} 페이지',
     downloadFullPreview: '전체 미리 보기 다운로드',
+    downloadThisList: '이 목록 다운로드',
     downloadSuccess:
       '{count}개 행을 {filename} 파일로 다운로드 폴더에 저장했습니다.',
     downloadFailed: '미리 보기 파일을 다운로드하지 못했습니다.',

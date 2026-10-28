@@ -98,6 +98,7 @@ export const STRINGS_EN = {
     pagerNext: 'Next',
     pageInfo: 'Page {current} of {total}',
     downloadFullPreview: 'Download full preview',
+    downloadThisList: 'Download this list',
     downloadSuccess:
       'Downloaded {count} row(s) as {filename} to your downloads folder.',
     downloadFailed: 'Could not download the preview file.',

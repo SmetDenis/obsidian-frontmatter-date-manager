@@ -87,6 +87,7 @@ export const STRINGS_ES: Strings = {
     pagerNext: 'Siguiente',
     pageInfo: 'Página {current} de {total}',
     downloadFullPreview: 'Descargar vista previa completa',
+    downloadThisList: 'Descargar esta lista',
     downloadSuccess:
       'Se descargaron {count} fila(s) como {filename} en tu carpeta de descargas.',
     downloadFailed: 'No se pudo descargar el archivo de vista previa.',

@@ -87,6 +87,7 @@ export const STRINGS_PT: Strings = {
     pagerNext: 'Seguinte',
     pageInfo: 'Página {current} de {total}',
     downloadFullPreview: 'Transferir pré-visualização completa',
+    downloadThisList: 'Transferir esta lista',
     downloadSuccess:
       'Transferidas {count} linha(s) como {filename} para a sua pasta de transferências.',
     downloadFailed:

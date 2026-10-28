@@ -87,6 +87,7 @@ export const STRINGS_PL: Strings = {
     pagerNext: 'Następna',
     pageInfo: 'Strona {current} z {total}',
     downloadFullPreview: 'Pobierz pełny podgląd',
+    downloadThisList: 'Pobierz tę listę',
     downloadSuccess:
       'Pobrano wierszy: {count}. Plik {filename} w folderze pobranych.',
     downloadFailed: 'Nie udało się pobrać pliku podglądu.',

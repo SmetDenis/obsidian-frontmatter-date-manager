@@ -87,6 +87,7 @@ export const STRINGS_TR: Strings = {
     pagerNext: 'Sonraki',
     pageInfo: 'Sayfa {current} / {total}',
     downloadFullPreview: 'Tam önizlemeyi indir',
+    downloadThisList: 'Bu listeyi indir',
     downloadSuccess:
       'İndirilen satır sayısı: {count}. {filename} dosyası indirilenler klasörünüze kaydedildi.',
     downloadFailed: 'Önizleme dosyası indirilemedi.',

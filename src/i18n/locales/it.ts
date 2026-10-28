@@ -87,6 +87,7 @@ export const STRINGS_IT: Strings = {
     pagerNext: 'Successiva',
     pageInfo: 'Pagina {current} di {total}',
     downloadFullPreview: 'Scarica anteprima completa',
+    downloadThisList: 'Scarica questo elenco',
     downloadSuccess:
       'Scaricate {count} riga/righe come {filename} nella cartella dei download.',
     downloadFailed: 'Impossibile scaricare il file di anteprima.',

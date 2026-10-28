@@ -85,6 +85,7 @@ export const STRINGS_VI: Strings = {
     pagerNext: 'Sau',
     pageInfo: 'Trang {current} trên {total}',
     downloadFullPreview: 'Tải về bản xem trước đầy đủ',
+    downloadThisList: 'Tải về danh sách này',
     downloadSuccess:
       'Đã tải về {count} dòng dưới dạng {filename} vào thư mục tải về của bạn.',
     downloadFailed: 'Không thể tải về tệp xem trước.',

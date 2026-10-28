@@ -92,6 +92,7 @@ export const STRINGS_JA: Strings = {
     pagerNext: '次へ',
     pageInfo: '{total} ページ中 {current} ページ',
     downloadFullPreview: '完全なプレビューをダウンロード',
+    downloadThisList: 'この一覧をダウンロード',
     downloadSuccess:
       '{count} 行をダウンロードしました。ファイル {filename} がダウンロードフォルダにあります。',
     downloadFailed: 'プレビューファイルをダウンロードできませんでした。',

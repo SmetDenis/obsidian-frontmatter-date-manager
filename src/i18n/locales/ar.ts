@@ -86,6 +86,7 @@ export const STRINGS_AR: Strings = {
     pagerNext: 'التالي',
     pageInfo: 'الصفحة {current} من {total}',
     downloadFullPreview: 'تنزيل المعاينة الكاملة',
+    downloadThisList: 'تنزيل هذه القائمة',
     downloadSuccess:
       'تم تنزيل عدد الصفوف: {count}. الملف {filename} في مجلد التنزيلات.',
     downloadFailed: 'تعذّر تنزيل ملف المعاينة.',

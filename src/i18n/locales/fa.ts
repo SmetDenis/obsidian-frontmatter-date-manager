@@ -87,6 +87,7 @@ export const STRINGS_FA: Strings = {
     pagerNext: 'بعدی',
     pageInfo: 'صفحه {current} از {total}',
     downloadFullPreview: 'دانلود پیش‌نمایش کامل',
+    downloadThisList: 'دانلود این فهرست',
     downloadSuccess:
       'تعداد {count} ردیف به‌صورت {filename} در پوشه دانلودهای شما دانلود شد.',
     downloadFailed: 'دانلود پرونده پیش‌نمایش ممکن نشد.',

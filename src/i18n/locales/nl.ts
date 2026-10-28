@@ -87,6 +87,7 @@ export const STRINGS_NL: Strings = {
     pagerNext: 'Volgende',
     pageInfo: 'Pagina {current} van {total}',
     downloadFullPreview: 'Volledig voorbeeld downloaden',
+    downloadThisList: 'Deze lijst downloaden',
     downloadSuccess:
       '{count} rij(en) gedownload als {filename} naar uw downloadmap.',
     downloadFailed: 'Het voorbeeldbestand kon niet worden gedownload.',

@@ -91,6 +91,7 @@ export const STRINGS_RU: Strings = {
     pagerNext: 'Следующая',
     pageInfo: 'Страница {current} из {total}',
     downloadFullPreview: 'Скачать полный предпросмотр',
+    downloadThisList: 'Скачать этот список',
     downloadSuccess:
       'Скачано строк: {count}. Файл {filename} в папке загрузок.',
     downloadFailed: 'Не удалось скачать файл предпросмотра.',

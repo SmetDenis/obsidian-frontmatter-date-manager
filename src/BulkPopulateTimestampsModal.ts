@@ -442,7 +442,12 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
       return row;
     });
 
+    // Each download button sits right under the table it downloads, and the
+    // warning stays next to the Run button it is about.
     renderPaginatedDiffTable(contentEl, { columns, rows });
+    renderDownloadPreviewButton(contentEl, () => {
+      downloadPreviewAsFile(this.plugin, columns, rows);
+    });
 
     if (notWritable.length > 0) {
       renderSkippedTable(
@@ -457,10 +462,6 @@ export class BulkPopulateTimestampsModal extends PhaseModal {
     if (isOverwrite) {
       renderWarning(contentEl, strings.modals.populate.previewOverwriteWarning);
     }
-
-    renderDownloadPreviewButton(contentEl, () => {
-      downloadPreviewAsFile(this.plugin, columns, rows);
-    });
 
     renderButtonBar(contentEl, {
       primary: {

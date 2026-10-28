@@ -86,6 +86,7 @@ export const STRINGS_UK: Strings = {
     pagerNext: 'Наступна',
     pageInfo: 'Сторінка {current} з {total}',
     downloadFullPreview: 'Завантажити повний попередній перегляд',
+    downloadThisList: 'Завантажити цей список',
     downloadSuccess:
       'Завантажено рядків: {count}. Файл {filename} у теці завантажень.',
     downloadFailed: 'Не вдалося завантажити файл попереднього перегляду.',

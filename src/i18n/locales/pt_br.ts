@@ -87,6 +87,7 @@ export const STRINGS_PT_BR: Strings = {
     pagerNext: 'Próxima',
     pageInfo: 'Página {current} de {total}',
     downloadFullPreview: 'Baixar visualização completa',
+    downloadThisList: 'Baixar esta lista',
     downloadSuccess:
       'Baixado(s) {count} linha(s) como {filename} na sua pasta de downloads.',
     downloadFailed: 'Não foi possível baixar o arquivo de visualização.',
