@@ -23,6 +23,8 @@ The user's notes are irreplaceable - never corrupt, lose, or reorder note data. 
 
 Claude's training knowledge about the Obsidian plugin API is outdated. **Always** use context7 MCP and official Obsidian developer documentation to verify API signatures, available methods, and current patterns before writing or modifying plugin code. Do not rely on memory - check the docs. Likewise, before bumping or trusting a pinned version, verify the **currently published** versions of the `obsidian` types and `eslint-plugin-obsidianmd` (the community review linter) against npm - the review bot always runs the latest linter, so a stale local pin can let new rule violations slip through.
 
+**Obsidian's own code is documentation too - read it.** The docs and `obsidian.d.ts` give signatures, not behavior: event order, which path fires an event, what a rename / sync / file-watcher / adapter actually does, how `mtime` moves. Every claim about runtime behavior (internals, event provenance, sync, mobile) - in code, a design, a review, or a reply on an issue - must be checked against the shipped bundle: `e2e/.obsidian-cache/obsidian-app/obsidian-<version>.asar` (the e2e pin), or the version the claim is about. An asar is a plain archive - extract with a short script or `grep -a`, no package install. Same rule for plugins we interact with (Excalidraw: `e2e/.obsidian-cache/obsidian-plugins/zsviczian/obsidian-excalidraw-plugin/<version>/`). A decision record quoting the bundle, a code comment, or an issue reporter's description is a lead to re-check, not verification. If the code is ambiguous, prove it with an e2e probe; if neither was done, call the claim unverified.
+
 Key Obsidian API used in this plugin:
 
 - `Plugin` lifecycle: `onload()`, `onunload()`

@@ -31,11 +31,12 @@
 
 ## Decision records
 
-Investigations whose outcome was "do not build this, and here is exactly why". Read one before re-opening the question it settles.
+Investigations and the decisions they led to - built, agreed or rejected, with exactly why. Read one before re-opening the question it settles.
 
 - [Rename-induced link rewrites and `updated`](./decisions/rename-induced-link-updates.md) - why the plugin stamps `updated` on notes it only link-rewrote after a rename, six candidate designs (five rejected, one - R2 - built), the zero-code workaround, and the reopening criteria (issue #18)
 - [The "Automatic dates" master switch](./decisions/automatic-dates-master-switch.md) - why `created` was not decoupled from the switch, how the switch is enforced at write time with auto/manual work origin, the manual fill-missing mode, the new-file window fixes, and the deferred opt-in "stamp when a note appears" mode (issue #24)
 - [Nested property paths](./decisions/nested-property-paths.md) - why nesting is written in the name with `>` (not a dot, no toggle, no migration), what happens when a parent is not a group or a group sits where a date goes, the name-conflict rules (equal date names refused only in the form), invalid stored paths, and the byte-identical hash filter (issue #28)
+- [Stamp `updated` when a note is renamed](./decisions/rename-as-edit.md) - scope agreed with the requester, not built yet: Obsidian 1.13.4 rename internals read from the bundle (a rename arriving through Sync or made outside Obsidian never fires `rename`), why the reporter's patch was rejected, the pipeline-based candidate and its marker state machine, alternatives, the questions asked with the requester's answers, and the open forks (issue #26)
 
 ## Plans
 
