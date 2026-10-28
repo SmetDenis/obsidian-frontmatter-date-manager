@@ -178,7 +178,7 @@ this.inProgressUpdates = null; this.updateQueue = new Iw;
 
 and `runAsyncLinkUpdate` sets `inProgressUpdates = []` immediately before running the op, restoring `null` in `finally`. So **during** the `rename` event it is an array for a link-updating rename and `null` for a bare `Vault.rename()`.
 
-Same caveat as F-C: undocumented internal, `unknown` cast, fail open on drift. Note also that a plugin calling `FileManager.renameFile` for a FOLDER may route straight to `vault.rename` (reported by a reviewer against Obsidian 1.14, not verified against 1.13.x) - so descendant rename events must not be assumed to carry the same signal.
+Same caveat as F-C: undocumented internal, `unknown` cast, fail open on drift. Note also that a plugin calling `FileManager.renameFile` for a FOLDER may route straight to `vault.rename` (reported by a reviewer against Obsidian 1.14, not verified against 1.13.x) - so descendant rename events must not be assumed to carry the same signal. **Checked 2026-10-04 against `obsidian-1.13.4.asar`:** in 1.13.4 `renameFile` has no folder branch, and a folder rename/move fires every child's `rename` inside the op, so each child event sees the array (F-F above, `rename-as-edit.md` R-1). Whether 1.14 changed this is still unverified.
 
 ### F-H: the alias rules have already changed across Obsidian versions
 
@@ -279,7 +279,7 @@ Remaining costs and limits, unchanged from C:
 - Reads every backlink source at rename time; folder moves need a hard cap and fail-open beyond it.
 - Covers file renames only: **not heading renames** (no `rename` event), not property renames.
 - Body hash mode only in practice.
-- On a second device the rewrites arrive as sync writes; whether a usable `rename` arrives first is **unverified** - assume it often fails open, and the resulting stamp syncs back.
+- On a second device the rewrites arrive as sync writes; whether a usable `rename` arrives first is **unverified** - assume it often fails open, and the resulting stamp syncs back. **Answered 2026-10-04 from `obsidian-1.13.4.asar`:** the sender's rename is never replayed as a `rename` on the receiving device - Obsidian Sync applies it as `delete` + `create` (its only own renames there are conflict copies), and external renames (Finder, iCloud, Syncthing, git) reach the vault the same way (see `rename-as-edit.md` R-3, R-4).
 - Still reimplements an undocumented, drifting grammar (F-H).
 
 ---
@@ -432,6 +432,7 @@ Kept because the reframing came out of the thread, not out of the code.
 - `CLAUDE.md` -> "File modification pipeline", "Freshness / no-op-write guard", "Hash cache lifecycle" - the machinery every design above had to interact with.
 - `docs/architecture.md` - the hash-gated write pipeline.
 - Issue #18; Obsidian core FR forum.obsidian.md/t/25629.
+- `docs/decisions/rename-as-edit.md` (issue #26) - the opposite request, "a rename is an edit"; re-checks F-A / F-G against the 1.13.4 bundle.
 
 ---
 
