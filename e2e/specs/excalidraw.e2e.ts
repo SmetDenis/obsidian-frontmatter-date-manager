@@ -613,6 +613,15 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
     const anchor = await createNote('x12-anchor', '# anchor\n');
     await openNote(anchor);
     await openDrawingInHiddenTab(drawing);
+    // The command below acts on the active note, and the hidden tab must sit
+    // behind it. Without this check an earlier scenario's leftovers (a stale
+    // active leaf, an empty leaf in front) made the scenario test the wrong
+    // note or flake on its own setup.
+    assert.equal(
+      await activeFilePath(),
+      anchor,
+      'setup: the anchor note must stay the active note',
+    );
 
     const before = await excalidrawLeafStates();
     assert.equal(
@@ -736,11 +745,25 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
   });
 });
 
-/** Open a note in the active leaf. */
+/** Open a note in the most recently active leaf and make it active.
+ * Not `getLeaf(false)`: once `closeAllDrawings()` has detached the drawing
+ * leaves, `workspace.activeLeaf` can still point at a detached leaf, and
+ * `getLeaf(false)` hands that leaf back - the note then opens nowhere visible
+ * (while `getActiveFile()` names it), and the main area keeps an empty leaf in
+ * front. */
 async function openNote(path: string): Promise<void> {
   await browser.executeObsidian(async ({ app, obsidian }, p) => {
     const f = app.vault.getAbstractFileByPath(p);
     if (!(f instanceof obsidian.TFile)) throw new Error(`no such file: ${p}`);
-    await app.workspace.getLeaf(false).openFile(f);
+    const leaf =
+      app.workspace.getMostRecentLeaf() ?? app.workspace.getLeaf(true);
+    await leaf.openFile(f, { active: true });
   }, path);
+}
+
+/** Path of the note the active leaf shows, or null. */
+async function activeFilePath(): Promise<string | null> {
+  return browser.executeObsidian(
+    ({ app }) => app.workspace.getActiveFile()?.path ?? null,
+  );
 }
