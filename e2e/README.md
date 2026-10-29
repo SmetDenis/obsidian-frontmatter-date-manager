@@ -91,7 +91,8 @@ here.
     rather than "a buffer has unsaved changes").
   - D10 - a size-changing re-stamp (variable-width `dateFormat`) does reach the
     editor and survives its next save, so the D9 defect is specific to the
-    size-neutral case.
+    size-neutral case. Its seed is an ISO value the `M/d/yyyy H:mm` format
+    cannot parse, so the size changes at any date and hour.
 
 - `specs/update-count.e2e.ts`
   - UC1 - first counted edit writes `updated_count: 1` as a **native unquoted
@@ -238,12 +239,15 @@ guard (`getWriteBlock`) is proven against the real thing.
 - X12 (issue #22) a drawing tab never shown since the layout loaded (a
   `DeferredView`: type `excalidraw`, no file) blocks nothing - a new note gets
   its dates automatically, the command reports a real write, and the gate is
-  `null` for both the note and the deferred drawing. Asserts the leaf is still
-  deferred at the end, or the scenario proved nothing.
+  `null` for both the note and the deferred drawing. Asserts as setup that the
+  anchor note is the active one and the tab is deferred, and that the leaf is
+  still deferred at the end, or the scenario proved nothing.
 - X13 (issue #22) the same with Excalidraw not loaded: the restored tab becomes a
   ghost pane (not a `FileView`, no file) and still blocks nothing. Both drive
   `WorkspaceLeaf.setViewState` on a hidden leaf - the branch Obsidian takes for
-  every tab at layout restore - via `openDrawingInHiddenTab`.
+  every tab at layout restore - via `openDrawingInHiddenTab`, on a brand-new
+  leaf (`createLeafInParent`) whose container is hidden: Obsidian defers only
+  a leaf it is not showing.
 
 Two Excalidraw behaviours shape how these are written, and both bit earlier
 drafts of this spec:
@@ -349,9 +353,10 @@ pipeline.
 
 ## Notes
 
-- `installerVersion: 'earliest'` / `browserVersion: 'latest'` pick the Obsidian
-  app/installer pair. Override the matrix with the `OBSIDIAN_VERSIONS` env var,
-  e.g. `OBSIDIAN_VERSIONS='latest/latest 1.4.11/earliest' npm run test:e2e`.
+- `browserVersion: '1.14.5'` pins the Obsidian app (the current public
+  release) and `installerVersion: 'earliest'` picks the oldest compatible
+  installer. Bump the pin deliberately and re-run the whole suite. The plugin's
+  1.13 floor is not run by e2e.
 - Testing Obsidian **beta** builds needs an Insider (Catalyst) account via
   `OBSIDIAN_EMAIL` / `OBSIDIAN_PASSWORD` env vars (2FA disabled).
 - The plugin is loaded from `dist/` - make sure it is built (the `test:e2e`

@@ -412,13 +412,42 @@ export async function closeAllDrawings(): Promise<void> {
  * pane doesn't look like anything to me"). Issue #22. Callers must assert the
  * resulting state via `excalidrawLeafStates()` - it is the precondition the
  * scenario relies on.
+ *
+ * Obsidian builds the DeferredView only for an empty leaf whose container is
+ * NOT shown (`containerEl.isShown()`, i.e. no `offsetParent`) - a shown leaf
+ * gets the real view (verified in obsidian-1.13.4.asar and 1.14.5). So the
+ * leaf comes from `createLeafInParent`, which always inserts a brand-new leaf
+ * and activates it, and re-activating `front` then hides it; the check below
+ * fails the setup loudly if it did not. The earlier `getLeaf('tab')` version
+ * flaked on this precondition: `createLeafInTabGroup` returns the group's most
+ * recently active leaf instead of a new one when that leaf is EMPTY, and after
+ * earlier scenarios the only leaf in front was such an empty one (seen in
+ * diagnostics; the old failure itself was not reproduced).
  */
 export async function openDrawingInHiddenTab(path: string): Promise<void> {
   await browser.executeObsidian(async ({ app }, p) => {
     const front = app.workspace.getMostRecentLeaf();
     if (!front) throw new Error('open a note first: no active leaf');
-    const hidden = app.workspace.getLeaf('tab');
+    const group = front.parent as unknown as {
+      children: unknown[];
+    };
+    // Declared for a WorkspaceSplit; a tab group is passed on purpose (the
+    // two are structurally the same in the typings, and Obsidian inserts and
+    // activates the new leaf the same way).
+    const hidden = app.workspace.createLeafInParent(
+      front.parent,
+      group.children.indexOf(front) + 1,
+    );
     app.workspace.setActiveLeaf(front, { focus: true });
+    // Obsidian's own `isShown()` test spelled out: `containerEl` is not in
+    // the public WorkspaceLeaf typing, nor `isShown` in the e2e DOM typings.
+    const container = (hidden as unknown as { containerEl: HTMLElement })
+      .containerEl;
+    if (container.offsetParent !== null) {
+      throw new Error(
+        'setup: the new tab is still shown after re-activating the front note - Obsidian would load the drawing instead of deferring it',
+      );
+    }
     // `icon`/`title` are persisted by getViewState() but not part of the
     // public ViewState typing; passed through a variable, not a literal.
     const restored = {
