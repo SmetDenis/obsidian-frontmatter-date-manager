@@ -674,7 +674,15 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
       },
     );
 
-    // The manual command reports a real write, not the drawing notice.
+    // The manual command reports a real write, not the drawing notice - and
+    // the write lands in the anchor. The notice alone does not say WHICH note
+    // was written: with another note in front the command stamps that one and
+    // reports the same, so the anchor is checked before and after.
+    assert.equal(
+      fmValue(await readNote(anchor), 'updated'),
+      undefined,
+      'setup: the anchor must not be stamped before the command',
+    );
     await armNoticeProbe();
     await browser.executeObsidianCommand(COMMAND_ID);
     await browser.pause(1000);
@@ -686,6 +694,10 @@ describe('excalidraw: drawings are tracked like notes, but never written to whil
     assert.ok(
       !notices.some((n) => /drawing has unsaved changes/.test(n)),
       `the drawing notice must not appear, got: ${JSON.stringify(notices)}`,
+    );
+    assert.ok(
+      fmValue(await readNote(anchor), 'updated') !== undefined,
+      'the command must have stamped the anchor note itself',
     );
 
     // Nothing above may have loaded the tab, or the scenario proved nothing.

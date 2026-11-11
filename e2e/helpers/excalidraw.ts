@@ -415,14 +415,14 @@ export async function closeAllDrawings(): Promise<void> {
  *
  * Obsidian builds the DeferredView only for an empty leaf whose container is
  * NOT shown (`containerEl.isShown()`, i.e. no `offsetParent`) - a shown leaf
- * gets the real view (verified in obsidian-1.13.4.asar and 1.14.5). So the
- * leaf comes from `createLeafInParent`, which always inserts a brand-new leaf
- * and activates it, and re-activating `front` then hides it; the check below
- * fails the setup loudly if it did not. The earlier `getLeaf('tab')` version
- * flaked on this precondition: `createLeafInTabGroup` returns the group's most
- * recently active leaf instead of a new one when that leaf is EMPTY, and after
- * earlier scenarios the only leaf in front was such an empty one (seen in
- * diagnostics; the old failure itself was not reproduced).
+ * gets the real view (verified in the 1.13.4, 1.14.5 and 1.15.0 bundles). So
+ * the leaf comes from `createLeafInParent`, which always inserts a brand-new
+ * leaf and activates it, and re-activating `front` then hides it; the check
+ * below fails the setup loudly if it did not. The earlier `getLeaf('tab')`
+ * version flaked on this precondition: `createLeafInTabGroup` returns the
+ * group's most recently active leaf instead of a new one when that leaf is
+ * EMPTY, and after earlier scenarios the only leaf in front was such an empty
+ * one (seen in diagnostics; the old failure itself was not reproduced).
  */
 export async function openDrawingInHiddenTab(path: string): Promise<void> {
   await browser.executeObsidian(async ({ app }, p) => {

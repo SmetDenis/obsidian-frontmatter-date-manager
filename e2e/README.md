@@ -240,8 +240,10 @@ guard (`getWriteBlock`) is proven against the real thing.
   `DeferredView`: type `excalidraw`, no file) blocks nothing - a new note gets
   its dates automatically, the command reports a real write, and the gate is
   `null` for both the note and the deferred drawing. Asserts as setup that the
-  anchor note is the active one and the tab is deferred, and that the leaf is
-  still deferred at the end, or the scenario proved nothing.
+  anchor note is the active one and the tab is deferred, that the command
+  stamped the anchor itself (the notice does not say which note was written),
+  and that the leaf is still deferred at the end, or the scenario proved
+  nothing.
 - X13 (issue #22) the same with Excalidraw not loaded: the restored tab becomes a
   ghost pane (not a `FileView`, no file) and still blocks nothing. Both drive
   `WorkspaceLeaf.setViewState` on a hidden leaf - the branch Obsidian takes for
@@ -353,9 +355,9 @@ pipeline.
 
 ## Notes
 
-- `browserVersion: '1.14.5'` pins the Obsidian app (the current public
-  release) and `installerVersion: 'earliest'` picks the oldest compatible
-  installer. Bump the pin deliberately and re-run the whole suite. The plugin's
+- `browserVersion: '1.15.0'` pins the Obsidian app (the latest public release
+  when the pin was set, 2026-11-11) and `installerVersion: 'earliest'` picks
+  the oldest compatible installer. Bump the pin deliberately and re-run the whole suite. The plugin's
   1.13 floor is not run by e2e.
 - Testing Obsidian **beta** builds needs an Insider (Catalyst) account via
   `OBSIDIAN_EMAIL` / `OBSIDIAN_PASSWORD` env vars (2FA disabled).
