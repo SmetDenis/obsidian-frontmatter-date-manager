@@ -629,17 +629,24 @@ describe('writes into an editor with unsaved changes (issue #10)', function () {
   });
 
   it('D10 (control): a size-changing re-stamp reaches the editor and survives its next save', async function () {
-    // The other side of the mtime/size matrix: with a variable-width format the
-    // re-stamp changes the file size, so Obsidian emits `modify` despite the
-    // pinned mtime, the buffer is synchronized, and nothing is reverted. If this
-    // fails too, the defect is broader than the size-neutral case.
+    // The size-changing counterpart of D9: with a variable-width format the
+    // re-stamp changes the file size, the open editor picks up the new value,
+    // and its next save keeps it. If this fails too, the defect is not specific
+    // to the size-neutral case.
     await closeSettings();
     await setSettings({
       ...BASE,
       enableAutoUpdate: false,
       dateFormat: 'M/d/yyyy H:mm',
     });
-    const seeded = '12/31/2019 23:59';
+    // The seed is deliberately NOT in the configured format: a stamp in
+    // `M/d/yyyy H:mm` is 13-16 characters long depending on the date and hour,
+    // so any seed in that format collides with it on some days and hours (a
+    // 16-character seed failed the size precondition every day 10:00-23:59 on
+    // the 10th-31st of October-December). This 19-character value cannot be
+    // parsed in that format, so the command re-stamps it exactly like any
+    // unparseable earlier value, and the size always changes.
+    const seeded = '2019-12-31T23:59:00';
     const path = await createNote(
       'diff-size',
       `---\ncreated: 1/1/2020 0:00\nupdated: ${seeded}\n---\n\n# Note\n\nline 1\n`,
